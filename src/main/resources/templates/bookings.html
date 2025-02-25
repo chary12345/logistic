@@ -33,6 +33,14 @@
         });
         let result = await response.json();
         alert("Booking Successful! Tracking ID: " + result.trackingId);
+        
+
+        if (response.ok) {
+            // If the API response is successful, redirect to the new HTML page
+            window.location.href = 'tracking'; // Replace with your desired page
+        } else {
+        	  alert(await res.text());
+        }
     }
 </script>
 </body>

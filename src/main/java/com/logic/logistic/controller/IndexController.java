@@ -11,7 +11,7 @@ public class IndexController {
 	        
 	        return "index.html";
 	    }
-	  @GetMapping("/api/auth/bookings")
+	  @GetMapping("bookings")
 	  public String booking() {
 	        
 	        return "bookings.html";

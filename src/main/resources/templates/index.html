@@ -32,7 +32,13 @@
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ phoneNumber: phone, otp: otp })
         });
-        alert(await res.text());
+      
+        if (res.ok) {
+            // If the API response is successful, redirect to the new HTML page
+            window.location.href = 'bookings'; // Replace with your desired page
+        } else {
+        	  alert(await res.text());
+        }
     }
 </script>
 </body>
