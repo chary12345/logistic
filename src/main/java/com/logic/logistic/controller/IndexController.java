@@ -17,7 +17,7 @@ public class IndexController {
 	        return "bookings.html";
 	    }
 	  
-	  
+	  @GetMapping("tracking")
 	  public String tracking() {
 	        
 	        return "tracking.html";
