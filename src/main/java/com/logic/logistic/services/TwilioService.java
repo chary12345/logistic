@@ -15,19 +15,20 @@ import com.twilio.rest.api.v2010.account.Message;
 
 @Service
 public class TwilioService {
-	@Value("${twilio.account.sid}")
-	private String accountSid;
-	@Value("${twilio.auth.token}")
-	private String authToken;
-	@Value("${twilio.phone.number}")
-	private String twilioPhoneNumber;
+	/*
+	 * @Value("${twilio.account.sid}") private String accountSid;
+	 * 
+	 * @Value("${twilio.auth.token}") private String authToken;
+	 * 
+	 * @Value("${twilio.phone.number}") private String twilioPhoneNumber;
+	 */
 	
 	@Autowired
 	private  UserRepository userRepository;
 	
 	
 	public String sendOtp(String phoneNumber) {
-		Twilio.init(accountSid, authToken);
+		//Twilio.init(accountSid, authToken);
 		String otp = String.valueOf(new Random().nextInt(9000) + 1000);
 		userRepository.save(new UserModel(phoneNumber, "CUSTOMER", otp));
 		/*

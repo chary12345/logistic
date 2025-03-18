@@ -9,7 +9,7 @@ public class IndexController {
 	  @GetMapping("/")
 	    public String index() {
 	        
-	        return "index.html";
+	        return "login.html";
 	    }
 	  @GetMapping("bookings")
 	  public String booking() {

@@ -11,13 +11,23 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.logic.logistic.model.Booking;
 import com.logic.logistic.model.BookingModel;
+import com.logic.logistic.repository.BookRepository;
 import com.logic.logistic.repository.BookingRepository;
 
 @RestController
 @RequestMapping("/api/bookings")
 public class BookingController {
     @Autowired private BookingRepository bookingRepository;
+    
+    @Autowired private BookRepository bookRepository;
+    
+    @PostMapping("/bookLoad")
+    public ResponseEntity<?> bookLoad(@RequestBody Booking booking) {
+       
+        return ResponseEntity.ok(bookRepository.save(booking));
+    }
 
     @PostMapping("/create")
     public ResponseEntity<?> createBooking(@RequestBody BookingModel booking) {
