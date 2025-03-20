@@ -4,11 +4,138 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Logistics Booking</title>
-    <link rel="stylesheet" href="css/styles.css">
-   
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f4f7fc;
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .navbar {
+            background-color: #2c3e50;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            color: white;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            justify-content: space-between;
+        }
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            margin: 0 20px;
+            position: relative;
+            font-weight: 500;
+        }
+        .dropdown {
+            position: relative;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            margin-left: 20px;
+        }
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: white;
+            box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+            min-width: 140px;
+            top: 100%;
+            left: 0;
+            border-radius: 5px;
+        }
+        .dropdown-content a {
+            color: black;
+            padding: 10px;
+            display: block;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .dropdown-content a:hover {
+            background-color: #f1f1f1;
+        }
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+        .container {
+            width: 80%;
+            margin: 80px auto 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        button {
+            background-color: #2980b9;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .charges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .charges label, .charges input {
+            display: inline-block;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: blue;
+            color: white;
+        }
+        .navbar-right {
+            display: flex;
+            align-items: center;
+        }
+        .navbar-left {
+            display: flex;
+            align-items: center;
+        }
+    </style>
 </head>
 <body>
+    <div class="navbar">
+        <div class="navbar-left">
+            <a href="#">Home</a>
+            <div class="dropdown">
+                <a href="#">Operations ▾</a>
+                <div class="dropdown-content">
+                    <a href="#">Booking</a>
+                    <a href="#">Dispatch</a>
+                    <a href="#">Receive</a>
+                    <a href="#">Delivery</a>
+                </div>
+            </div>
+            <div class="dropdown">
+                <a href="#">Reports ▾</a>
+                <div class="dropdown-content">
+                    <a href="#">Booking Report</a>
+                    <a href="#">Dispatch Report</a>
+                    <a href="#">Receive Report</a>
+                    <a href="#">Delivery Report</a>
+                </div>
+            </div>
+        </div>
+        <div class="navbar-right">
+            <button onclick="logout()">Logout</button>
+        </div>
+    </div>
     <div class="container">
         <h2>Logistics Booking Form</h2>
         <form id="bookingForm">
@@ -23,52 +150,162 @@
             <label>GST No:</label> <input type="text" id="consigneeGST">
             <label>Address:</label> <input type="text" id="consigneeAddress">
             <h3>Article Details</h3>
-            <label>Article Type:</label> 
-            <select id="articleType">
-                <option value="Fragile">Fragile</option>
-                <option value="Solid">Solid</option>
-            </select>
-            <label>Weight:</label> <input type="number" id="articleWeight" required>
-            <label>Invoice No:</label> <input type="text" id="invoiceNo">
+            <table>
+                <tr>
+                    <th>Article</th>
+                    <th>Art</th>
+                    <th>Art Type</th>
+                    <th>Said To Contains</th>
+                    <th>Art Amt</th>
+                    <th>Total</th>
+                    <th>Action</th>
+                </tr>
+                <tr>
+                    <td><input type="text" id="article"></td>
+                    <td><input type="number" id="artQuantity" value="0"></td>
+                    <td>
+                        <select id="artType">
+                            <option value="Auto Parts">Auto Parts</option>
+                            <option value="Electronics">Electronics</option>
+                            <option value="Garments">Garments</option>
+                        </select>
+                    </td>
+                    <td>
+                        <select id="saidToContain">
+                            <option value="Spare Parts">Spare Parts</option>
+                            <option value="Components">Components</option>
+                            <option value="Accessories">Accessories</option>
+                        </select>
+                    </td>
+                    <td><input type="number" id="artAmount" value="0"></td>
+                    <td><span id="totalAmount">0</span></td>
+                    <td><button type="button" onclick="addArticle()">Add</button></td>
+                </tr>
+            </table>
             <h3>Charges</h3>
-            <label>Freight:</label> <input type="number" id="freight" value="0">
-            <label>SGST (2.5%):</label> <input type="number" id="sgst" value="0">
-            <label>CGST (2.5%):</label> <input type="number" id="cgst" value="0">
-            <label>IGST (5%):</label> <input type="number" id="igst" value="0">
-            <label>Grand Total:</label> <input type="number" id="grandTotal" readonly>
-            
-			<button class="btn btn-success w-100" onclick="booking()">Booking
-				</button>
+            <div class="charges">
+                <label>Freight:</label> <input type="number" id="freight" value="0" oninput="calculateCharges()" readonly>
+                <label>SGST (2.5%):</label> <input type="number" id="sgst" value="0" readonly>
+                <label>CGST (2.5%):</label> <input type="number" id="cgst" value="0" readonly>
+                <label>IGST (5%):</label> <input type="number" id="igst" value="0" readonly>
+                <label>Grand Total:</label> <input type="number" id="grandTotal" readonly>
+            </div>
+            <button type="submit">Booking</button>
         </form>
     </div>
     <script>
-   
-    async function booking() {
-    	document.getElementById("bookingForm").addEventListener("submit", function(event) {
-    	    event.preventDefault();
-    	    let data = {
-    	        consignorName: document.getElementById("consignorName").value,
-    	        consignorMobile: document.getElementById("consignorMobile").value,
-    	        consigneeName: document.getElementById("consigneeName").value,
-    	        consigneeMobile: document.getElementById("consigneeMobile").value,
-    	        articleType: document.getElementById("articleType").value,
-    	        articleWeight: document.getElementById("articleWeight").value,
-    	        invoiceNo: document.getElementById("invoiceNo").value,
-    	        freight: document.getElementById("freight").value,
-    	        sgst: document.getElementById("sgst").value,
-    	        cgst: document.getElementById("cgst").value,
-    	        igst: document.getElementById("igst").value
-    	    };
-    	    fetch("http://localhost:8080/api/bookings/bookLoad", {
-    	        method: "POST",
-    	        headers: { "Content-Type": "application/json" },
-    	        body: JSON.stringify(data)
-    	    }).then(response => response.json())
-    	      .then(data => alert("Booking saved successfully!"));
-    	});
+        function calculateCharges() {
+            let freight = parseFloat(document.getElementById("freight").value) || 0;
+            let sgst = (freight * 0.025).toFixed(2);
+            let cgst = (freight * 0.025).toFixed(2);
+            let igst = (freight * 0.05).toFixed(2);
+            let grandTotal = (freight + parseFloat(sgst) + parseFloat(cgst) + parseFloat(igst)).toFixed(2);
 
+            document.getElementById("sgst").value = sgst;
+            document.getElementById("cgst").value = cgst;
+            document.getElementById("igst").value = igst;
+            document.getElementById("grandTotal").value = grandTotal;
+        }
 
-    }
-</script>
+        function addArticle() {
+            let table = document.querySelector("table");
+            let row = table.insertRow(-1);
+            let article = document.getElementById("article").value;
+            let artQty = document.getElementById("artQuantity").value;
+            let artType = document.getElementById("artType").value;
+            let saidToContain = document.getElementById("saidToContain").value;
+            let artAmt = document.getElementById("artAmount").value;
+            let total = parseInt(artQty) * parseInt(artAmt);
+            row.innerHTML = `
+                <td>${article}</td>
+                <td>${artQty}</td>
+                <td>${artType}</td>
+                <td>${saidToContain}</td>
+                <td>${artAmt}</td>
+                <td>${total}</td>
+                <td><button type="button" onclick="deleteRow(this)">Delete</button></td>
+            `;
+            document.getElementById("artQuantity").value = "0";
+            document.getElementById("artType").selectedIndex = 0; // Reset dropdown
+            document.getElementById("saidToContain").selectedIndex = 0; // Reset dropdown
+            document.getElementById("artAmount").value = "0";
+            document.getElementById("totalAmount").textContent = "0";
+            updateFreight(); // Update freight after adding an article
+        }
+
+        function deleteRow(btn) {
+            let row = btn.parentNode.parentNode;
+            row.parentNode.removeChild(row);
+            updateFreight(); // Update freight after deleting a row
+        }
+
+        function updateFreight() {
+            let totalFreight = 0;
+            let rows = document.querySelectorAll("table tr:not(:first-child)");
+            rows.forEach(row => {
+                let totalCell = row.querySelector("td:nth-child(6)");
+                if (totalCell) {
+                    totalFreight += parseInt(totalCell.textContent) || 0;
+                }
+            });
+            document.getElementById("freight").value = totalFreight;
+            calculateCharges(); // Recalculate charges after updating freight
+        }
+
+        document.getElementById("bookingForm").addEventListener("submit", async function(event) {
+            event.preventDefault();
+
+            let articleDetails = [];
+            let rows = document.querySelectorAll("table tr:not(:first-child)");
+            rows.forEach(row => {
+                let cells = row.querySelectorAll("td");
+                articleDetails.push({
+                    article: cells[0].textContent,
+                    artQty: cells[1].textContent,
+                    artType: cells[2].textContent,
+                    saidToContain: cells[3].textContent,
+                    artAmt: cells[4].textContent,
+                    total: cells[5].textContent,
+                });
+            });
+
+            let data = {
+                consignorName: document.getElementById("consignorName").value,
+                consignorMobile: document.getElementById("consignorMobile").value,
+                consigneeName: document.getElementById("consigneeName").value,
+                consigneeMobile: document.getElementById("consigneeMobile").value,
+                consignorGST: document.getElementById("consignorGST").value,
+                consignorAddress: document.getElementById("consignorAddress").value,
+                consigneeGST: document.getElementById("consigneeGST").value,
+                consigneeAddress: document.getElementById("consigneeAddress").value,
+                articleDetails: articleDetails,
+                freight: document.getElementById("freight").value,
+                sgst: document.getElementById("sgst").value,
+                cgst: document.getElementById("cgst").value,
+                igst: document.getElementById("igst").value,
+                grandTotal: document.getElementById("grandTotal").value,
+            };
+
+            try {
+                let response = await fetch("http://localhost:8080/api/bookings/bookLoad", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(data)
+                });
+                let result = await response.json();
+                alert("Booking saved successfully!");
+            } catch (error) {
+                console.error("Error saving booking:", error);
+                alert("Failed to save booking.");
+            }
+        });
+
+        function logout() {
+            // Implement your logout logic here
+            alert("Logout clicked!"); // Replace with actual logout functionality
+        }
+
+        calculateCharges();
+        </script>
 </body>
 </html>
