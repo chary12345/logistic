@@ -10,8 +10,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.logic.logistic.dto.UserDto;
 import com.logic.logistic.model.LoginRequest;
-import com.logic.logistic.model.User;
 import com.logic.logistic.repository.UserRepository;
 
 @RestController
@@ -24,7 +24,7 @@ public class CompanyLoginController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
-        User user = userRepository.findByUsername(request.getUsername());
+    	UserDto user = userRepository.findByUsername(request.getUsername(),request.getPassword());
         if (user != null && user.getPassword().equals(request.getPassword())) {
             return ResponseEntity.ok(Collections.singletonMap("message", "Login Successful"));
         }
