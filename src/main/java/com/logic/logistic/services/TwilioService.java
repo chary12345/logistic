@@ -5,13 +5,10 @@ import java.util.Optional;
 import java.util.Random;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.logic.logistic.model.UserModel;
 import com.logic.logistic.repository.UserRepository;
-import com.twilio.Twilio;
-import com.twilio.rest.api.v2010.account.Message;
 
 @Service
 public class TwilioService {
@@ -30,7 +27,7 @@ public class TwilioService {
 	public String sendOtp(String phoneNumber) {
 		//Twilio.init(accountSid, authToken);
 		String otp = String.valueOf(new Random().nextInt(9000) + 1000);
-		userRepository.save(new UserModel(phoneNumber, "CUSTOMER", otp));
+		//userRepository.save(new UserModel(phoneNumber, "CUSTOMER", otp));
 		/*
 		 * Message.creator(new com.twilio.type.PhoneNumber(phoneNumber), new
 		 * com.twilio.type.PhoneNumber(twilioPhoneNumber), "Your OTP is: " +
@@ -40,8 +37,9 @@ public class TwilioService {
 	}
 
 	public boolean verifyOtp(String phoneNumber, String otp) {
-		Optional<UserModel> user = userRepository.findById(phoneNumber);
-		return user.isPresent() && user.get().getOtp().equals(otp);
+		return false;
+		//Optional<UserModel> user = userRepository.findById(phoneNumber);
+		//return user.isPresent() && user.get().getOtp().equals(otp);
 	}
 }
 

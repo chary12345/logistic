@@ -56,7 +56,7 @@ async function validateLogin() {
         } else {
             // If the login failed, display the server's error message
             errorMsg.textContent = data.message || "Login failed. Please try again.";
-            window.location.href = "bookings"; // Adjust the URL to your bookings page
+           window.location.href = "/"; // Adjust the URL to your bookings page
         }
     } catch (error) {
         // Handle any network errors
