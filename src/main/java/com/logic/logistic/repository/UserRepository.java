@@ -5,7 +5,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import com.logic.logistic.dto.UserDto;
-import com.logic.logistic.model.User;
 
 @Repository
 public interface UserRepository extends JpaRepository<UserDto, String>{
