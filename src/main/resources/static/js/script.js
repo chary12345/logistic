@@ -12,21 +12,41 @@ async function validateLogin() {
     let captchaInput = document.getElementById("captcha-input").value;
     let captchaText = document.getElementById("captcha-text").textContent;
     let errorMsg = document.getElementById("error-msg");
+    let usernameError = document.getElementById("username-error");
+    let passwordError = document.getElementById("password-error");
+    let groupError = document.getElementById("group-error");
+    let captchaError = document.getElementById("captcha-error");
 
-    // Basic validation: Check if any field is empty
-    if (!username || !password || !group || !captchaInput) {
-        errorMsg.textContent = "All fields are required!";
-        return;
-    }
-
-    // Validate the captcha input
-    if (captchaInput !== captchaText) {
-        errorMsg.textContent = "Invalid Captcha!";
-        return;
-    }
-
-    // Clear any previous error messages
+    // Reset error messages
     errorMsg.textContent = "";
+    usernameError.style.display = "none";
+    passwordError.style.display = "none";
+    groupError.style.display = "none";
+    captchaError.style.display = "none";
+
+    let isValid = true;
+
+    // Basic client side validation: Check if any field is empty
+    if (!username) {
+        usernameError.style.display = "block";
+        isValid = false;
+    }
+    if (!password) {
+        passwordError.style.display = "block";
+        isValid = false;
+    }
+    if (!group) {
+        groupError.style.display = "block";
+        isValid = false;
+    }
+    if (captchaInput !== captchaText) {
+        captchaError.style.display = "block";
+        isValid = false;
+    }
+
+    if (!isValid) {
+        return; // Stop if client-side validation fails
+    }
 
     // Create the login data object
     let loginData = {
@@ -51,12 +71,11 @@ async function validateLogin() {
 
         // Check if the login was successful
         if (response.ok) {
-            alert("Login Successful!");
+            // alert("Login Successful!"); // Removed the alert
             window.location.href = "bookings"; // Adjust the URL to your bookings page
         } else {
             // If the login failed, display the server's error message
             errorMsg.textContent = data.message || "Login failed. Please try again.";
-           window.location.href = "/"; // Adjust the URL to your bookings page
         }
     } catch (error) {
         // Handle any network errors
