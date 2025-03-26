@@ -1,6 +1,8 @@
 package com.logic.logistic.controller;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -24,10 +26,14 @@ public class CompanyLoginController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+    	Map<String, Object> map=new HashMap<String, Object>();
     	UserDto user = userRepository.findByUsername(request.getUsername(),request.getPassword());
         if (user != null && user.getPassword().equals(request.getPassword())) {
-            return ResponseEntity.ok(Collections.singletonMap("message", "Login Successful"));
+        	map.put("message", "Login Successful");
+        	map.put("userData", user);
+            return ResponseEntity.ok(map);
         }
+      
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Collections.singletonMap("message", "Invalid Credentials"));
     }
 

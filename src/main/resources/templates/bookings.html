@@ -353,7 +353,7 @@ th {
 					<i class="fas fa-user"></i>
 				</div>
 				<div class="user-dropdown-content">
-					<div class="user-info">
+					<div class="user-info" id="user-info-modal">
 						<p>
 							<strong>First Name:</strong> <span id="userFirstName"></span>
 						</p>
@@ -461,6 +461,9 @@ th {
 	</div>
 	<div id="overlay" class="overlay"></div>
 	<script>
+	
+	
+	
     function showBookingForm() {
         document.getElementById('bookingFormContainer').style.display = 'block';
         document.getElementById('bookingReportForm').style.display = 'none';
@@ -659,28 +662,10 @@ th {
         }
     });
 
+ // Logout Function
     function logout() {
-        fetch('/api/logout', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(response => {
-            if (response.ok) {
-                localStorage.removeItem('userToken');
-                sessionStorage.removeItem('userData');
-                document.cookie = "username=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-                window.location.href = '/login.html';
-            } else {
-                console.error('Logout failed:', response.status);
-                alert('Logout failed. Please try again.');
-            }
-        })
-        .catch(error => {
-            console.error('Logout error:', error);
-            alert('An error occurred during logout.');
-        });
+    	 sessionStorage.removeItem('user');  // Remove the stored user object from sessionStorage
+        window.location.href = '/'; // Redirect to logout route
     }
 
     function showChangePasswordForm() {
@@ -759,13 +744,7 @@ th {
     }
 
     function populateUserData() {
-        const userData = {
-            firstName: "John",
-            lastName: "Doe",
-            phone: "123-456-7890",
-            email: "john.doe@example.com",
-            role: "Admin"
-        };
+    	 const userData = JSON.parse(sessionStorage.getItem('user'));
 
         document.getElementById('userFirstName').textContent = userData.firstName;
         document.getElementById('userLastName').textContent = userData.lastName;
