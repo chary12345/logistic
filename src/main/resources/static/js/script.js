@@ -71,7 +71,14 @@ async function validateLogin() {
 
         // Check if the login was successful
         if (response.ok) {
-            // alert("Login Successful!"); // Removed the alert
+              
+            if (data.userData) {
+                    sessionStorage.setItem('user', JSON.stringify(data.userData));
+                    window.location.href = "bookings";
+                } else {
+                    alert('Error: User data not found');
+                    window.location.href = "/";
+                }
             window.location.href = "bookings"; // Adjust the URL to your bookings page
         } else {
             // If the login failed, display the server's error message
