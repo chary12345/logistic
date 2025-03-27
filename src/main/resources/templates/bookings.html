@@ -9,6 +9,11 @@
 	rel="stylesheet">
 <link rel="stylesheet"
 	href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<script
+	src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+<script
+	src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.13/jspdf.plugin.autotable.min.js"></script>
+<script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 body {
 	background-color: #f4f7fc;
@@ -51,7 +56,7 @@ body {
 	margin-left: 10px;
 }
 
-.dropdown > a {
+.dropdown>a {
 	padding-right: 15px;
 }
 
@@ -94,13 +99,13 @@ body {
 }
 
 .container {
-    width: 90%; /* Increased width for better fit */
-    max-width: 1200px; /* Increased max width */
-    margin: 80px auto 30px; /* Adjusted margin for better positioning */
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+	width: 90%; /* Increased width for better fit */
+	max-width: 1200px; /* Increased max width */
+	margin: 80px auto 30px; /* Adjusted margin for better positioning */
+	background: white;
+	padding: 20px;
+	border-radius: 10px;
+	box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
 }
 
 button {
@@ -111,6 +116,7 @@ button {
 	cursor: pointer;
 	border-radius: 5px;
 	font-size: 14px;
+	margin-right: 5px; /* Added some spacing between buttons */
 }
 
 .charges {
@@ -124,10 +130,10 @@ button {
 }
 
 table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-    table-layout: auto; /* Added to ensure columns adjust as needed */
+	width: 100%;
+	border-collapse: collapse;
+	margin-top: 20px;
+	table-layout: auto; /* Added to ensure columns adjust as needed */
 }
 
 th, td {
@@ -396,8 +402,11 @@ th {
 			id="fromDate"> <label for="toDate">To Date:</label> <input
 			type="date" id="toDate">
 		<button onclick="generateBookingReport()">Generate Report</button>
+		<button onclick="downloadBookingReport()">Download PDF</button>
+		<button onclick="downloadBookingReportExcel()">Download Excel</button>
 		<div id="reportMessage"
 			style="margin-top: 10px; display: none; color: red;"></div>
+		<div id="reportTableContainer"></div>
 	</div>
 	<div class="container" id="bookingFormContainer">
 		<h2>Logistics Booking Form</h2>
@@ -461,9 +470,7 @@ th {
 	</div>
 	<div id="overlay" class="overlay"></div>
 	<script>
-	
-	
-	
+
     function showBookingForm() {
         document.getElementById('bookingFormContainer').style.display = 'block';
         document.getElementById('bookingReportForm').style.display = 'none';
@@ -478,37 +485,36 @@ th {
         }
     }
 
+    let reportData = []; // Store the fetched report data globally
+
     function generateBookingReport() {
-        const fromDate = document.getElementById('fromDate').value; // Get the 'from' date input value
-        const toDate = document.getElementById('toDate').value; // Get the 'to' date input value
-        const reportMessage = document.getElementById('reportMessage'); // Get the report message element
+        const fromDate = document.getElementById('fromDate').value;
+        const toDate = document.getElementById('toDate').value;
+        const reportMessage = document.getElementById('reportMessage');
+        const reportTableContainer = document.getElementById('reportTableContainer');
+
+        // Clear previous report data and table
+        reportData = [];
+        reportTableContainer.innerHTML = '';
+        reportMessage.style.display = 'none';
 
         // Fetch data from the API
-        fetch(`/api/bookings/report?fromDate=${fromDate}&toDate=${toDate}`) // Make a GET request to the API endpoint
-            .then(response => response.json()) // Parse the response as JSON
-            .then(data => { // Handle the parsed data
-                if (data.length > 0) { // Check if there are any records in the response
-                    displayReportData(data); // Display the data in a table
-                    reportMessage.style.display = 'none'; // Hide the report message
-                } else { // If no records are found
-                    reportMessage.textContent = "No Records Found"; // Set the report message
-                    reportMessage.style.display = 'block'; // Show the report message
-                    // Remove existing table if any
-                    let existingTable = document.getElementById('bookingReportForm').querySelector('table'); // Select the table inside the report form
-                    if (existingTable) { // If a table exists
-                        document.getElementById('bookingReportForm').removeChild(existingTable); // Remove the table
-                    }
+        fetch(`/api/bookings/report?fromDate=${fromDate}&toDate=${toDate}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.length > 0) {
+                    reportData = data; // Store the fetched data
+                    displayReportData(data);
+                    reportMessage.style.display = 'none';
+                } else {
+                    reportMessage.textContent = "No Records Found";
+                    reportMessage.style.display = 'block';
                 }
             })
-            .catch(error => { // Handle any errors during the fetch operation
-                console.error("Error fetching report data:", error); // Log the error to the console
-                reportMessage.textContent = "Error fetching report data."; // Set the error message
-                reportMessage.style.display = 'block'; // Show the error message
-                // Remove existing table if any
-                let existingTable = document.getElementById('bookingReportForm').querySelector('table'); // Select the table inside the report form
-                if (existingTable) { // If a table exists
-                    document.getElementById('bookingReportForm').removeChild(existingTable); // Remove the table
-                }
+            .catch(error => {
+                console.error("Error fetching report data:", error);
+                reportMessage.textContent = "Error fetching report data.";
+                reportMessage.style.display = 'block';
             });
     }
 
@@ -545,17 +551,113 @@ th {
                 <td>${booking.sgst}</td>
                 <td>${booking.cgst}</td>
                 <td>${booking.igst}</td>
-                <td>${booking.bookingDate}</td>
+                <td>${new Date(booking.bookingDate).toLocaleDateString()}</td>
             `;
         });
 
-        let reportContainer = document.getElementById('bookingReportForm');
-        let existingTable = reportContainer.querySelector('table');
-        if (existingTable) {
-            reportContainer.removeChild(existingTable);
-        }
+        const reportContainer = document.getElementById('reportTableContainer');
         reportContainer.appendChild(reportTable);
     }
+
+    function downloadBookingReport() {
+        if (reportData.length === 0) {
+            alert("No data to download. Please generate the report first.");
+            return;
+        }
+
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('landscape');
+
+        // Explicitly register the autoTable plugin (if it's not automatically registered)
+        if (pdf.autoTable === undefined || typeof pdf.autoTable !== 'function') {
+            console.error("jsPDF-AutoTable plugin is not correctly loaded.");
+            alert("Error: Could not load PDF generation plugin.");
+            return;
+        }
+
+        const columns = [
+            { header: 'ID', dataKey: 'id' },
+            { header: 'Consignor Name', dataKey: 'consignorName' },
+            { header: 'Consignor Mobile', dataKey: 'consignorMobile' },
+            { header: 'Consignee Name', dataKey: 'consigneeName' },
+            { header: 'Consignee Mobile', dataKey: 'consigneeMobile' },
+            { header: 'Article Type', dataKey: 'articleType' },
+            { header: 'Article Weight', dataKey: 'articleWeight' },
+            { header: 'Freight', dataKey: 'freight' },
+            { header: 'SGST', dataKey: 'sgst' },
+            { header: 'CGST', dataKey: 'cgst' },
+            { header: 'IGST', dataKey: 'igst' },
+            { header: 'Booking Date', dataKey: 'bookingDate' }
+        ];
+
+        const formattedData = reportData.map(item => ({
+            ...item,
+            bookingDate: new Date(item.bookingDate).toLocaleDateString()
+        }));
+
+        pdf.autoTable({
+            columns: columns,
+            body: formattedData,
+            margin: { top: 20, left: 10, right: 10, bottom: 10 },
+            bodyStyles: { fontSize: 8 },
+            columnStyles: {
+                id: { cellWidth: 10 },
+                consignorMobile: { cellWidth: 25 },
+                consigneeMobile: { cellWidth: 25 },
+                bookingDate: { cellWidth: 20 }
+            },
+            didParseCell: function(data) {
+                if (data.column.dataKey === 'articleWeight') {
+                    if (data.row.raw.articleDetails && Array.isArray(data.row.raw.articleDetails)) {
+                        data.cell.text = data.row.raw.articleDetails.reduce((sum, detail) => sum + parseInt(detail.artQty), 0);
+                    } else {
+                        data.cell.text = 'N/A'; // Or some other appropriate default value
+                    }
+                }
+            },
+            didDrawPage: function(data) {
+                pdf.setFontSize(12);
+                pdf.setTextColor(40);
+                pdf.text("Booking Report", data.settings.margin.left, 10);
+            }
+        });
+
+        pdf.save(`booking_report_${new Date().toISOString().slice(0, 10)}.pdf`);
+    }
+
+    function downloadBookingReportExcel() {
+        if (reportData.length === 0) {
+            alert("No data to download. Please generate the report first.");
+            return;
+        }
+
+        // Prepare data for Excel
+        const excelData = reportData.map(item => ({
+            ID: item.id,
+            'Consignor Name': item.consignorName,
+            'Consignor Mobile': item.consignorMobile,
+            'Consignee Name': item.consigneeName,
+            'Consignee Mobile': item.consigneeMobile,
+            'Article Type': item.articleType,
+            'Article Weight': item.articleDetails ? item.articleDetails.reduce((sum, detail) => sum + parseInt(detail.artQty), 0) : 'N/A',
+            Freight: item.freight,
+            SGST: item.sgst,
+            CGST: item.cgst,
+            IGST: item.igst,
+            'Booking Date': new Date(item.bookingDate).toLocaleDateString()
+        }));
+
+        // Create a new workbook
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(excelData);
+
+        // Add the worksheet to the workbook
+        XLSX.utils.book_append_sheet(wb, ws, 'Booking Report');
+
+        // Save the workbook as an Excel file
+        XLSX.writeFile(wb, `booking_report_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    }
+
     function calculateCharges() {
         let freight = parseFloat(document.getElementById("freight").value) || 0;
         let sgst = (freight * 0.025).toFixed(2);
@@ -656,6 +758,11 @@ th {
             });
             let result = await response.json();
             alert("Booking saved successfully!");
+            document.getElementById("bookingForm").reset();
+            // Optionally clear the article table as well
+            const articleTableRows = document.querySelectorAll("#bookingForm table tr:not(:first-child)");
+            articleTableRows.forEach(row => row.remove());
+            updateFreight();
         } catch (error) {
             console.error("Error saving booking:", error);
             alert("Failed to save booking.");
