@@ -7,22 +7,25 @@ import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "company_dto")
 public class CompanyDto {
 	@Id
-	@Column(name = "companyCode")
+	@Column(name = "company_Code")
 	private String companyCode;
 	private String companyFullName;
-	@OneToMany(cascade = CascadeType.ALL)
-	@JoinColumn(name = "companyCode", referencedColumnName = "companyCode") // Use the 'companyCode' from CompanyDto as
-																			// the FK
-	private List<AddressDto> address;
 	private String groupName;
+	private String plan;
+	private String logo;
+	@OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
+    private List<BranchDTO> branches; // One company has many branches
+
+    @OneToOne(mappedBy = "company")
+    private UserDto user; // One company is owned by one user
 	private Date createdate;
 	private Date updateDate;
 	private Date expiryDate;
@@ -44,13 +47,7 @@ public class CompanyDto {
 		this.companyFullName = companyFullName;
 	}
 
-	public List<AddressDto> getAddress() {
-		return address;
-	}
-
-	public void setAddress(List<AddressDto> address) {
-		this.address = address;
-	}
+	
 
 	public String getGroupName() {
 		return groupName;
@@ -92,6 +89,38 @@ public class CompanyDto {
 
 	public void setStartDate(Date startDate) {
 		this.startDate = startDate;
+	}
+
+	public String getLogo() {
+		return logo;
+	}
+
+	public void setLogo(String logo) {
+		this.logo = logo;
+	}
+
+	public List<BranchDTO> getBranches() {
+		return branches;
+	}
+
+	public void setBranches(List<BranchDTO> branches) {
+		this.branches = branches;
+	}
+
+	public UserDto getUser() {
+		return user;
+	}
+
+	public void setUser(UserDto user) {
+		this.user = user;
+	}
+
+	public String getPlan() {
+		return plan;
+	}
+
+	public void setPlan(String plan) {
+		this.plan = plan;
 	}
 
 	

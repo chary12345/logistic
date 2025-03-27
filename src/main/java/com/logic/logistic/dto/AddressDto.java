@@ -7,9 +7,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
 @Entity
@@ -30,9 +27,10 @@ public class AddressDto {
     private Date createDate;
     private Date updatedDate;
 
-    // Corrected: Reference to the whole entity CompanyDto, not just the companyCode field.
- 
-   
+	/*
+	 * @OneToOne(mappedBy = "addresse") private BranchDTO branch; // One branch can
+	 * have many addresses
+	 */   
    // private CompanyDto comapany;
 	public Long getAddressId() {
 		return addressId;
@@ -94,6 +92,10 @@ public class AddressDto {
 	public void setUpdatedDate(Date updatedDate) {
 		this.updatedDate = updatedDate;
 	}
+	/*
+	 * public BranchDTO getBranch() { return branch; } public void
+	 * setBranch(BranchDTO branch) { this.branch = branch; }
+	 */
 	
 	
 	

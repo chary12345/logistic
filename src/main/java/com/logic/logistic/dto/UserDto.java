@@ -4,6 +4,7 @@ import java.sql.Date;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
 
@@ -18,15 +19,17 @@ public class UserDto {
 	private String password;
 	private String phone;
 	private String email;
-	private String role;
-	private String companyCode;
+    private String role; // Enum for roles like "Owner", "Admin", etc.
+	@OneToOne
+    private CompanyDto company; // One user (owner) has only one company
 	private Date createdDate;
 	private Date updatedDate;
 	private Date expiryDate;
 	private String logo;
-	private String plan;
+	private String permissions;
 	private boolean blockUser;
 	private String blockReason;
+	private String blockedBy;
 	public Date getExpiryDate() {
 		return expiryDate;
 	}
@@ -57,30 +60,22 @@ public class UserDto {
 	public void setPassword(String password) {
 		this.password = password;
 	}
+	
+	
 	public String getRole() {
 		return role;
 	}
 	public void setRole(String role) {
 		this.role = role;
 	}
-	public Date getCreatedDate() {
-		return createdDate;
-	}
-	public void setCreatedDate(Date createdDate) {
-		this.createdDate = createdDate;
-	}
+	
 	public String getLogo() {
 		return logo;
 	}
 	public void setLogo(String logo) {
 		this.logo = logo;
 	}
-	public String getPlan() {
-		return plan;
-	}
-	public void setPlan(String plan) {
-		this.plan = plan;
-	}
+	
 	public String getFirstName() {
 		return firstName;
 	}
@@ -105,11 +100,12 @@ public class UserDto {
 	public void setEmail(String email) {
 		this.email = email;
 	}
-	public String getCompanyCode() {
-		return companyCode;
+	
+	public CompanyDto getCompany() {
+		return company;
 	}
-	public void setCompanyCode(String companyCode) {
-		this.companyCode = companyCode;
+	public void setCompany(CompanyDto company) {
+		this.company = company;
 	}
 	public Date getUpdatedDate() {
 		return updatedDate;
@@ -117,8 +113,23 @@ public class UserDto {
 	public void setUpdatedDate(Date updatedDate) {
 		this.updatedDate = updatedDate;
 	}
-
+	public String getPermissions() {
+		return permissions;
+	}
+	public void setPermissions(String permissions) {
+		this.permissions = permissions;
+	}
+	public String getBlockedBy() {
+		return blockedBy;
+	}
+	public void setBlockedBy(String blockedBy) {
+		this.blockedBy = blockedBy;
+	}
+	public void setCreatedDate(Date createdDate) {
+        this.createdDate = createdDate;
+    }
+	public Date getCreatedDate() {
+		return createdDate;
+	}
 	
-	
-
 }
