@@ -166,8 +166,10 @@ th {
 	border-radius: 5px;
 	position: fixed;
 	top: 50px;
+	left: 0;
 	width: 100%;
 	z-index: 999;
+	box-sizing: border-box; /* Added to include padding in width */
 }
 
 .report-form label {
@@ -330,6 +332,24 @@ th {
 	background-color: rgba(0, 0, 0, 0.5);
 	z-index: 1001;
 }
+
+#reportActions {
+    margin-top: 10px;
+}
+
+#reportActions button {
+    margin-right: 5px;
+}
+
+#reportTableContainer {
+    overflow-x: auto; /* Enable horizontal scrolling for large tables */
+    margin-top: 15px; /* Add some space above the table */
+}
+
+#reportTableContainer table {
+    width: auto; /* Allow table to expand based on content */
+    min-width: 100%; /* Ensure table doesn't get too narrow */
+}
 </style>
 </head>
 <body onload="populateUserData()">
@@ -402,11 +422,13 @@ th {
 			id="fromDate"> <label for="toDate">To Date:</label> <input
 			type="date" id="toDate">
 		<button onclick="generateBookingReport()">Generate Report</button>
-		<button onclick="downloadBookingReport()">Download PDF</button>
-		<button onclick="downloadBookingReportExcel()">Download Excel</button>
 		<div id="reportMessage"
 			style="margin-top: 10px; display: none; color: red;"></div>
 		<div id="reportTableContainer"></div>
+        <div id="reportActions" style="display: none;">
+            <button onclick="downloadBookingReport()">Download PDF</button>
+            <button onclick="downloadBookingReportExcel()">Download Excel</button>
+        </div>
 	</div>
 	<div class="container" id="bookingFormContainer">
 		<h2>Logistics Booking Form</h2>
@@ -427,32 +449,36 @@ th {
 			<input type="text" id="consigneeAddress">
 			<h3>Article Details</h3>
 			<table>
-				<tr>
-					<th>Article</th>
-					<th>Art</th>
-					<th>Art Type</th>
-					<th>Said To Contains</th>
-					<th>Art Amt</th>
-					<th>Total</th>
-					<th>Action</th>
-				</tr>
-				<tr>
-					<td><input type="text" id="article"></td>
-					<td><input type="number" id="artQuantity" value="0"></td>
-					<td><select id="artType">
-							<option value="Auto Parts">Auto Parts</option>
-							<option value="Electronics">Electronics</option>
-							<option value="Garments">Garments</option>
-					</select></td>
-					<td><select id="saidToContain">
-							<option value="Spare Parts">Spare Parts</option>
-							<option value="Components">Components</option>
-							<option value="Accessories">Accessories</option>
-					</select></td>
-					<td><input type="number" id="artAmount" value="0"></td>
-					<td><span id="totalAmount">0</span></td>
-					<td><button type="button" onclick="addArticle()">Add</button></td>
-				</tr>
+				<thead>
+					<tr>
+						<th>Article</th>
+						<th>Art</th>
+						<th>Art Type</th>
+						<th>Said To Contains</th>
+						<th>Art Amt</th>
+						<th>Total</th>
+						<th>Action</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td><input type="text" id="article"></td>
+						<td><input type="number" id="artQuantity" value="0"></td>
+						<td><select id="artType">
+								<option value="Auto Parts">Auto Parts</option>
+								<option value="Electronics">Electronics</option>
+								<option value="Garments">Garments</option>
+						</select></td>
+						<td><select id="saidToContain">
+								<option value="Spare Parts">Spare Parts</option>
+								<option value="Components">Components</option>
+								<option value="Accessories">Accessories</option>
+						</select></td>
+						<td><input type="number" id="artAmount" value="0"></td>
+						<td><span id="totalAmount">0</span></td>
+						<td><button type="button" onclick="addArticle()">Add</button></td>
+					</tr>
+				</tbody>
 			</table>
 			<h3>Charges</h3>
 			<div class="charges">
@@ -461,7 +487,7 @@ th {
 				<label for="sgst">SGST (2.5%):</label> <input type="number"
 					id="sgst" value="0" readonly> <label for="cgst">CGST
 					(2.25%):</label> <input type="number" id="cgst" value="0" readonly>
-				<label for="igst">IGST (5%):</label> <input type="number" id="igst"
+					<label for="igst">IGST (5%):</label> <input type="number" id="igst"
 					value="0" readonly> <label for="grandTotal">Grand
 					Total:</label> <input type="number" id="grandTotal" readonly>
 			</div>
@@ -471,7 +497,8 @@ th {
 	<div id="overlay" class="overlay"></div>
 	<script>
 
-    function showBookingForm() {
+    function showBookingForm()
+    {
         document.getElementById('bookingFormContainer').style.display = 'block';
         document.getElementById('bookingReportForm').style.display = 'none';
         hideChangePasswordForm(); // Ensure password form is hidden
@@ -481,6 +508,9 @@ th {
         if (reportType === 'booking') {
             document.getElementById('bookingReportForm').style.display = 'block';
             document.getElementById('bookingFormContainer').style.display = 'none';
+            document.getElementById('reportActions').style.display = 'none'; // Initially hide the download buttons
+            document.getElementById('reportTableContainer').innerHTML = ''; // Clear previous report
+            document.getElementById('reportMessage').style.display = 'none';
             hideChangePasswordForm(); // Ensure password form is hidden
         }
     }
@@ -492,11 +522,13 @@ th {
         const toDate = document.getElementById('toDate').value;
         const reportMessage = document.getElementById('reportMessage');
         const reportTableContainer = document.getElementById('reportTableContainer');
+        const reportActions = document.getElementById('reportActions');
 
         // Clear previous report data and table
         reportData = [];
         reportTableContainer.innerHTML = '';
         reportMessage.style.display = 'none';
+        reportActions.style.display = 'none'; // Hide buttons before new report
 
         // Fetch data from the API
         fetch(`/api/bookings/report?fromDate=${fromDate}&toDate=${toDate}`)
@@ -506,15 +538,18 @@ th {
                     reportData = data; // Store the fetched data
                     displayReportData(data);
                     reportMessage.style.display = 'none';
+                    reportActions.style.display = 'block'; // Show buttons after report is generated
                 } else {
                     reportMessage.textContent = "No Records Found";
                     reportMessage.style.display = 'block';
+                    reportActions.style.display = 'none';
                 }
             })
             .catch(error => {
                 console.error("Error fetching report data:", error);
                 reportMessage.textContent = "Error fetching report data.";
                 reportMessage.style.display = 'block';
+                reportActions.style.display = 'none';
             });
     }
 
@@ -561,7 +596,7 @@ th {
 
     function downloadBookingReport() {
         if (reportData.length === 0) {
-            alert("No data to download. Please generate the report first.");
+            // No alert here
             return;
         }
 
@@ -571,7 +606,7 @@ th {
         // Explicitly register the autoTable plugin (if it's not automatically registered)
         if (pdf.autoTable === undefined || typeof pdf.autoTable !== 'function') {
             console.error("jsPDF-AutoTable plugin is not correctly loaded.");
-            alert("Error: Could not load PDF generation plugin.");
+            // No alert here
             return;
         }
 
@@ -627,7 +662,7 @@ th {
 
     function downloadBookingReportExcel() {
         if (reportData.length === 0) {
-            alert("No data to download. Please generate the report first.");
+            // No alert here
             return;
         }
 
@@ -672,23 +707,34 @@ th {
     }
 
     function addArticle() {
-        let table = document.querySelector("table");
-        let row = table.insertRow(-1);
-        let article = document.getElementById("article").value;
-        let artQty = document.getElementById("artQuantity").value;
-        let artType = document.getElementById("artType").value;
-        let saidToContain = document.getElementById("saidToContain").value;
-        let artAmt = document.getElementById("artAmount").value;
-        let total = parseInt(artQty) * parseInt(artAmt);
-        row.innerHTML = `
-            <td>${article}</td>
-            <td>${artQty}</td>
-            <td>${artType}</td>
-            <td>${saidToContain}</td>
-            <td>${artAmt}</td>
-            <td>${total}</td>
-            <td><button type="button" onclick="deleteRow(this)">Delete</button></td>
-        `;
+        let tableBody = document.querySelector("#bookingForm table tbody");
+        let newRow = tableBody.insertRow(-1); // Insert at the end of the tbody
+
+        let articleCell = newRow.insertCell();
+        let artQtyCell = newRow.insertCell();
+        let artTypeCell = newRow.insertCell();
+        let saidToContainCell = newRow.insertCell();
+        let artAmtCell = newRow.insertCell();
+        let totalCell = newRow.insertCell();
+        let actionCell = newRow.insertCell();
+
+        articleCell.textContent = document.getElementById("article").value;
+        artQtyCell.textContent = document.getElementById("artQuantity").value;
+        artTypeCell.textContent = document.getElementById("artType").value;
+        saidToContainCell.textContent = document.getElementById("saidToContain").value;
+        artAmtCell.textContent = document.getElementById("artAmount").value;
+        totalCell.textContent = parseInt(document.getElementById("artQuantity").value) * parseInt(document.getElementById("artAmount").value);
+
+        let deleteButton = document.createElement("button");
+        deleteButton.type = "button";
+        deleteButton.textContent = "Delete";
+        deleteButton.onclick = function() {
+            deleteRow(this);
+        };
+        actionCell.appendChild(deleteButton);
+
+        // Clear the input fields in the *first* row (the template row)
+        document.getElementById("article").value = "";
         document.getElementById("artQuantity").value = "0";
         document.getElementById("artType").selectedIndex = 0;
         document.getElementById("saidToContain").selectedIndex = 0;
@@ -696,7 +742,7 @@ th {
         document.getElementById("totalAmount").textContent = "0";
         updateFreight();
     }
-
+    
     function deleteRow(btn) {
         let row = btn.parentNode.parentNode;
         row.parentNode.removeChild(row);
