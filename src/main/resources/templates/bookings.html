@@ -845,6 +845,18 @@ th {
     }
 
     function changePassword() {
+        console.log('Session Storage Contents:', sessionStorage);
+        const userData = JSON.parse(sessionStorage.getItem('user'));
+        console.log('Retrieved userData:', userData);
+
+        if (!userData || !userData.userName) { // Changed userData.username to userData.userName
+            console.log('Error: Username not found in userData:', userData);
+            passwordMessage.textContent = "Username not found. Please log in again.";
+            passwordMessage.style.display = 'block';
+            return;
+        }
+        const username = userData.userName; // Changed userData.username to userData.userName
+
         const currentPassword = document.getElementById('currentPassword').value;
         const newPassword = document.getElementById('newPassword').value;
         const confirmPassword = document.getElementById('confirmPassword').value;
@@ -873,7 +885,7 @@ th {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ currentPassword: currentPassword, newPassword: newPassword })
+            body: JSON.stringify({ username: username, currentPassword: currentPassword, newPassword: newPassword })
         })
         .then(response => response.json())
         .then(data => {
@@ -895,7 +907,6 @@ th {
             passwordMessage.style.display = 'block';
         });
     }
-
     function populateUserData() {
     	 const userData = JSON.parse(sessionStorage.getItem('user'));
 
