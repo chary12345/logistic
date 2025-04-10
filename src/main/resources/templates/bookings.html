@@ -120,9 +120,10 @@ button {
 }
 
 .charges {
-	display: flex;
+	display: none; /* Add this line to initially hide the charges section */
 	flex-wrap: wrap;
 	gap: 10px;
+	margin-top: 20px; /* Add some space above the charges */
 }
 
 .charges label, .charges input {
@@ -830,13 +831,22 @@ th {
         document.getElementById("saidToContain").selectedIndex = 0;
         document.getElementById("artAmount").value = "0";
         document.getElementById("totalAmount").textContent = "0";
-        updateFreight();
+        const chargesSection = document.querySelector('.charges');
+        if (chargesSection && document.querySelector("#bookingForm table tbody").rows.length > 0) {
+            chargesSection.style.display = 'flex';
+            updateFreight();
+        }
     }
     
     function deleteRow(btn) {
         let row = btn.parentNode.parentNode;
         row.parentNode.removeChild(row);
-        updateFreight();
+        let tableBody = document.querySelector("#bookingForm table tbody");
+        if (tableBody.rows.length <= 1) {
+            hideChargesSection();
+        } else {
+            updateFreight();
+        }
     }
 
     function updateFreight() {
@@ -939,6 +949,23 @@ th {
             alert("An error occurred while creating the branch.");
         }
     });
+     
+     function hideChargesSection() {
+    	    const chargesSection = document.querySelector('.charges');
+    	    if (chargesSection) {
+    	        chargesSection.style.display = 'none';
+    	        // Optionally reset the charges values if needed
+    	        document.getElementById("freight").value = "0";
+    	        document.getElementById("sgst").value = "0";
+    	        document.getElementById("cgst").value = "0";
+    	        document.getElementById("igst").value = "0";
+    	        document.getElementById("grandTotal").value = "0";
+    	    }
+    	}
+  // Initially hide the charges section
+     document.addEventListener('DOMContentLoaded', function() {
+         hideChargesSection();
+     });
 
  // Logout Function
     function logout() {
