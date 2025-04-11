@@ -497,6 +497,10 @@ th {
 	<div class="container" id="bookingFormContainer">
 		<h2>Logistics Booking Form</h2>
 		<form id="bookingForm">
+			<label for="deliveryDestination">Delivery Destination:</label>
+			<input type="text" id="deliveryDestination" list="destinations">
+			<datalist id="destinations">
+			</datalist>
 			<h3>Consignor (From)</h3>
 			<label for="consignorName">Name:</label> <input type="text"
 				id="consignorName" required> <label for="consignorMobile">Mobile
@@ -1071,6 +1075,55 @@ th {
 
     calculateCharges();
     showBookingForm();
+
+    // Sample destination data (replace with your actual data source)
+    const destinationOptions = [
+        "New York",
+        "Los Angeles",
+        "Chicago",
+        "Houston",
+        "Phoenix",
+        "Philadelphia",
+        "San Antonio",
+        "San Diego",
+        "Dallas",
+        "San Jose"
+    ];
+
+    // Function to populate the datalist
+    function populateDestinations() {
+        const datalist = document.getElementById("destinations");
+        destinationOptions.forEach(destination => {
+            const option = document.createElement("option");
+            option.value = destination;
+            datalist.appendChild(option);
+        });
+    }
+
+    // Function to validate GST number
+    function validateGST(gstInputId) {
+        const gstInput = document.getElementById(gstInputId);
+        const gstValue = gstInput.value.trim(); // Trim whitespace
+        const gstPattern = /^[0-9]{10}$/; // Correct regular expression for 10 digits
+
+        if (!gstPattern.test(gstValue)) {
+            alert("Invalid GST number.");
+            gstInput.value = ""; // Clear the invalid input
+            return false; // Indicate validation failure
+        }
+        return true; // Indicate validation success
+    }
+
+    // Add event listeners to the GST input fields
+    document.getElementById("consignorGST").addEventListener("blur", function() {
+        validateGST("consignorGST");
+    });
+
+    document.getElementById("consigneeGST").addEventListener("blur", function() {
+        validateGST("consigneeGST");
+    });
+    document.addEventListener('DOMContentLoaded', populateDestinations);
+
 </script>
 </body>
 </html>
