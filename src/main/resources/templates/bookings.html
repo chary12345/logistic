@@ -1,1129 +1,195 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Logistics Booking</title>
-<link
-	href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap"
-	rel="stylesheet">
-<link rel="stylesheet"
-	href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-<script
-	src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
-<script
-	src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.13/jspdf.plugin.autotable.min.js"></script>
-<script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<style>
-body {
-	background-color: #f4f7fc;
-	font-family: 'Poppins', sans-serif;
-	margin: 0;
-	padding: 0;
-}
-
-.header-bar {
-	display: none;
-}
-
-.navbar {
-	background-color: #2c3e50;
-	padding: 8px 15px;
-	display: flex;
-	align-items: center;
-	color: white;
-	position: fixed;
-	top: 0;
-	width: 100%;
-	z-index: 1000;
-	justify-content: flex-start;
-}
-
-.navbar a {
-	color: white;
-	text-decoration: none;
-	margin: 0 10px;
-	position: relative;
-	font-weight: 500;
-	font-size: 14px;
-}
-
-.dropdown {
-	position: relative;
-	display: flex;
-	align-items: center;
-	cursor: pointer;
-	margin-left: 10px;
-}
-
-.dropdown>a {
-	padding-right: 15px;
-}
-
-.dropdown::after {
-	content: '\25BE';
-	position: absolute;
-	right: 5px;
-	top: 50%;
-	transform: translateY(-50%);
-	font-size: 0.8em;
-	color: white;
-}
-
-.dropdown-content {
-	display: none;
-	position: absolute;
-	background-color: white;
-	box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
-	min-width: 120px;
-	top: 100%;
-	left: 0;
-	border-radius: 5px;
-	white-space: nowrap;
-}
-
-.dropdown-content a {
-	color: black;
-	padding: 8px 10px;
-	display: block;
-	text-decoration: none;
-	font-size: 12px;
-}
-
-.dropdown-content a:hover {
-	background-color: #f1f1f1;
-}
-
-.dropdown:hover .dropdown-content {
-	display: block;
-}
-
-.container {
-	width: 90%; /* Increased width for better fit */
-	max-width: 1200px; /* Increased max width */
-	margin: 80px auto 30px; /* Adjusted margin for better positioning */
-	background: white;
-	padding: 20px;
-	border-radius: 10px;
-	box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-}
-
-button {
-	background-color: #2980b9;
-	color: white;
-	padding: 10px 15px;
-	border: none;
-	cursor: pointer;
-	border-radius: 5px;
-	font-size: 14px;
-	margin-right: 5px; /* Added some spacing between buttons */
-}
-
-.charges {
-	display: none; /* Add this line to initially hide the charges section */
-	flex-wrap: wrap;
-	gap: 10px;
-	margin-top: 20px; /* Add some space above the charges */
-}
-
-.charges label, .charges input {
-	display: inline-block;
-}
-
-table {
-	width: 100%;
-	border-collapse: collapse;
-	margin-top: 20px;
-	table-layout: auto; /* Added to ensure columns adjust as needed */
-}
-
-th, td {
-	border: 1px solid black;
-	padding: 8px;
-	text-align: center;
-}
-
-th {
-	background-color: blue;
-	color: white;
-}
-
-.navbar-right {
-	display: flex;
-	align-items: center;
-	margin-left: auto;
-	margin-right: 15px;
-}
-
-.navbar-left {
-	display: flex;
-	align-items: center;
-}
-
-.report-form {
-	display: none;
-	background-color: #e0e0e0;
-	padding: 20px;
-	border-radius: 5px;
-	position: fixed;
-	top: 50px;
-	left: 0;
-	width: 100%;
-	z-index: 999;
-	box-sizing: border-box; /* Added to include padding in width */
-}
-
-.report-form label {
-	margin-right: 10px;
-}
-
-.user-dropdown {
-	position: relative;
-	display: flex;
-	align-items: center;
-	cursor: pointer;
-}
-
-.user-dropdown-content {
-	display: none;
-	position: absolute;
-	background-color: white;
-	box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
-	min-width: 160px;
-	top: 100%;
-	right: 0;
-	border-radius: 5px;
-	padding: 8px;
-	white-space: nowrap;
-	text-align: left;
-	font-size: 0.9em;
-}
-
-.user-dropdown:hover .user-dropdown-content {
-	display: block;
-}
-
-.user-info p {
-	margin: 5px 0;
-	font-size: 14px;
-	color: black;
-}
-
-.user-actions {
-	margin-top: 10px;
-}
-
-.user-actions button {
-	display: block;
-	padding: 8px 12px;
-	text-decoration: none;
-	color: white;
-	font-size: 0.9em;
-	border: none;
-	border-radius: 4px;
-	width: 100%;
-	text-align: center;
-	cursor: pointer;
-	margin-bottom: 5px;
-}
-
-.user-actions button:first-child {
-	background-color: #3498db;
-}
-
-.user-actions button:first-child:hover {
-	background-color: #2980b9;
-}
-
-.user-actions button:last-child {
-	background-color: #e74c3c;
-}
-
-.user-actions button:last-child:hover {
-	background-color: #c0392b;
-}
-
-.user-icon {
-	font-size: 18px;
-	cursor: pointer;
-	padding: 6px;
-	border-radius: 50%;
-	background-color: #34495e;
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	width: 30px;
-	height: 30px;
-}
-
-.user-icon i {
-	margin: 0;
-}
-
-#changePasswordForm {
-	display: none;
-	background-color: white;
-	padding: 20px;
-	border-radius: 8px;
-	position: fixed;
-	top: 50%;
-	left: 50%;
-	transform: translate(-50%, -50%);
-	z-index: 1002;
-	width: 90%;
-	max-width: 400px;
-	box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-#changePasswordForm h3 {
-	margin-top: 0;
-	text-align: center;
-	color: #333;
-	margin-bottom: 15px;
-}
-
-#changePasswordForm label {
-	display: block;
-	margin-bottom: 8px;
-	font-weight: 500;
-	color: #555;
-}
-
-#changePasswordForm input[type="password"] {
-	width: calc(100% - 16px);
-	padding: 8px;
-	margin-bottom: 15px;
-	border: 1px solid #ccc;
-	border-radius: 4px;
-	box-sizing: border-box;
-	font-size: 0.9em;
-}
-
-#changePasswordForm button {
-	background-color: #3498db;
-	color: white;
-	padding: 10px 15px;
-	border: none;
-	cursor: pointer;
-	border-radius: 5px;
-	font-size: 0.9em;
-	width: 100%;
-	display: block;
-	margin-top: 10px;
-}
-
-#changePasswordForm button:hover {
-	background-color: #2980b9;
-}
-
-#passwordMessage {
-	margin-top: 10px;
-	color: red;
-	text-align: center;
-	font-size: 0.9em;
-}
-
-.overlay {
-	display: none;
-	position: fixed;
-	top: 0;
-	left: 0;
-	width: 100%;
-	height: 100%;
-	background-color: rgba(0, 0, 0, 0.5);
-	z-index: 1001;
-}
-
-#reportActions {
-	margin-top: 10px;
-}
-
-#reportActions button {
-	margin-right: 5px;
-}
-
-#reportTableContainer {
-	overflow-x: auto; /* Enable horizontal scrolling for large tables */
-	margin-top: 15px; /* Add some space above the table */
-}
-
-#reportTableContainer table {
-	width: auto; /* Allow table to expand based on content */
-	min-width: 100%; /* Ensure table doesn't get too narrow */
-}
-
-#createBranchForm {
-	display: none;
-	background-color: #f9f9f9;
-	padding: 20px;
-	border-radius: 8px;
-	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-	width: 90%;
-	max-width: 500px;
-	margin: 30px auto; /* Adjust margin as needed */
-}
-
-#createBranchForm h3 {
-	text-align: center;
-	color: #333;
-	margin-bottom: 15px;
-}
-
-#createBranchForm label {
-	display: block;
-	margin-bottom: 8px;
-	font-weight: bold;
-	color: #555;
-}
-
-#createBranchForm input[type="text"], #createBranchForm textarea {
-	width: calc(100% - 16px);
-	padding: 10px;
-	margin-bottom: 15px;
-	border: 1px solid #ccc;
-	border-radius: 4px;
-	box-sizing: border-box;
-	font-size: 1em;
-}
-
-#createBranchForm button[type="submit"], #createBranchForm button[type="button"]
-	{
-	background-color: #5cb85c;
-	color: white;
-	padding: 10px 15px;
-	border: none;
-	border-radius: 4px;
-	cursor: pointer;
-	font-size: 1em;
-	margin-right: 10px;
-}
-
-#createBranchForm button[type="submit"]:hover, #createBranchForm button[type="button"]:hover
-	{
-	background-color: #4cae4c;
-}
-
-#createBranchForm .form-actions {
-	text-align: right;
-	margin-top: 15px;
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logistics Booking</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="/css/style_v2.css">
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.13/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body onload="populateUserData()">
-	<div class="header-bar"></div>
-	<div class="navbar">
-		<div class="navbar-left">
-			<a href="#" onclick="showBookingForm()">Home</a>
-			<div class="dropdown">
-				<a href="#">Operations</a>
-				<div class="dropdown-content">
-					<a href="#">Booking</a> <a href="#">Dispatch</a> <a href="#">Receive</a>
-					<a href="#">Delivery</a>
-				</div>
-			</div>
-			<div class="dropdown">
-				<a href="#">Reports</a>
-				<div class="dropdown-content">
-					<a href="#" onclick="showReportForm('booking')">Booking Report</a>
-					<a href="#">Dispatch Report</a> <a href="#">Receive Report</a> <a
-						href="#">Delivery Report</a>
-				</div>
-			</div>
-			<div class="dropdown">
-				<a href="#">Manage</a>
-				<div class="dropdown-content">
-					<a href="#" onclick="showCreateBranchForm()">Create Branch</a>
-				</div>
-			</div>
-		</div>
-		<div class="navbar-right">
-			<div class="user-dropdown">
-				<div class="user-icon">
-					<i class="fas fa-user"></i>
-				</div>
-				<div class="user-dropdown-content">
-					<div class="user-info" id="user-info-modal">
-						<p>
-							<strong>First Name:</strong> <span id="userFirstName"></span>
-						</p>
-						<p>
-							<strong>Last Name:</strong> <span id="userLastName"></span>
-						</p>
-						<p>
-							<strong>Phone:</strong> <span id="userPhone"></span>
-						</p>
-						<p>
-							<strong>Email:</strong> <span id="userEmail"></span>
-						</p>
-						<p>
-							<strong>Role:</strong> <span id="userRole"></span>
-						</p>
-					</div>
-					<div class="user-actions">
-						<button onclick="showChangePasswordForm()">Change
-							Password</button>
-						<button onclick="logout()">Logout</button>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-	<div id="changePasswordForm" class="change-password-form">
-		<h3>Change Password</h3>
-		<label for="currentPassword">Current Password:</label> <input
-			type="password" id="currentPassword"> <label
-			for="newPassword">New Password:</label> <input type="password"
-			id="newPassword"> <label for="confirmPassword">Confirm
-			New Password:</label> <input type="password" id="confirmPassword">
-		<button onclick="changePassword()">Change Password</button>
-		<div id="passwordMessage"
-			style="margin-top: 10px; display: none; color: red;"></div>
-	</div>
-	<div id="bookingReportForm" class="report-form">
-		<h3>Booking Report</h3>
-		<label for="fromDate">From Date:</label> <input type="date"
-			id="fromDate"> <label for="toDate">To Date:</label> <input
-			type="date" id="toDate">
-		<button onclick="generateBookingReport()">Generate Report</button>
-		<div id="reportMessage"
-			style="margin-top: 10px; display: none; color: red;"></div>
-		<div id="reportTableContainer"></div>
-		<div id="reportActions" style="display: none;">
-			<button onclick="downloadBookingReport()">Download PDF</button>
-			<button onclick="downloadBookingReportExcel()">Download
-				Excel</button>
-		</div>
-	</div>
-	<div class="container" id="bookingFormContainer">
-		<h2>Logistics Booking Form</h2>
-		<form id="bookingForm">
-			<label for="deliveryDestination">Delivery Destination:</label>
-			<input type="text" id="deliveryDestination" list="destinations">
-			<datalist id="destinations">
-			</datalist>
-			<h3>Consignor (From)</h3>
-			<label for="consignorName">Name:</label> <input type="text"
-				id="consignorName" required> <label for="consignorMobile">Mobile
-				No:</label> <input type="text" id="consignorMobile" required> <label
-				for="consignorGST">GST No:</label> <input type="text"
-				id="consignorGST"> <label for="consignorAddress">Address:</label>
-			<input type="text" id="consignorAddress">
-			<h3>Consignee (To)</h3>
-			<label for="consigneeName">Name:</label> <input type="text"
-				id="consigneeName" required> <label for="consigneeMobile">Mobile
-				No:</label> <input type="text" id="consigneeMobile" required> <label
-				for="consigneeGST">GST No:</label> <input type="text"
-				id="consigneeGST"> <label for="consigneeAddress">Address:</label>
-			<input type="text" id="consigneeAddress">
-			<h3>Article Details</h3>
-			<table>
-				<thead>
-					<tr>
-						<th>Article</th>
-						<th>Art</th>
-						<th>Art Type</th>
-						<th>Said To Contains</th>
-						<th>Art Amt</th>
-						<th>Total</th>
-						<th>Action</th>
-					</tr>
-				</thead>
-				<tbody>
-					<tr>
-						<td><input type="text" id="article"></td>
-						<td><input type="number" id="artQuantity" value="0"></td>
-						<td><select id="artType">
-								<option value="Auto Parts">Auto Parts</option>
-								<option value="Electronics">Electronics</option>
-								<option value="Garments">Garments</option>
-						</select></td>
-						<td><select id="saidToContain">
-								<option value="Spare Parts">Spare Parts</option>
-								<option value="Components">Components</option>
-								<option value="Accessories">Accessories</option>
-						</select></td>
-						<td><input type="number" id="artAmount" value="0"></td>
-						<td><span id="totalAmount">0</span></td>
-						<td><button type="button" onclick="addArticle()">Add</button></td>
-					</tr>
-				</tbody>
-			</table>
-			<h3>Charges</h3>
-			<div class="charges">
-				<label for="freight">Freight:</label> <input type="number"
-					id="freight" value="0" oninput="calculateCharges()" readonly>
-				<label for="sgst">SGST (2.5%):</label> <input type="number"
-					id="sgst" value="0" readonly> <label for="cgst">CGST
-					(2.25%):</label> <input type="number" id="cgst" value="0" readonly>
-				<label for="igst">IGST (5%):</label> <input type="number" id="igst"
-					value="0" readonly> <label for="grandTotal">Grand
-					Total:</label> <input type="number" id="grandTotal" readonly>
-			</div>
-			<button type="submit">Booking</button>
-		</form>
-	</div>
-	<div id="createBranchForm">
-		<h3>Create New Branch</h3>
-		<form id="branchForm">
-			<label for="branchName">Branch Name:</label> <input type="text"
-				id="branchName" required> <label for="branchCode">Branch
-				Code:</label> <input type="text" id="branchCode" required> <label
-				for="branchOperations">Operations:</label> <input type="text"
-				id="branchOperations"> <label for="branchAddress">Address:</label>
-			<textarea id="branchAddress"></textarea>
+    <div class="header-bar"></div>
+    <div class="navbar">
+        <div class="navbar-left">
+            <a href="#" onclick="showBookingForm()">Home</a>
+            <div class="dropdown">
+                <a href="#">Operations</a>
+                <div class="dropdown-content">
+                    <a href="#">Booking</a>
+                    <a href="#">Dispatch</a>
+                    <a href="#">Receive</a>
+                    <a href="#">Delivery</a>
+                </div>
+            </div>
+            <div class="dropdown">
+                <a href="#">Reports</a>
+                <div class="dropdown-content">
+                    <a href="#" onclick="showReportForm('booking')">Booking Report</a>
+                    <a href="#">Dispatch Report</a>
+                    <a href="#">Receive Report</a>
+                    <a href="#">Delivery Report</a>
+                </div>
+            </div>
+            <div class="dropdown">
+                <a href="#">Manage</a>
+                <div class="dropdown-content">
+                    <a href="#" onclick="showCreateBranchForm()">Create Branch</a>
+                </div>
+            </div>
+        </div>
+        <div class="navbar-right">
+            <div class="user-dropdown">
+                <div class="user-icon">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="user-dropdown-content">
+                    <div class="user-info" id="user-info-modal">
+                        <p><strong>First Name:</strong> <span id="userFirstName"></span></p>
+                        <p><strong>Last Name:</strong> <span id="userLastName"></span></p>
+                        <p><strong>Phone:</strong> <span id="userPhone"></span></p>
+                        <p><strong>Email:</strong> <span id="userEmail"></span></p>
+                        <p><strong>Role:</strong> <span id="userRole"></span></p>
+                    </div>
+                    <div class="user-actions">
+                        <button onclick="showChangePasswordForm()">Change Password</button>
+                        <button onclick="logout()">Logout</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="changePasswordForm" class="change-password-form">
+        <h3>Change Password</h3>
+        <label for="currentPassword">Current Password:</label>
+        <input type="password" id="currentPassword">
+        <label for="newPassword">New Password:</label>
+        <input type="password" id="newPassword">
+        <label for="confirmPassword">Confirm New Password:</label>
+        <input type="password" id="confirmPassword">
+        <button onclick="changePassword()">Change Password</button>
+        <div id="passwordMessage" style="margin-top: 10px; display: none; color: red;"></div>
+    </div>
+    <div id="bookingReportForm" class="report-form">
+        <h3>Booking Report</h3>
+        <label for="fromDate">From Date:</label>
+        <input type="date" id="fromDate">
+        <label for="toDate">To Date:</label>
+        <input type="date" id="toDate">
+        <button onclick="generateBookingReport()">Generate Report</button>
+        <div id="reportMessage" style="margin-top: 10px; display: none; color: red;"></div>
+        <div id="reportTableContainer"></div>
+        <div id="reportActions" style="display: none;">
+            <button onclick="downloadBookingReport()">Download PDF</button>
+            <button onclick="downloadBookingReportExcel()">Download Excel</button>
+        </div>
+    </div>
+    <div class="container" id="bookingFormContainer">
+        <h2>Logistics Booking Form</h2>
+        <form id="bookingForm">
+            <label for="deliveryDestination">Delivery Destination:</label>
+            <input type="text" id="deliveryDestination" list="destinations">
+            <datalist id="destinations">
+            </datalist>
+            <h3>Consignor (From)</h3>
+            <label for="consignorName">Name:</label>
+            <input type="text" id="consignorName" required>
+            <label for="consignorMobile">Mobile No:</label>
+            <input type="text" id="consignorMobile" required>
+            <label for="consignorGST">GST No:</label>
+            <input type="text" id="consignorGST">
+            <label for="consignorAddress">Address:</label>
+            <input type="text" id="consignorAddress">
+            <h3>Consignee (To)</h3>
+            <label for="consigneeName">Name:</label>
+            <input type="text" id="consigneeName" required>
+            <label for="consigneeMobile">Mobile No:</label>
+            <input type="text" id="consigneeMobile" required>
+            <label for="consigneeGST">GST No:</label>
+            <input type="text" id="consigneeGST">
+            <label for="consigneeAddress">Address:</label>
+            <input type="text" id="consigneeAddress">
+            <h3>Article Details</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Article</th>
+                        <th>Art</th>
+                        <th>Art Type</th>
+                        <th>Said To Contains</th>
+                        <th>Art Amt</th>
+                        <th>Total</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><input type="text" id="article"></td>
+                        <td><input type="number" id="artQuantity" value="0"></td>
+                        <td>
+                            <select id="artType">
+                                <option value="Auto Parts">Auto Parts</option>
+                                <option value="Electronics">Electronics</option>
+                                <option value="Garments">Garments</option>
+                            </select>
+                        </td>
+                        <td>
+                            <select id="saidToContain">
+                                <option value="Spare Parts">Spare Parts</option>
+                                <option value="Components">Components</option>
+                                <option value="Accessories">Accessories</option>
+                            </select>
+                        </td>
+                        <td><input type="number" id="artAmount" value="0"></td>
+                        <td><span id="totalAmount">0</span></td>
+                        <td><button type="button" onclick="addArticle()">Add</button></td>
+                    </tr>
+                </tbody>
+            </table>
+            <h3>Charges</h3>
+            <div class="charges">
+                <label for="freight">Freight:</label>
+                <input type="number" id="freight" value="0" oninput="calculateCharges()" readonly>
+                <label for="sgst">SGST (2.5%):</label>
+                <input type="number" id="sgst" value="0" readonly>
+                <label for="cgst">CGST (2.25%):</label>
+                <input type="number" id="cgst" value="0" readonly>
+                <label for="igst">IGST (5%):</label>
+                <input type="number" id="igst" value="0" readonly>
+                <label for="grandTotal">Grand Total:</label>
+                <input type="number" id="grandTotal" readonly>
+            </div>
+            <button type="submit">Booking</button>
+        </form>
+    </div>
+    <div id="createBranchForm">
+        <h3>Create New Branch</h3>
+        <form id="branchForm">
+            <label for="branchName">Branch Name:</label>
+            <input type="text" id="branchName" required>
+            <label for="branchCode">Branch Code:</label>
+            <input type="text" id="branchCode" required>
+            <label for="branchOperations">Operations:</label>
+            <input type="text" id="branchOperations">
+            <label for="branchAddress">Address:</label>
+            <textarea id="branchAddress"></textarea>
 
-			<div class="form-actions">
-				<button type="submit">Save Branch</button>
-				<button type="button" onclick="hideCreateBranchForm()">Cancel</button>
-			</div>
-		</form>
-	</div>
-	<div id="overlay" class="overlay"></div>
-	<script>
+            <div class="form-actions">
+                <button type="submit">Save Branch</button>
+                <button type="button" onclick="hideCreateBranchForm()">Cancel</button>
+            </div>
+        </form>
+    </div>
+    <div id="overlay" class="overlay"></div>
 
-    function showBookingForm()
-    {
-        document.getElementById('bookingFormContainer').style.display = 'block';
-        document.getElementById('bookingReportForm').style.display = 'none';
-        hideChangePasswordForm(); // Ensure password form is hidden
-    }
-
-    function showCreateBranchForm() {
-        document.getElementById('createBranchForm').style.display = 'block';
-        document.getElementById('bookingFormContainer').style.display = 'none';
-        document.getElementById('bookingReportForm').style.display = 'none';
-        hideChangePasswordForm();
-    }
-
-    function hideCreateBranchForm() {
-        document.getElementById('createBranchForm').style.display = 'none';
-    }
-
-    function showReportForm(reportType) {
-        if (reportType === 'booking') {
-            document.getElementById('bookingReportForm').style.display = 'block';
-            document.getElementById('bookingFormContainer').style.display = 'none';
-            document.getElementById('reportActions').style.display = 'none'; // Initially hide the download buttons
-            document.getElementById('reportTableContainer').innerHTML = ''; // Clear previous report
-            document.getElementById('reportMessage').style.display = 'none';
-            hideChangePasswordForm(); // Ensure password form is hidden
-        }
-    }
-
-    let reportData = []; // Store the fetched report data globally
-
-    function generateBookingReport() {
-        const fromDate = document.getElementById('fromDate').value;
-        const toDate = document.getElementById('toDate').value;
-        const reportMessage = document.getElementById('reportMessage');
-        const reportTableContainer = document.getElementById('reportTableContainer');
-        const reportActions = document.getElementById('reportActions');
-
-        // Clear previous report data and table
-        reportData = [];
-        reportTableContainer.innerHTML = '';
-        reportMessage.style.display = 'none';
-        reportActions.style.display = 'none'; // Hide buttons before new report
-
-        // Fetch data from the API
-        fetch(`/api/bookings/report?fromDate=${fromDate}&toDate=${toDate}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.length > 0) {
-                    reportData = data; // Store the fetched data
-                    displayReportData(data);
-                    reportMessage.style.display = 'none';
-                    reportActions.style.display = 'block'; // Show buttons after report is generated
-                } else {
-                    reportMessage.textContent = "No Records Found";
-                    reportMessage.style.display = 'block';
-                    reportActions.style.display = 'none';
-                }
-            })
-            .catch(error => {
-                console.error("Error fetching report data:", error);
-                reportMessage.textContent = "Error fetching report data.";
-                reportMessage.style.display = 'block';
-                reportActions.style.display = 'none';
-            });
-    }
-
-    function displayReportData(data) {
-        let reportTable = document.createElement('table');
-        reportTable.innerHTML = `
-            <tr>
-                <th>ID</th>
-                <th>Consignor Name</th>
-                <th>Consignor Mobile</th>
-                <th>Consignee Name</th>
-                <th>Consignee Mobile</th>
-                <th>Article Type</th>
-                <th>Article Weight</th>
-                <th>Freight</th>
-                <th>SGST</th>
-                <th>CGST</th>
-                <th>IGST</th>
-                <th>Booking Date</th>
-            </tr>
-        `;
-
-        data.forEach(booking => {
-            let row = reportTable.insertRow();
-            row.innerHTML = `
-                <td>${booking.id}</td>
-                <td>${booking.consignorName}</td>
-                <td>${booking.consignorMobile}</td>
-                <td>${booking.consigneeName}</td>
-                <td>${booking.consigneeMobile}</td>
-                <td>${booking.articleType}</td>
-                <td>${booking.articleWeight}</td>
-                <td>${booking.freight}</td>
-                <td>${booking.sgst}</td>
-                <td>${booking.cgst}</td>
-                <td>${booking.igst}</td>
-                <td>${new Date(booking.bookingDate).toLocaleDateString()}</td>
-            `;
-        });
-
-        const reportContainer = document.getElementById('reportTableContainer');
-        reportContainer.appendChild(reportTable);
-    }
-
-    function downloadBookingReport() {
-        if (reportData.length === 0) {
-            // No alert here
-            return;
-        }
-
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF('landscape');
-
-        // Explicitly register the autoTable plugin (if it's not automatically registered)
-        if (pdf.autoTable === undefined || typeof pdf.autoTable !== 'function') {
-            console.error("jsPDF-AutoTable plugin is not correctly loaded.");
-            // No alert here
-            return;
-        }
-
-        const columns = [
-            { header: 'ID', dataKey: 'id' },
-            { header: 'Consignor Name', dataKey: 'consignorName' },
-            { header: 'Consignor Mobile', dataKey: 'consignorMobile' },
-            { header: 'Consignee Name', dataKey: 'consigneeName' },
-            { header: 'Consignee Mobile', dataKey: 'consigneeMobile' },
-            { header: 'Article Type', dataKey: 'articleType' },
-            { header: 'Article Weight', dataKey: 'articleWeight' },
-            { header: 'Freight', dataKey: 'freight' },
-            { header: 'SGST', dataKey: 'sgst' },
-            { header: 'CGST', dataKey: 'cgst' },
-            { header: 'IGST', dataKey: 'igst' },
-            { header: 'Booking Date', dataKey: 'bookingDate' }
-        ];
-
-        const formattedData = reportData.map(item => ({
-            ...item,
-            bookingDate: new Date(item.bookingDate).toLocaleDateString()
-        }));
-
-        pdf.autoTable({
-            columns: columns,
-            body: formattedData,
-            margin: { top: 20, left: 10, right: 10, bottom: 10 },
-            bodyStyles: { fontSize: 8 },
-            columnStyles: {
-                id: { cellWidth: 10 },
-                consignorMobile: { cellWidth: 25 },
-                consigneeMobile: { cellWidth: 25 },
-                bookingDate: { cellWidth: 20 }
-            },
-            didParseCell: function(data) {
-                if (data.column.dataKey === 'articleWeight') {
-                    if (data.row.raw.articleDetails && Array.isArray(data.row.raw.articleDetails)) {
-                        data.cell.text = data.row.raw.articleDetails.reduce((sum, detail) => sum + parseInt(detail.artQty), 0);
-                    } else {
-                        data.cell.text = 'N/A'; // Or some other appropriate default value
-                    }
-                }
-            },
-            didDrawPage: function(data) {
-                pdf.setFontSize(12);
-                pdf.setTextColor(40);
-                pdf.text("Booking Report", data.settings.margin.left, 10);
-            }
-        });
-
-        pdf.save(`booking_report_${new Date().toISOString().slice(0, 10)}.pdf`);
-    }
-
-    function downloadBookingReportExcel() {
-        if (reportData.length === 0) {
-            // No alert here
-            return;
-        }
-
-        // Prepare data for Excel
-        const excelData = reportData.map(item => ({
-            ID: item.id,
-            'Consignor Name': item.consignorName,
-            'Consignor Mobile': item.consignorMobile,
-            'Consignee Name': item.consigneeName,
-            'Consignee Mobile': item.consigneeMobile,
-            'Article Type': item.articleType,
-            'Article Weight': item.articleDetails ? item.articleDetails.reduce((sum, detail) => sum + parseInt(detail.artQty), 0) : 'N/A',
-            Freight: item.freight,
-            SGST: item.sgst,
-            CGST: item.cgst,
-            IGST: item.igst,
-            'Booking Date': new Date(item.bookingDate).toLocaleDateString()
-        }));
-
-        // Create a new workbook
-        const wb = XLSX.utils.book_new();
-        const ws = XLSX.utils.json_to_sheet(excelData);
-
-        // Add the worksheet to the workbook
-        XLSX.utils.book_append_sheet(wb, ws, 'Booking Report');
-
-        // Save the workbook as an Excel file
-        XLSX.writeFile(wb, `booking_report_${new Date().toISOString().slice(0, 10)}.xlsx`);
-    }
-
-    function calculateCharges() {
-        let freight = parseFloat(document.getElementById("freight").value) || 0;
-        let sgst = (freight * 0.025).toFixed(2);
-        let cgst = (freight * 0.025).toFixed(2);
-        let igst = (freight * 0.05).toFixed(2);
-        let grandTotal = (freight + parseFloat(sgst) + parseFloat(cgst) + parseFloat(igst)).toFixed(2);
-
-        document.getElementById("sgst").value = sgst;
-        document.getElementById("cgst").value = cgst;
-        document.getElementById("igst").value = igst;
-        document.getElementById("grandTotal").value = grandTotal;
-    }
-
-    function addArticle() {
-        let tableBody = document.querySelector("#bookingForm table tbody");
-        let newRow = tableBody.insertRow(-1); // Insert at the end of the tbody
-
-        let articleCell = newRow.insertCell();
-        let artQtyCell = newRow.insertCell();
-        let artTypeCell = newRow.insertCell();
-        let saidToContainCell = newRow.insertCell();
-        let artAmtCell = newRow.insertCell();
-        let totalCell = newRow.insertCell();
-        let actionCell = newRow.insertCell();
-
-        articleCell.textContent = document.getElementById("article").value;
-        artQtyCell.textContent = document.getElementById("artQuantity").value;
-        artTypeCell.textContent = document.getElementById("artType").value;
-        saidToContainCell.textContent = document.getElementById("saidToContain").value;
-        artAmtCell.textContent = document.getElementById("artAmount").value;
-        totalCell.textContent = parseInt(document.getElementById("artQuantity").value) * parseInt(document.getElementById("artAmount").value);
-
-        let deleteButton = document.createElement("button");
-        deleteButton.type = "button";
-        deleteButton.textContent = "Delete";
-        deleteButton.onclick = function() {
-            deleteRow(this);
-        };
-        actionCell.appendChild(deleteButton);
-
-        // Clear the input fields in the *first* row (the template row)
-        document.getElementById("article").value = "";
-        document.getElementById("artQuantity").value = "0";
-        document.getElementById("artType").selectedIndex = 0;
-        document.getElementById("saidToContain").selectedIndex = 0;
-        document.getElementById("artAmount").value = "0";
-        document.getElementById("totalAmount").textContent = "0";
-        const chargesSection = document.querySelector('.charges');
-        if (chargesSection && document.querySelector("#bookingForm table tbody").rows.length > 0) {
-            chargesSection.style.display = 'flex';
-            updateFreight();
-        }
-    }
-    
-    function deleteRow(btn) {
-        let row = btn.parentNode.parentNode;
-        row.parentNode.removeChild(row);
-        let tableBody = document.querySelector("#bookingForm table tbody");
-        if (tableBody.rows.length <= 1) {
-            hideChargesSection();
-        } else {
-            updateFreight();
-        }
-    }
-
-    function updateFreight() {
-        let totalFreight = 0;
-        let rows = document.querySelectorAll("table tr:not(:first-child)");
-        rows.forEach(row => {
-            let totalCell = row.querySelector("td:nth-child(6)");
-            if (totalCell) {
-                totalFreight += parseInt(totalCell.textContent) || 0;
-            }
-        });
-        document.getElementById("freight").value = totalFreight;
-        calculateCharges();
-    }
-
-    document.getElementById("bookingForm").addEventListener("submit", async function(event) {
-        event.preventDefault();
-
-        let articleDetails = [];
-        let rows = document.querySelectorAll("table tr:not(:first-child)");
-        rows.forEach(row => {
-            let cells = row.querySelectorAll("td");
-            articleDetails.push({
-                article: cells[0].textContent,
-                artQty: cells[1].textContent,
-                artType: cells[2].textContent,
-                saidToContain: cells[3].textContent,
-                artAmt: cells[4].textContent,
-                total: cells[5].textContent,
-            });
-        });
-
-        let data = {
-            consignorName: document.getElementById("consignorName").value,
-            consignorMobile: document.getElementById("consignorMobile").value,
-            consigneeName: document.getElementById("consigneeName").value,
-            consigneeMobile: document.getElementById("consigneeMobile").value,
-            consignorGST: document.getElementById("consignorGST").value,
-            consignorAddress: document.getElementById("consignorAddress").value,
-            consigneeGST: document.getElementById("consigneeGST").value,
-            consigneeAddress: document.getElementById("consigneeAddress").value,
-            articleDetails: articleDetails,
-            freight: document.getElementById("freight").value,
-            sgst: document.getElementById("sgst").value,
-            cgst: document.getElementById("cgst").value,
-            igst: document.getElementById("igst").value,
-            grandTotal: document.getElementById("grandTotal").value,
-        };
-
-        try {
-            let response = await fetch("http://localhost:8080/api/bookings/bookLoad", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(data)
-            });
-            let result = await response.json();
-            alert("Booking saved successfully!");
-            document.getElementById("bookingForm").reset();
-            // Optionally clear the article table as well
-            const articleTableRows = document.querySelectorAll("#bookingForm table tr:not(:first-child)");
-            articleTableRows.forEach(row => row.remove());
-            updateFreight();
-        } catch (error) {
-            console.error("Error saving booking:", error);
-            alert("Failed to save booking.");
-        }
-    });
-
-     document.getElementById("branchForm").addEventListener("submit", async function(event) {
-        event.preventDefault();
-
-        const branchData = {
-            branchName: document.getElementById("branchName").value,
-            branchCode: document.getElementById("branchCode").value,
-            operations: document.getElementById("branchOperations").value,
-            address: document.getElementById("branchAddress").value
-        };
-
-        try {
-            const response = await fetch("/api/branches/create", { // Replace with your actual API endpoint
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(branchData)
-            });
-
-            const result = await response.json();
-
-            if (response.ok) {
-                alert("Branch created successfully!");
-                document.getElementById("branchForm").reset();
-                hideCreateBranchForm();
-            } else {
-                alert(`Failed to create branch: ${result.message || 'Unknown error'}`);
-            }
-
-        } catch (error) {
-            console.error("Error creating branch:", error);
-            alert("An error occurred while creating the branch.");
-        }
-    });
-     
-     function hideChargesSection() {
-    	    const chargesSection = document.querySelector('.charges');
-    	    if (chargesSection) {
-    	        chargesSection.style.display = 'none';
-    	        // Optionally reset the charges values if needed
-    	        document.getElementById("freight").value = "0";
-    	        document.getElementById("sgst").value = "0";
-    	        document.getElementById("cgst").value = "0";
-    	        document.getElementById("igst").value = "0";
-    	        document.getElementById("grandTotal").value = "0";
-    	    }
-    	}
-  // Initially hide the charges section
-     document.addEventListener('DOMContentLoaded', function() {
-         hideChargesSection();
-     });
-
- // Logout Function
-    function logout() {
-    	 sessionStorage.removeItem('user');  // Remove the stored user object from sessionStorage
-        window.location.href = '/'; // Redirect to logout route
-    }
-
-    function showChangePasswordForm() {
-        document.getElementById('changePasswordForm').style.display = 'block';
-        document.getElementById('overlay').style.display = 'block';
-        setTimeout(() => {
-            document.addEventListener('click', handleOutsideClick);
-        }, 100);
-    }
-
-    function hideChangePasswordForm() {
-        document.getElementById('changePasswordForm').style.display = 'none';
-        document.getElementById('overlay').style.display = 'none';
-        document.removeEventListener('click', handleOutsideClick);
-    }
-
-    function handleOutsideClick(event) {
-        const changePasswordForm = document.getElementById('changePasswordForm');
-        const userDropdown = document.querySelector('.user-dropdown');
-
-        if (changePasswordForm && !changePasswordForm.contains(event.target) && userDropdown && !userDropdown.contains(event.target)) {
-            hideChangePasswordForm();
-        }
-    }
-
-    function changePassword() {
-        console.log('Session Storage Contents:', sessionStorage);
-        const userData = JSON.parse(sessionStorage.getItem('user'));
-        console.log('Retrieved userData:', userData);
-
-        if (!userData || !userData.userName) { // Changed userData.username to userData.userName
-            console.log('Error: Username not found in userData:', userData);
-            passwordMessage.textContent = "Username not found. Please log in again.";
-            passwordMessage.style.display = 'block';
-            return;
-        }
-        const username = userData.userName; // Changed userData.username to userData.userName
-
-        const currentPassword = document.getElementById('currentPassword').value;
-        const newPassword = document.getElementById('newPassword').value;
-        const confirmPassword = document.getElementById('confirmPassword').value;
-        const passwordMessage = document.getElementById('passwordMessage');
-
-        if (!currentPassword) {
-            passwordMessage.textContent = "Please enter your current password.";
-            passwordMessage.style.display = 'block';
-            return;
-        }
-
-        if (!newPassword) {
-            passwordMessage.textContent = "Please enter a new password.";
-            passwordMessage.style.display = 'block';
-            return;
-        }
-
-        if (newPassword !== confirmPassword) {
-            passwordMessage.textContent = "New password and confirm password do not match.";
-            passwordMessage.style.display = 'block';
-            return;
-        }
-
-        fetch('/api/change-password', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ username: username, currentPassword: currentPassword, newPassword: newPassword })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                passwordMessage.textContent = "Password changed successfully!";
-                passwordMessage.style.color = 'green';
-                passwordMessage.style.display = 'block';
-                setTimeout(hideChangePasswordForm, 2000);
-            } else {
-                passwordMessage.textContent = data.message || "Failed to change password.";
-                passwordMessage.style.color = 'red';
-                passwordMessage.style.display = 'block';
-            }
-        })
-        .catch(error => {
-            console.error('Error changing password:', error);
-            passwordMessage.textContent = "An error occurred while changing password.";
-            passwordMessage.style.color = 'red';
-            passwordMessage.style.display = 'block';
-        });
-    }
-    function populateUserData() {
-    	 const userData = JSON.parse(sessionStorage.getItem('user'));
-
-        document.getElementById('userFirstName').textContent = userData.firstName;
-        document.getElementById('userLastName').textContent = userData.lastName;
-        document.getElementById('userPhone').textContent = userData.phone;
-        document.getElementById('userEmail').textContent = userData.email;
-        document.getElementById('userRole').textContent = userData.role;
-    }
-
-    calculateCharges();
-    showBookingForm();
-
-    // Sample destination data (replace with your actual data source)
-    const destinationOptions = [
-        "New York",
-        "Los Angeles",
-        "Chicago",
-        "Houston",
-        "Phoenix",
-        "Philadelphia",
-        "San Antonio",
-        "San Diego",
-        "Dallas",
-        "San Jose"
-    ];
-
-    // Function to populate the datalist
-    function populateDestinations() {
-        const datalist = document.getElementById("destinations");
-        destinationOptions.forEach(destination => {
-            const option = document.createElement("option");
-            option.value = destination;
-            datalist.appendChild(option);
-        });
-    }
-
-    // Function to validate GST number
-    function validateGST(gstInputId) {
-        const gstInput = document.getElementById(gstInputId);
-        const gstValue = gstInput.value.trim(); // Trim whitespace
-        const gstPattern = /^[0-9]{10}$/; // Correct regular expression for 10 digits
-
-        if (!gstPattern.test(gstValue)) {
-            alert("Invalid GST number.");
-            gstInput.value = ""; // Clear the invalid input
-            return false; // Indicate validation failure
-        }
-        return true; // Indicate validation success
-    }
-
-    // Add event listeners to the GST input fields
-    document.getElementById("consignorGST").addEventListener("blur", function() {
-        validateGST("consignorGST");
-    });
-
-    document.getElementById("consigneeGST").addEventListener("blur", function() {
-        validateGST("consigneeGST");
-    });
-    document.addEventListener('DOMContentLoaded', populateDestinations);
-
-</script>
+    <script src="/js/script_v2.js"></script>
 </body>
 </html>
