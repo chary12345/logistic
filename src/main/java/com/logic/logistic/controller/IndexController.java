@@ -22,4 +22,11 @@ public class IndexController {
 	        
 	        return "tracking.html";
 	    }
+	  
+	  @GetMapping("/branchcreate")
+		public String createBranchInfo() {
+			return "branchcreate.html";
+			
+		}
+		
 }

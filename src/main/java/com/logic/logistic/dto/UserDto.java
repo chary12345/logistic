@@ -4,7 +4,6 @@ import java.sql.Date;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
 
@@ -20,8 +19,7 @@ public class UserDto {
 	private String phone;
 	private String email;
     private String role; // Enum for roles like "Owner", "Admin", etc.
-	@OneToOne
-    private CompanyDto company; // One user (owner) has only one company
+	
 	private Date createdDate;
 	private Date updatedDate;
 	private Date expiryDate;
@@ -30,6 +28,14 @@ public class UserDto {
 	private boolean blockUser;
 	private String blockReason;
 	private String blockedBy;
+	private String companyCode;
+	private String branchCode;
+	public String getBranchCode() {
+		return branchCode;
+	}
+	public void setBranchCode(String branchCode) {
+		this.branchCode = branchCode;
+	}
 	public Date getExpiryDate() {
 		return expiryDate;
 	}
@@ -101,12 +107,7 @@ public class UserDto {
 		this.email = email;
 	}
 	
-	public CompanyDto getCompany() {
-		return company;
-	}
-	public void setCompany(CompanyDto company) {
-		this.company = company;
-	}
+	
 	public Date getUpdatedDate() {
 		return updatedDate;
 	}
@@ -131,5 +132,12 @@ public class UserDto {
 	public Date getCreatedDate() {
 		return createdDate;
 	}
+	public String getCompanyCode() {
+		return companyCode;
+	}
+	public void setCompanyCode(String companyCode) {
+		this.companyCode = companyCode;
+	}
+	
 	
 }

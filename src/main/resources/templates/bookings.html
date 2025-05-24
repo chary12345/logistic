@@ -1,195 +1,320 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Logistics Booking</title>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap"
-        rel="stylesheet">
-    <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="/css/style_v2.css">
-    <script
-        src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
-    <script
-        src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.13/jspdf.plugin.autotable.min.js"></script>
-    <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Logistics Booking</title>
+<link
+	href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap"
+	rel="stylesheet">
+<link rel="stylesheet"
+	href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<link rel="stylesheet" href="/css/style_v2.css">
+
+  <link rel="stylesheet" href="/css/branchcreate.css">
+<script
+	src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+<script
+	src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.13/jspdf.plugin.autotable.min.js"></script>
+<script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body onload="populateUserData()">
-    <div class="header-bar"></div>
-    <div class="navbar">
-        <div class="navbar-left">
-            <a href="#" onclick="showBookingForm()">Home</a>
-            <div class="dropdown">
-                <a href="#">Operations</a>
-                <div class="dropdown-content">
-                    <a href="#">Booking</a>
-                    <a href="#">Dispatch</a>
-                    <a href="#">Receive</a>
-                    <a href="#">Delivery</a>
-                </div>
-            </div>
-            <div class="dropdown">
-                <a href="#">Reports</a>
-                <div class="dropdown-content">
-                    <a href="#" onclick="showReportForm('booking')">Booking Report</a>
-                    <a href="#">Dispatch Report</a>
-                    <a href="#">Receive Report</a>
-                    <a href="#">Delivery Report</a>
-                </div>
-            </div>
-            <div class="dropdown">
-                <a href="#">Manage</a>
-                <div class="dropdown-content">
-                    <a href="#" onclick="showCreateBranchForm()">Create Branch</a>
-                </div>
-            </div>
-        </div>
-        <div class="navbar-right">
-            <div class="user-dropdown">
-                <div class="user-icon">
-                    <i class="fas fa-user"></i>
-                </div>
-                <div class="user-dropdown-content">
-                    <div class="user-info" id="user-info-modal">
-                        <p><strong>First Name:</strong> <span id="userFirstName"></span></p>
-                        <p><strong>Last Name:</strong> <span id="userLastName"></span></p>
-                        <p><strong>Phone:</strong> <span id="userPhone"></span></p>
-                        <p><strong>Email:</strong> <span id="userEmail"></span></p>
-                        <p><strong>Role:</strong> <span id="userRole"></span></p>
-                    </div>
-                    <div class="user-actions">
-                        <button onclick="showChangePasswordForm()">Change Password</button>
-                        <button onclick="logout()">Logout</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div id="changePasswordForm" class="change-password-form">
-        <h3>Change Password</h3>
-        <label for="currentPassword">Current Password:</label>
-        <input type="password" id="currentPassword">
-        <label for="newPassword">New Password:</label>
-        <input type="password" id="newPassword">
-        <label for="confirmPassword">Confirm New Password:</label>
-        <input type="password" id="confirmPassword">
-        <button onclick="changePassword()">Change Password</button>
-        <div id="passwordMessage" style="margin-top: 10px; display: none; color: red;"></div>
-    </div>
-    <div id="bookingReportForm" class="report-form">
-        <h3>Booking Report</h3>
-        <label for="fromDate">From Date:</label>
-        <input type="date" id="fromDate">
-        <label for="toDate">To Date:</label>
-        <input type="date" id="toDate">
-        <button onclick="generateBookingReport()">Generate Report</button>
-        <div id="reportMessage" style="margin-top: 10px; display: none; color: red;"></div>
-        <div id="reportTableContainer"></div>
-        <div id="reportActions" style="display: none;">
-            <button onclick="downloadBookingReport()">Download PDF</button>
-            <button onclick="downloadBookingReportExcel()">Download Excel</button>
-        </div>
-    </div>
-    <div class="container" id="bookingFormContainer">
-        <h2>Logistics Booking Form</h2>
-        <form id="bookingForm">
-            <label for="deliveryDestination">Delivery Destination:</label>
-            <input type="text" id="deliveryDestination" list="destinations">
-            <datalist id="destinations">
-            </datalist>
-            <h3>Consignor (From)</h3>
-            <label for="consignorName">Name:</label>
-            <input type="text" id="consignorName" required>
-            <label for="consignorMobile">Mobile No:</label>
-            <input type="text" id="consignorMobile" required>
-            <label for="consignorGST">GST No:</label>
-            <input type="text" id="consignorGST">
-            <label for="consignorAddress">Address:</label>
-            <input type="text" id="consignorAddress">
-            <h3>Consignee (To)</h3>
-            <label for="consigneeName">Name:</label>
-            <input type="text" id="consigneeName" required>
-            <label for="consigneeMobile">Mobile No:</label>
-            <input type="text" id="consigneeMobile" required>
-            <label for="consigneeGST">GST No:</label>
-            <input type="text" id="consigneeGST">
-            <label for="consigneeAddress">Address:</label>
-            <input type="text" id="consigneeAddress">
-            <h3>Article Details</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Article</th>
-                        <th>Art</th>
-                        <th>Art Type</th>
-                        <th>Said To Contains</th>
-                        <th>Art Amt</th>
-                        <th>Total</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><input type="text" id="article"></td>
-                        <td><input type="number" id="artQuantity" value="0"></td>
-                        <td>
-                            <select id="artType">
-                                <option value="Auto Parts">Auto Parts</option>
-                                <option value="Electronics">Electronics</option>
-                                <option value="Garments">Garments</option>
-                            </select>
-                        </td>
-                        <td>
-                            <select id="saidToContain">
-                                <option value="Spare Parts">Spare Parts</option>
-                                <option value="Components">Components</option>
-                                <option value="Accessories">Accessories</option>
-                            </select>
-                        </td>
-                        <td><input type="number" id="artAmount" value="0"></td>
-                        <td><span id="totalAmount">0</span></td>
-                        <td><button type="button" onclick="addArticle()">Add</button></td>
-                    </tr>
-                </tbody>
-            </table>
-            <h3>Charges</h3>
-            <div class="charges">
-                <label for="freight">Freight:</label>
-                <input type="number" id="freight" value="0" oninput="calculateCharges()" readonly>
-                <label for="sgst">SGST (2.5%):</label>
-                <input type="number" id="sgst" value="0" readonly>
-                <label for="cgst">CGST (2.25%):</label>
-                <input type="number" id="cgst" value="0" readonly>
-                <label for="igst">IGST (5%):</label>
-                <input type="number" id="igst" value="0" readonly>
-                <label for="grandTotal">Grand Total:</label>
-                <input type="number" id="grandTotal" readonly>
-            </div>
-            <button type="submit">Booking</button>
-        </form>
-    </div>
-    <div id="createBranchForm">
-        <h3>Create New Branch</h3>
-        <form id="branchForm">
-            <label for="branchName">Branch Name:</label>
-            <input type="text" id="branchName" required>
-            <label for="branchCode">Branch Code:</label>
-            <input type="text" id="branchCode" required>
-            <label for="branchOperations">Operations:</label>
-            <input type="text" id="branchOperations">
-            <label for="branchAddress">Address:</label>
-            <textarea id="branchAddress"></textarea>
+	<div class="header-bar"></div>
+	<div class="navbar">
+		<div class="navbar-left">
+			<a href="#" onclick="showBookingForm()">Home</a>
+			<div class="dropdown">
+				<a href="#">Operations</a>
+				<div class="dropdown-content">
+					<a href="#">Booking</a> <a href="#">Dispatch</a> <a href="#">Receive</a>
+					<a href="#">Delivery</a>
+				</div>
+			</div>
+			<div class="dropdown">
+				<a href="#">Reports</a>
+				<div class="dropdown-content">
+					<a href="#" onclick="showReportForm('booking')">Booking Report</a>
+					<a href="#">Dispatch Report</a> <a href="#">Receive Report</a> <a
+						href="#">Delivery Report</a>
+				</div>
+			</div>
+			<!-- Inside the Manage dropdown -->
+			<div class="dropdown">
+				<a href="#">Manage</a>
+				<div class="dropdown-content">
+					<!-- <li><a id="createBranchLink" class="dropdown-item" href="#">Create
+							Branch</a></li> -->
+							<a href="#" onclick="showBookingForm('booking')">Create Branch</a>
+				</div>
+			</div>
+		</div>
+		<div class="navbar-right">
+			<div class="user-dropdown">
+				<div class="user-icon">
+					<i class="fas fa-user"></i>
+				</div>
+				<div class="user-dropdown-content">
+					<div class="user-info" id="user-info-modal">
+						<p>
+							<strong>First Name:</strong> <span id="userFirstName"></span>
+						</p>
+						<p>
+							<strong>Last Name:</strong> <span id="userLastName"></span>
+						</p>
 
-            <div class="form-actions">
-                <button type="submit">Save Branch</button>
-                <button type="button" onclick="hideCreateBranchForm()">Cancel</button>
-            </div>
-        </form>
-    </div>
-    <div id="overlay" class="overlay"></div>
+					</div>
+					<div class="user-actions">
+						<button onclick="showChangePasswordForm()">Change
+							Password</button>
+						<button onclick="logout()">Logout</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div id="changePasswordForm" class="change-password-form">
+		<h3>Change Password</h3>
+		<label for="currentPassword">Current Password:</label> <input
+			type="password" id="currentPassword"> <label
+			for="newPassword">New Password:</label> <input type="password"
+			id="newPassword"> <label for="confirmPassword">Confirm
+			New Password:</label> <input type="password" id="confirmPassword">
+		<button onclick="changePassword()">Change Password</button>
+		<div id="passwordMessage"
+			style="margin-top: 10px; display: none; color: red;"></div>
+	</div>
+	<div id="bookingReportForm" class="report-form">
+		<h3>Booking Report</h3>
+		<label for="fromDate">From Date:</label> <input type="date"
+			id="fromDate"> <label for="toDate">To Date:</label> <input
+			type="date" id="toDate">
+		<button onclick="generateBookingReport()">Generate Report</button>
+		<div id="reportMessage"
+			style="margin-top: 10px; display: none; color: red;"></div>
+		<div id="reportTableContainer"></div>
+		<div id="reportActions" style="display: none;">
+			<button onclick="downloadBookingReport()">Download PDF</button>
+			<button onclick="downloadBookingReportExcel()">Download
+				Excel</button>
+		</div>
+	</div>
+	<div class="container" id="bookingFormContainer" style="display: block;">
+		<h2>Logistics Booking Form</h2>
+		<form id="bookingForm">
+			<label for="deliveryDestination">Delivery Destination:</label> <input
+				type="text" id="deliveryDestination" list="destinations">
+			<datalist id="destinations">
+			</datalist>
+			<h3>Consignor (From)</h3>
+			<label for="consignorName">Name:</label> <input type="text"
+				id="consignorName" required> <label for="consignorMobile">Mobile
+				No:</label> <input type="text" id="consignorMobile" required> <label
+				for="consignorGST">GST No:</label> <input type="text"
+				id="consignorGST"> <label for="consignorAddress">Address:</label>
+			<input type="text" id="consignorAddress">
+			<h3>Consignee (To)</h3>
+			<label for="consigneeName">Name:</label> <input type="text"
+				id="consigneeName" required> <label for="consigneeMobile">Mobile
+				No:</label> <input type="text" id="consigneeMobile" required> <label
+				for="consigneeGST">GST No:</label> <input type="text"
+				id="consigneeGST"> <label for="consigneeAddress">Address:</label>
+			<input type="text" id="consigneeAddress">
+			<h3>Article Details</h3>
+			<table>
+				<thead>
+					<tr>
+						<th>Article</th>
+						<th>Art</th>
+						<th>Art Type</th>
+						<th>Said To Contains</th>
+						<th>Art Amt</th>
+						<th>Total</th>
+						<th>Action</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td><input type="text" id="article"></td>
+						<td><input type="number" id="artQuantity" value="0"></td>
+						<td><select id="artType">
+								<option value="Auto Parts">Auto Parts</option>
+								<option value="Electronics">Electronics</option>
+								<option value="Garments">Garments</option>
+						</select></td>
+						<td><select id="saidToContain">
+								<option value="Spare Parts">Spare Parts</option>
+								<option value="Components">Components</option>
+								<option value="Accessories">Accessories</option>
+						</select></td>
+						<td><input type="number" id="artAmount" value="0"></td>
+						<td><span id="totalAmount">0</span></td>
+						<td><button type="button" onclick="addArticle()">Add</button></td>
+					</tr>
+				</tbody>
+			</table>
+			<h3>Charges</h3>
+			<div class="charges">
+				<label for="freight">Freight:</label> <input type="number"
+					id="freight" value="0" oninput="calculateCharges()" readonly>
+				<label for="sgst">SGST (2.5%):</label> <input type="number"
+					id="sgst" value="0" readonly> <label for="cgst">CGST
+					(2.25%):</label> <input type="number" id="cgst" value="0" readonly>
+				<label for="igst">IGST (5%):</label> <input type="number" id="igst"
+					value="0" readonly> <label for="grandTotal">Grand
+					Total:</label> <input type="number" id="grandTotal" readonly>
+			</div>
+			<button type="submit">Booking</button>
+		</form>
+	</div>
 
-    <script src="/js/script_v2.js"></script>
+ <div class="main-content" id="CreateBranchContainer" style="display: none;">
+		<div class="form-section">
+			<form id="branchForm">
+				<div class="row">
+					<div class="col-6">
+						<label class="form-label">Branch Name *</label> <input type="text"
+							class="form-control" id="branchname" required>
+					</div>
+					<div class="col-6">
+						<label class="form-label">Branch Code *</label> <input type="text"
+							class="form-control" id="branchcode" required>
+						<div id="branchCodeError" class="error text-danger"></div>
+					</div>
+				</div>
+
+				<div class="row">
+					<div class="col-6">
+						<label class="form-label">Branch opperations *</label> <select
+							class="form-select" id="opperations" required>
+							<option value="">-- Select --</option>
+							<option>Both</option>
+							<option>Delivery</option>
+							<option>Booking</option>
+						</select>
+					</div>
+					<div class="col-6">
+						<label class="form-label">PAN No</label> <input type="text"
+							class="form-control" id="pan">
+					</div>
+				</div>
+
+				<div class="row">
+					<div class="col-6">
+						<label class="form-label">Phone Number</label> <input type="text"
+							class="form-control" id="phone">
+					</div>
+					<div class="col-6">
+						<label class="form-label">GSTIN</label> <input type="text"
+							class="form-control" id="gstin">
+					</div>
+				</div>
+
+				<div class="row">
+					<div class="col-6">
+						<label class="form-label">Email Address</label> <input
+							type="email" class="form-control" id="email">
+					</div>
+					<div class="col-6">
+						<label class="form-label">Contact Person *</label> <input
+							type="text" class="form-control" id="contactperson" required>
+					</div>
+				</div>
+
+				<div class="row">
+					<div class="col-6">
+						<label class="form-label">FlatOrApartmentNumber *</label> <input
+							type="text" class="form-control" id="flatorapartmentNumber"
+							required>
+					</div>
+					<div class="col-6">
+						<label class="form-label">Area Or Streetline *</label>
+						<textarea class="form-control" id="AddressStreet" required></textarea>
+					</div>
+
+				</div>
+
+
+
+				<div class="row">
+					<div class="col-6">
+						<label class="form-label">LandMark</label> <input type="text"
+							class="form-control" id="landmark" required>
+					</div>
+					<div class="col-6">
+						<label class="form-label">Postalcode *</label> <input type="text"
+							class="form-control" id="postalCode" required pattern="\d{6}">
+						<div id="postalCodeError" class="error text-danger"></div>
+					</div>
+
+				</div>
+
+				<div class="row">
+					<div class="col-6">
+						<label class="form-label">State *</label> <input type="text"
+							class="form-control" id="state" required>
+
+					</div>
+					<div class="col-6">
+						<div style="position: relative;">
+							<label class="form-label">City *</label> <input type="text"
+								class="form-control" id="city" required>
+							<div id="cityDropdown" class="city-dropdown"></div>
+						</div>
+
+					</div>
+				</div>
+
+				<!-- <div class="row">
+					<div class="col-6">
+						<label class="form-label">Region *</label> <select
+							class="form-select" id="region" required>
+							<option value="">-- Select --</option>
+							<option>South</option>
+						</select>
+					</div>
+					<div class="col-6">
+						<label class="form-label d-block">Agent Branch?</label>
+						<div class="form-check form-check-inline">
+							<input class="form-check-input" type="radio" name="agent" checked>
+							<label class="form-check-label">No</label>
+						</div>
+						<div class="form-check form-check-inline">
+							<input class="form-check-input" type="radio" name="agent">
+							<label class="form-check-label">Yes</label>
+						</div>
+					</div>
+				</div> -->
+
+				<div class="row">
+					<div class="col-12">
+						<label class="form-label">Branch Type *</label> <select
+							class="form-select" id="branchType" required>
+							<option value="">-- Select --</option>
+							<option>General</option>
+							<option>Head-office</option>
+						</select>
+					</div>
+				</div>
+
+				<div class="btn-group mt-2 gap-2">
+					<button type="submit" class="btn btn-primary">Add</button>
+					<button type="button" class="btn btn-success">Edit</button>
+					<button type="button" class="btn btn-danger">Delete</button>
+					<button type="button" class="btn btn-warning text-white"
+						id="resetBtn">Reset</button>
+					<button type="button" class="btn btn-secondary">Deactivate</button>
+				</div>
+			</form>
+			<div id="responseMessage" class="response-message success"></div>
+
+		</div>
+	</div>
+
+
+
+
+	<div id="overlay" class="overlay"></div>
+
+	<script src="/js/bookings.js"></script>
 </body>
 </html>
