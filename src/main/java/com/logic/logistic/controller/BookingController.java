@@ -1,5 +1,6 @@
 package com.logic.logistic.controller;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +26,7 @@ public class BookingController {
 
     @PostMapping("/bookLoad")
     public ResponseEntity<?> bookLoad(@RequestBody Booking booking) {
-        booking.setBookingDate(new Date()); // Set the current date
+        booking.setBookingDate(LocalDateTime.now()); // Set the current date
         return ResponseEntity.ok(bookRepository.save(booking));
     }
 

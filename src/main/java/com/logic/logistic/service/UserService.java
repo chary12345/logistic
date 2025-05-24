@@ -12,7 +12,7 @@ public class UserService {
     private UserRepository userRepository;
 
     public boolean changeUserPassword(String username, String currentPassword, String newPassword) {
-        UserDto user = userRepository.findByUsername(username, currentPassword);
+        UserDto user = userRepository.findByUsername(username);
 
         if (user == null) {
             System.out.println("User not found or incorrect password!");

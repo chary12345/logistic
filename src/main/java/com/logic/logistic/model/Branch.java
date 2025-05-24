@@ -1,18 +1,8 @@
-package com.logic.logistic.dto;
+package com.logic.logistic.model;
 
 import java.sql.Date;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-
-@Entity
-@Table(name = "branch_data")
-public class BranchDTO {
-
-	@Id
-	@Column(name = "branchCode")
+public class Branch {
 	private String branchCode;
 	private String branchName;
 	private String branchType;
@@ -22,11 +12,11 @@ public class BranchDTO {
 	private String branchPan;
 	private String gstIn;
 	private String contactPersonName;
-	private String companyCode;
-	private String branchCreatedBy;
 	private Date createDate;
 	private Date updateDate;
-	private boolean isBranchActive;
+	private String branchCreatedBy;
+	private String companyCode;
+	private Address branchAddress;
 	public String getBranchCode() {
 		return branchCode;
 	}
@@ -81,18 +71,6 @@ public class BranchDTO {
 	public void setContactPersonName(String contactPersonName) {
 		this.contactPersonName = contactPersonName;
 	}
-	public String getCompanyCode() {
-		return companyCode;
-	}
-	public void setCompanyCode(String companyCode) {
-		this.companyCode = companyCode;
-	}
-	public String getBranchCreatedBy() {
-		return branchCreatedBy;
-	}
-	public void setBranchCreatedBy(String branchCreatedBy) {
-		this.branchCreatedBy = branchCreatedBy;
-	}
 	public Date getCreateDate() {
 		return createDate;
 	}
@@ -105,11 +83,23 @@ public class BranchDTO {
 	public void setUpdateDate(Date updateDate) {
 		this.updateDate = updateDate;
 	}
-	public boolean isBranchActive() {
-		return isBranchActive;
+	public String getBranchCreatedBy() {
+		return branchCreatedBy;
 	}
-	public void setBranchActive(boolean isBranchActive) {
-		this.isBranchActive = isBranchActive;
+	public void setBranchCreatedBy(String branchCreatedBy) {
+		this.branchCreatedBy = branchCreatedBy;
 	}
-	
+	public String getCompanyCode() {
+		return companyCode;
+	}
+	public void setCompanyCode(String companyCode) {
+		this.companyCode = companyCode;
+	}
+	public Address getBranchAddress() {
+		return branchAddress;
+	}
+	public void setBranchAddress(Address branchAddress) {
+		this.branchAddress = branchAddress;
+	}
+
 }
