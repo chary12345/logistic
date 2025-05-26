@@ -5,6 +5,13 @@ function showBookingForm() {
 	hideChangePasswordForm(); // Ensure password form is hidden
 }
 
+function showCreateBranchForm() {
+    document.getElementById('CreateBranchContainer').style.display = 'block';
+    document.getElementById('bookingFormContainer').style.display = 'none';
+    document.getElementById('bookingReportForm').style.display = 'none';
+    hideChangePasswordForm(); // Hide the change password form if open
+}
+
 
 
 document.getElementById("branchForm").addEventListener("submit", async function (e) {
@@ -65,11 +72,131 @@ document.getElementById("branchForm").addEventListener("submit", async function 
             window.location.reload();
         }
 	    });
+	    
+	     function showToast(message, isSuccess = true) {
+	        const toastElement = document.getElementById('liveToast');
+	        const toastBody = toastElement.querySelector('.toast-body');
+	        const toastHeader = toastElement.querySelector('.toast-header strong');
+
+	        toastBody.textContent = message;
+	        toastHeader.textContent = isSuccess ? 'Success' : 'Error';
+	        toastElement.classList.remove('bg-danger', 'bg-success');
+	        toastElement.classList.add(isSuccess ? 'bg-success' : 'bg-danger');
+
+	        const toast = new bootstrap.Toast(toastElement);
+	        toast.show();
+	    }
+	    
+	      //Function to validate branch code
+	    async function validateBranchCode(branchCode) {
+	        try {
+	            // Send API request to validate branch code
+	            
+	             const response = await fetch('/validate-branch-code?branchCode=' + branchCode, {
+	                method: 'GET',
+	            });
+	              const data = await response.json();      
+	            document.getElementById('branchCodeError').textContent = data.status;
+	        } catch (error) {
+	            document.getElementById('branchCodeError').textContent = 'Error validating branch code. Please try again later.';
+	            document.getElementById('branchCodeError').style.color = 'red';
+	        }
+	    }
+
+	    // Event listener to trigger validation on branch code input
+	    document.getElementById('branchcode').addEventListener('focus', function () {
+	        const branchCode = this.value.trim();
+	        if (branchCode) {
+	            validateBranchCode(branchCode);
+	        }
+	    });
+	    
+	  //Function to generate branch code based on company code and branch name
+	   async function generateBranchCode() {
+	        const branchName = document.getElementById("branchname").value.trim();
+	        const companyCode = userData.companyAndBranchDeatils.companyCode;
+
+	        // Check if both companyCode and branchName are entered
+	        if (branchName && companyCode) {
+	            // Take first two letters of the branch name and combine with company code
+	            const branchCode = branchName.substring(0, 2).toUpperCase() + companyCode.toUpperCase();
+	            document.getElementById("branchcode").value = branchCode;
+	        } else {
+	            // Clear the branch code if either of the fields are empty
+	            document.getElementById("branchcode").value = "";
+	        }
+	    }
+
+	    // Event listener for branchCode input box to populate automatically when clicked
+	    document.getElementById('branchcode').addEventListener('focus', function () {
+	        // Only populate branchCode if it's empty (i.e., not manually edited yet)
+	        if (!this.value) {
+	            generateBranchCode();
+	        }
+	    });
+	    
+	  //Function to fetch city and state based on postal code
+	    async function fetchCityState(postalCode) {
+	        try {
+	            const response = await fetch(`https://api.postalpincode.in/pincode/${postalCode}`);
+	            const data = await response.json();
+	            const postalData = data[0];
+	            
+	            if (postalData.Status === "Success") {
+	                const cityList = postalData.PostOffice;
+	                const state = postalData.PostOffice[0].State;
+	                let citiesHtml = '';
+
+	                // If there are multiple cities, show them as a dropdown
+	                cityList.forEach(city => {
+	                    citiesHtml += `<div class="city-item" onclick="selectCity('${city.Name}')">${city.Name}</div>`;
+	                });
+
+	                document.getElementById("state").value = state;
+	                const cityDropdown = document.getElementById("cityDropdown");
+	                if (citiesHtml) {
+	                    cityDropdown.innerHTML = citiesHtml;
+	                    cityDropdown.style.display = 'block';
+	           }
+	            } else {
+	                document.getElementById("postalCodeError").innerText = "Invalid Postal Code. Please try again.";
+	              document.getElementById("state").value = '';
+	                document.getElementById("city").value = '';
+	              document.getElementById("cityDropdown").style.display = 'none';
+	           }
+	        } catch (error) {
+	            document.getElementById("postalCodeError").innerText = "Error fetching postal code details.";
+	            document.getElementById("cityDropdown").style.display = 'none';
+	        }
+	    }
+
+	    // Event listener for postal code input
+	    document.getElementById('postalCode').addEventListener('blur', function () {
+	        const postalCode = this.value.trim();
+	        if (postalCode) {
+	            fetchCityState(postalCode);
+	        }
+	    });
+
+	    // Function to select a city from the dropdown
+	    function selectCity(cityName) {
+	        document.getElementById('city').value = cityName;
+	        document.getElementById('cityDropdown').style.display = 'none';
+	    }
+
+	    // Event listener for city input to toggle the dropdown visibility
+	    document.getElementById('city').addEventListener('focus', function () {
+	        const postalCode = document.getElementById('postalCode').value.trim();
+	        if (postalCode) {
+	            fetchCityState(postalCode);
+	        }
+	    });
 
 function showReportForm(reportType) {
 	if (reportType === 'booking') {
 		document.getElementById('bookingReportForm').style.display = 'block';
 		document.getElementById('bookingFormContainer').style.display = 'none';
+		document.getElementById('CreateBranchContainer').style.display = 'none';
 		document.getElementById('reportActions').style.display = 'none'; // Initially hide the download buttons
 		document.getElementById('reportTableContainer').innerHTML = ''; // Clear previous report
 		document.getElementById('reportMessage').style.display = 'none';
@@ -511,8 +638,9 @@ function changePassword() {
 			passwordMessage.style.display = 'block';
 		});
 }
+let userData={};
 function populateUserData() {
-	const userData = JSON.parse(sessionStorage.getItem('user'));
+	 userData = JSON.parse(sessionStorage.getItem('user'));
 
 	document.getElementById('userFirstName').textContent = userData.firstName;
 	document.getElementById('userLastName').textContent = userData.lastName;
