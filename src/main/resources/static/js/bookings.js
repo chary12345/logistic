@@ -530,6 +530,8 @@ document.getElementById("bookingForm").addEventListener("submit", async function
 		cgst: document.getElementById("cgst").value,
 		igst: document.getElementById("igst").value,
 		grandTotal: document.getElementById("grandTotal").value,
+		 companyCode:userData.companyAndBranchDeatils.companyCode,
+    branchCode:userData.companyAndBranchDeatils.branchCode,
 	};
 
 	try {
