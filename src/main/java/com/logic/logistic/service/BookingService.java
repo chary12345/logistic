@@ -1,13 +1,20 @@
-package com.logic.logistic.service;
+ package com.logic.logistic.service;
 
 import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
+//For paged result
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+//For pagination
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.logic.logistic.dto.Booking;
 import com.logic.logistic.dto.BookingReceiptSequence;
 import com.logic.logistic.model.BookingDTO;
+import com.logic.logistic.model.BookingPageResponse;
 import com.logic.logistic.repository.BookRepository;
 import com.logic.logistic.repository.BookingReceiptSequenceRepository;
 
@@ -63,5 +70,18 @@ public class BookingService {
 			System.out.println(e.getMessage());
 		}
 		return save;
+	}
+	public BookingPageResponse getBookingReportsBetweenDates(LocalDateTime fromDate,LocalDateTime toDate){
+		Pageable pageable = PageRequest.of(0, 10, Sort.by("bookingDate").descending());
+		 Page<Booking> page = bookingRepo.findByBookingDateBetween(fromDate, toDate, pageable);
+		 BookingPageResponse response = new BookingPageResponse();
+		    response.setContent(page.getContent());
+		    response.setPageNumber(page.getNumber());
+		    response.setPageSize(page.getSize());
+		    response.setTotalElements(page.getTotalElements());
+		    response.setTotalPages(page.getTotalPages());
+		    response.setLast(page.isLast());
+		return response;
+		
 	}
 }
