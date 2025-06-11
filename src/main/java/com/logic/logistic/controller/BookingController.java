@@ -1,5 +1,6 @@
 package com.logic.logistic.controller;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
 
@@ -57,15 +58,15 @@ public class BookingController {
 
     @GetMapping("/report")
     public ResponseEntity<?> getBookingReport(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate) {
-        return ResponseEntity.ok(bookRepository.findByBookingDateBetween(fromDate, toDate));
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime fromDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime toDate) {
+        return ResponseEntity.ok(bookingService.getBookingReportsBetweenDates(fromDate, toDate));
     }
     
     @GetMapping("/todayReports")
     public ResponseEntity<?> toDayBookingRepoprts(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate) {
-        return ResponseEntity.ok(bookRepository.findByBookingDateBetween(fromDate, toDate));
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime fromDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime toDate) {
+        return ResponseEntity.ok(bookingService.getBookingReportsBetweenDates(fromDate, toDate));
     }
 }

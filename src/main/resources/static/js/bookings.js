@@ -245,12 +245,20 @@ function showReportForm(reportType) {
 let reportData = []; // Store the fetched report data globally
 
 function generateBookingReport() {
-	const fromDate = document.getElementById('fromDate').value;
-	const toDate = document.getElementById('toDate').value;
+	const fromDateRaw = document.getElementById('fromDate').value;
+	const toDateRaw = document.getElementById('toDate').value;
 	const reportMessage = document.getElementById('reportMessage');
 	const reportTableContainer = document.getElementById('reportTableContainer');
 	const reportActions = document.getElementById('reportActions');
 
+if (!fromDateRaw || !toDateRaw) {
+  alert("Please select both From and To dates.");
+  return;
+}
+
+// Manually add time portion
+const fromDate = `${fromDateRaw}T00:00:00`;
+const toDate = `${toDateRaw}T23:59:59`;
 	// Clear previous report data and table
 	reportData = [];
 	reportTableContainer.innerHTML = '';
@@ -261,9 +269,9 @@ function generateBookingReport() {
 	fetch(`/api/bookings/report?fromDate=${fromDate}&toDate=${toDate}`)
 		.then(response => response.json())
 		.then(data => {
-			if (data.length > 0) {
-				reportData = data; // Store the fetched data
-				displayReportData(data);
+			if (data.content && data.content.length > 0) {
+				reportData = data.content; // Store the fetched data
+				displayReportData(data.content);
 				reportMessage.style.display = 'none';
 				reportActions.style.display = 'block'; // Show buttons after report is generated
 			} else {
@@ -284,7 +292,7 @@ function displayReportData(data) {
 	let reportTable = document.createElement('table');
 	reportTable.innerHTML = `
             <tr>
-                <th>ID</th>
+                <th>LoadingReciept</th>
                 <th>Consignor Name</th>
                 <th>Consignor Mobile</th>
                 <th>Consignee Name</th>
@@ -295,6 +303,7 @@ function displayReportData(data) {
                 <th>SGST</th>
                 <th>CGST</th>
                 <th>IGST</th>
+                <th>ConsignStatus</th>
                 <th>Booking Date</th>
             </tr>
         `;
@@ -302,7 +311,7 @@ function displayReportData(data) {
 	data.forEach(booking => {
 		let row = reportTable.insertRow();
 		row.innerHTML = `
-                <td>${booking.id}</td>
+                <td>${booking.loadingReciept}</td>
                 <td>${booking.consignorName}</td>
                 <td>${booking.consignorMobile}</td>
                 <td>${booking.consigneeName}</td>
@@ -313,6 +322,7 @@ function displayReportData(data) {
                 <td>${booking.sgst}</td>
                 <td>${booking.cgst}</td>
                 <td>${booking.igst}</td>
+                 <td>${booking.consignStatus}</td>
                 <td>${new Date(booking.bookingDate).toLocaleDateString()}</td>
             `;
 	});
