@@ -511,6 +511,18 @@ function updateFreight() {
 document.getElementById("bookingForm").addEventListener("submit", async function(event) {
 	event.preventDefault();
 
+	const deliveryInput = document.getElementById("deliveryDestination").value;
+	const match = deliveryInput.match(/\(([^)]+)\)/); // Extract code from "(CODE)"
+	const selectedBranchCode = match ? match[1] : null;
+
+	const currentBranchCode = userData?.companyAndBranchDeatils?.branchCode;
+
+	if (selectedBranchCode && selectedBranchCode === currentBranchCode) {
+		alert("Destination branch cannot be the same as your current branch.");
+		return;
+	}
+
+
 	let articleDetails = [];
 	let rows = document.querySelectorAll("table tr:not(:first-child)");
 	rows.forEach(row => {
@@ -702,29 +714,37 @@ function populateUserData() {
 calculateCharges();
 showBookingForm();
 
-// Sample destination data (replace with your actual data source)
-const destinationOptions = [
-	"New York",
-	"Los Angeles",
-	"Chicago",
-	"Houston",
-	"Phoenix",
-	"Philadelphia",
-	"San Antonio",
-	"San Diego",
-	"Dallas",
-	"San Jose"
-];
+async function loadBranchDestinations() {
+	const companyCode = userData?.companyAndBranchDeatils?.companyCode;
+	console.log("Company code:", companyCode); // debug
 
-// Function to populate the datalist
-function populateDestinations() {
-	const datalist = document.getElementById("destinations");
-	destinationOptions.forEach(destination => {
-		const option = document.createElement("option");
-		option.value = destination;
-		datalist.appendChild(option);
-	});
+	if (!companyCode) return;
+
+	try {
+		const response = await fetch(`/BranchesByCompanyCode/${companyCode}`);
+		if (!response.ok) throw new Error("Failed to fetch branches");
+
+		const result = await response.json();
+
+		if (result.status === "SUCCESS" && Array.isArray(result.data)) {
+			const destinationList = document.getElementById("destinationList");
+			destinationList.innerHTML = "";
+
+			result.data.forEach(branch => {
+				const option = document.createElement("option");
+				option.value = `${branch.branchName} (${branch.branchCode})`;
+				destinationList.appendChild(option);
+			});
+		} else {
+			console.warn("No branch data returned.");
+		}
+	} catch (error) {
+		console.error("Error loading branch destinations:", error);
+	}
 }
+
+document.getElementById("deliveryDestination").addEventListener("focus", loadBranchDestinations);
+
 
 
 // Function to validate GST number
@@ -749,4 +769,3 @@ document.getElementById("consignorGST").addEventListener("blur", function() {
 document.getElementById("consigneeGST").addEventListener("blur", function() {
 	validateGST("consigneeGST");
 });
-document.addEventListener('DOMContentLoaded', populateDestinations);
