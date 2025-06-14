@@ -103,9 +103,10 @@
 	<div class="container" id="bookingFormContainer" style="display: block;">
 		<h2>Logistics Booking Form</h2>
 		<form id="bookingForm">
-			<label for="deliveryDestination">Delivery Destination:</label> <input
-				type="text" id="deliveryDestination" list="destinations">
-			<datalist id="destinations">
+			<label for="deliveryDestination">Delivery Destination:</label>
+<input type="text" id="deliveryDestination" list="destinationList"  autocomplete="off">
+<datalist id="destinationList"></datalist>
+
 			</datalist>
 			<h3>Consignor (From)</h3>
 			<label for="consignorName">Name:</label> <input type="text"
