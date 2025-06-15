@@ -7,9 +7,12 @@ public class CompanyAndBranch {
 	private String plan;
 	private String companyLogo;
 	
+	
 	private String branchCode;
 	private String branchName;
 	private String branchType;
+	
+	private boolean isCompanyActive;
 	public String getCompanyCode() {
 		return companyCode;
 	}
@@ -58,8 +61,16 @@ public class CompanyAndBranch {
 	public void setBranchType(String branchType) {
 		this.branchType = branchType;
 	}
+	
+	public boolean isCompanyActive() {
+		return isCompanyActive;
+	}
+	public void setCompanyActive(boolean isCompanyActive) {
+		this.isCompanyActive = isCompanyActive;
+	}
+	
 	public CompanyAndBranch(String companyCode, String companyName, String groupName, String plan, String companyLogo,
-			String branchCode, String branchName, String branchType) {
+			String branchCode, String branchName, String branchType, boolean isCompanyActive) {
 		super();
 		this.companyCode = companyCode;
 		this.companyName = companyName;
@@ -69,6 +80,7 @@ public class CompanyAndBranch {
 		this.branchCode = branchCode;
 		this.branchName = branchName;
 		this.branchType = branchType;
+		this.isCompanyActive = isCompanyActive;
 	}
 	public CompanyAndBranch() {
 		

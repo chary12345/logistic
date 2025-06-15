@@ -19,7 +19,7 @@
 <script>
     async function sendOtp() {
         let phone = document.getElementById("phoneNumber").value;
-        await fetch("http://localhost:8080/api/auth/send-otp", {
+        await fetch("/api/auth/send-otp", {
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ phoneNumber: phone })
         });
@@ -28,7 +28,7 @@
     async function verifyOtp() {
         let phone = document.getElementById("phoneNumber").value;
         let otp = document.getElementById("otp").value;
-        let res = await fetch("http://localhost:8080/api/auth/verify-otp", {
+        let res = await fetch("api/auth/verify-otp", {
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ phoneNumber: phone, otp: otp })
         });

@@ -58,7 +58,7 @@ async function validateLogin() {
 
 	try {
 		// Send the login data to the server using fetch API
-		let response = await fetch("http://localhost:8080/api/login", {
+		let response = await fetch("api/login", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json"
