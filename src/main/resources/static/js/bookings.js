@@ -507,6 +507,63 @@ function updateFreight() {
 	document.getElementById("freight").value = totalFreight;
 	calculateCharges();
 }
+function printBookingReceipt(booking) {
+	const printWindow = window.open('', '', 'width=800,height=600');
+	const styles = `
+		<style>
+			body { font-family: Arial, sans-serif; padding: 20px; }
+			h2 { text-align: center; }
+			table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+			td { padding: 6px 10px; }
+			.total { font-weight: bold; }
+			hr { margin: 20px 0; }
+		</style>
+	`;
+
+	const html = `
+		<html>
+		<head>
+			<title>Booking Receipt</title>
+			${styles}
+		</head>
+		<body>
+			<h2>Logistics Booking Receipt</h2>
+			<hr>
+			<table>
+				<tr><td><strong>Receipt No:</strong></td><td>${booking.loadingReciept}</td></tr>
+				<tr><td><strong>Date:</strong></td><td>${new Date(booking.bookingDate).toLocaleString()}</td></tr>
+				<tr><td><strong>Consignor:</strong></td><td>${booking.consignorName} (${booking.consignorMobile})</td></tr>
+				<tr><td><strong>Address:</strong></td><td>${booking.consignorAddress}</td></tr>
+				<tr><td><strong>Consignee:</strong></td><td>${booking.consigneeName} (${booking.consigneeMobile})</td></tr>
+				<tr><td><strong>Address:</strong></td><td>${booking.consigneeAddress}</td></tr>
+				<tr><td><strong>Freight:</strong></td><td>₹${booking.freight}</td></tr>
+				<tr><td><strong>Status:</strong></td><td>Booked</td></tr>
+				<tr><td><strong>SGST:</strong></td><td>₹${booking.sgst}</td></tr>
+				<tr><td><strong>CGST:</strong></td><td>₹${booking.cgst}</td></tr>
+				<tr><td><strong>IGST:</strong></td><td>₹${booking.igst}</td></tr>
+				<tr><td class="total">Total:</td><td class="total">₹${(
+					parseFloat(booking.freight) +
+					parseFloat(booking.sgst) +
+					parseFloat(booking.cgst) +
+					parseFloat(booking.igst)
+				).toFixed(2)}</td></tr>
+			</table>
+			<hr>
+			<p style="text-align:center;">Thank you for booking with us!</p>
+			<script>
+				window.onload = function() {
+					window.print();
+					setTimeout(() => window.close(), 1000);
+				}
+			</script>
+		</body>
+		</html>
+	`;
+
+	printWindow.document.write(html);
+	printWindow.document.close();
+}
+
 
 document.getElementById("bookingForm").addEventListener("submit", async function(event) {
 	event.preventDefault();
@@ -557,7 +614,7 @@ document.getElementById("bookingForm").addEventListener("submit", async function
 	};
 
 	try {
-		let response = await fetch("http://localhost:8080/api/bookings/bookLoad", {
+		let response = await fetch("api/bookings/bookLoad", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(data)
@@ -569,6 +626,7 @@ document.getElementById("bookingForm").addEventListener("submit", async function
 		const articleTableRows = document.querySelectorAll("#bookingForm table tr:not(:first-child)");
 		articleTableRows.forEach(row => row.remove());
 		updateFreight();
+		printBookingReceipt(result);
 	} catch (error) {
 		console.error("Error saving booking:", error);
 		alert("Failed to save booking.");

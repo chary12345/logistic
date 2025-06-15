@@ -17,7 +17,7 @@
     </div>
 <script>
     async function loadBookings() {
-        let response = await fetch("http://localhost:8080/admin/bookings");
+        let response = await fetch("admin/bookings");
         let bookings = await response.json();
         let tableContent = "";
         bookings.forEach(b => {

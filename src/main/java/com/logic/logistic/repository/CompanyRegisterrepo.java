@@ -21,7 +21,7 @@ public interface CompanyRegisterrepo extends JpaRepository<CompanyDto, String> {
 	CompanyDto getCompanyByID(String companyCode);
 
 	// Custom Query to JOIN company and branch data
-	@Query(value = "SELECT c.company_code AS companyCode,c.company_full_name AS companyName,c.group_name AS groupName,c.plan AS plan,c.logo AS companyLogo, b.branch_code AS branchCode,b.branch_name AS branchName, b.branch_type AS branchType FROM logistics_logic.company_dto c JOIN logistics_logic.branch_data b  ON c.company_code = b.company_code WHERE c.company_code = :companyCode AND b.branch_code = :branchCode", nativeQuery = true)
+	@Query(value = "SELECT c.company_code AS companyCode,c.company_full_name AS companyName,c.group_name AS groupName,c.plan AS plan,c.logo AS companyLogo, b.branch_code AS branchCode,b.branch_name AS branchName, b.branch_type AS branchType,c.is_company_block as isCompanyActive FROM logistics_logic.company_dto c JOIN logistics_logic.branch_data b  ON c.company_code = b.company_code WHERE c.company_code = :companyCode AND b.branch_code = :branchCode", nativeQuery = true)
 	CompanyAndBranch fetchCompanyAndBranchdetgails(String companyCode, String branchCode);
 
 	@Query(value = "SELECT  c.company_code AS companyCode,c.company_full_name AS companyName,c.group_name AS groupName,c.plan AS plan,u.user_name,u.first_name,u.last_name,u.phone,c.is_company_block as companyBlocked,c.expiry_date as expiryDate FROM  company_dto c JOIN  user_data u ON u.company_code = c.company_code WHERE  u.role = 'SuperAdmin'",nativeQuery = true)
