@@ -1,6 +1,7 @@
- package com.logic.logistic.service;
+package com.logic.logistic.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 //For paged result
@@ -32,7 +33,7 @@ public class BookingService {
 	@Transactional
 	public Booking saveBooking(BookingDTO dto) {
 		String key = dto.getCompanyCode() + dto.getBranchCode();
-		Booking save =null;
+		Booking save = null;
 		try {
 			BookingReceiptSequence sequence = sequenceRepo.findById(key).orElseGet(() -> {
 				BookingReceiptSequence s = new BookingReceiptSequence();
@@ -63,25 +64,45 @@ public class BookingService {
 			booking.setSgst(dto.getSgst());
 			booking.setCgst(dto.getCgst());
 			booking.setIgst(dto.getIgst());
-			 booking.setBookingDate(LocalDateTime.now());
-			 booking.setConsignStatus("BOOKED");
-			save= bookingRepo.save(booking);
+			booking.setBookingDate(LocalDateTime.now());
+			booking.setConsignStatus("BOOKED");
+			save = bookingRepo.save(booking);
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
 		}
 		return save;
 	}
-	public BookingPageResponse getBookingReportsBetweenDates(LocalDateTime fromDate,LocalDateTime toDate){
+
+	public BookingPageResponse getBookingReportsBetweenDates(LocalDateTime fromDate, LocalDateTime toDate) {
 		Pageable pageable = PageRequest.of(0, 10, Sort.by("bookingDate").descending());
-		 Page<Booking> page = bookingRepo.findByBookingDateBetween(fromDate, toDate, pageable);
-		 BookingPageResponse response = new BookingPageResponse();
-		    response.setContent(page.getContent());
-		    response.setPageNumber(page.getNumber());
-		    response.setPageSize(page.getSize());
-		    response.setTotalElements(page.getTotalElements());
-		    response.setTotalPages(page.getTotalPages());
-		    response.setLast(page.isLast());
+		Page<Booking> page = bookingRepo.findByBookingDateBetween(fromDate, toDate, "BOOKED", pageable);
+		BookingPageResponse response = new BookingPageResponse();
+		response.setContent(page.getContent());
+		response.setPageNumber(page.getNumber());
+		response.setPageSize(page.getSize());
+		response.setTotalElements(page.getTotalElements());
+		response.setTotalPages(page.getTotalPages());
+		response.setLast(page.isLast());
 		return response;
-		
+
+	}
+
+	@Transactional
+	public List<Booking> dispatchLoad(List<String> loadingReceipts) {
+		List<Booking> dispatchBookings = null;
+		try {
+			dispatchBookings = bookingRepo.findByLoadingRecieptIn(loadingReceipts);
+			LocalDateTime now = LocalDateTime.now();
+			for (Booking booking : dispatchBookings) {
+				booking.setConsignStatus("DISPATCHED");
+				booking.setDispatchDate(now);
+			}
+
+			bookingRepo.saveAll(dispatchBookings);
+
+		} catch (Exception e) {
+			System.out.println(e.getMessage());
+		}
+		return dispatchBookings;
 	}
 }
