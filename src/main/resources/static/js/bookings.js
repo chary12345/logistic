@@ -17,12 +17,12 @@ function showCreateBranchForm() {
 document.getElementById("branchForm").addEventListener("submit", async function(e) {
 	e.preventDefault();
 
- validateBranchForm();
+	validateBranchForm();
 
-    if (!formValid) {
-      showToast("Please fix all form errors before submitting.", false);
-      return;
-    }
+	if (!formValid) {
+		showToast("Please fix all form errors before submitting.", false);
+		return;
+	}
 
 	const branchData = {
 		branchCode: document.getElementById("branchcode").value,
@@ -81,30 +81,30 @@ document.getElementById("branchForm").addEventListener("submit", async function(
 
 let formValid = false;
 
-  function validateBranchForm() {
-    const form = document.getElementById("branchForm");
-    const submitBtn = document.getElementById("submitBtn");
+function validateBranchForm() {
+	const form = document.getElementById("branchForm");
+	const submitBtn = document.getElementById("submitBtn");
 
-    const branchCodeError = document.getElementById("branchCodeError");
-    const postalCodeError = document.getElementById("postalCodeError");
+	const branchCodeError = document.getElementById("branchCodeError");
+	const postalCodeError = document.getElementById("postalCodeError");
 
-    let valid = form.checkValidity();
-    let hasCustomErrors =
-      (branchCodeError && branchCodeError.textContent.trim() !== "") ||
-      (postalCodeError && postalCodeError.textContent.trim() !== "");
+	let valid = form.checkValidity();
+	let hasCustomErrors =
+		(branchCodeError && branchCodeError.textContent.trim() !== "") ||
+		(postalCodeError && postalCodeError.textContent.trim() !== "");
 
-    formValid = valid && !hasCustomErrors;
-    submitBtn.disabled = !formValid;
-  }
+	formValid = valid && !hasCustomErrors;
+	submitBtn.disabled = !formValid;
+}
 
-  document.addEventListener("DOMContentLoaded", () => {
-    const form = document.getElementById("branchForm");
-    Array.from(form.elements).forEach((el) => {
-      el.addEventListener("input", validateBranchForm);
-      el.addEventListener("blur", validateBranchForm);
-    });
-    validateBranchForm(); // Initial check
-  });
+document.addEventListener("DOMContentLoaded", () => {
+	const form = document.getElementById("branchForm");
+	Array.from(form.elements).forEach((el) => {
+		el.addEventListener("input", validateBranchForm);
+		el.addEventListener("blur", validateBranchForm);
+	});
+	validateBranchForm(); // Initial check
+});
 
 function showToast(message, isSuccess = true) {
 	const toastElement = document.getElementById('liveToast');
@@ -251,14 +251,14 @@ function generateBookingReport() {
 	const reportTableContainer = document.getElementById('reportTableContainer');
 	const reportActions = document.getElementById('reportActions');
 
-if (!fromDateRaw || !toDateRaw) {
-  alert("Please select both From and To dates.");
-  return;
-}
+	if (!fromDateRaw || !toDateRaw) {
+		alert("Please select both From and To dates.");
+		return;
+	}
 
-// Manually add time portion
-const fromDate = `${fromDateRaw}T00:00:00`;
-const toDate = `${toDateRaw}T23:59:59`;
+	// Manually add time portion
+	const fromDate = `${fromDateRaw}T00:00:00`;
+	const toDate = `${toDateRaw}T23:59:59`;
 	// Clear previous report data and table
 	reportData = [];
 	reportTableContainer.innerHTML = '';
@@ -292,6 +292,7 @@ function displayReportData(data) {
 	let reportTable = document.createElement('table');
 	reportTable.innerHTML = `
             <tr>
+            <th><input type="checkbox" id="selectAll" onclick="toggleAllCheckboxes(this)"></th>
                 <th>LoadingReciept</th>
                 <th>Consignor Name</th>
                 <th>Consignor Mobile</th>
@@ -307,10 +308,13 @@ function displayReportData(data) {
                 <th>Booking Date</th>
             </tr>
         `;
-
+	let seen = new Set();
 	data.forEach(booking => {
+		if (seen.has(booking.loadingReciept)) return;
+		seen.add(booking.loadingReciept);
 		let row = reportTable.insertRow();
 		row.innerHTML = `
+		<td><input type="checkbox" class="bookingCheckbox" value="${booking.loadingReciept}"></td>
                 <td>${booking.loadingReciept}</td>
                 <td>${booking.consignorName}</td>
                 <td>${booking.consignorMobile}</td>
@@ -329,6 +333,10 @@ function displayReportData(data) {
 
 	const reportContainer = document.getElementById('reportTableContainer');
 	reportContainer.appendChild(reportTable);
+}
+function toggleAllCheckboxes(source) {
+	const checkboxes = document.querySelectorAll('.bookingCheckbox');
+	checkboxes.forEach(cb => cb.checked = source.checked);
 }
 
 function downloadBookingReport() {
@@ -542,11 +550,11 @@ function printBookingReceipt(booking) {
 				<tr><td><strong>CGST:</strong></td><td>₹${booking.cgst}</td></tr>
 				<tr><td><strong>IGST:</strong></td><td>₹${booking.igst}</td></tr>
 				<tr><td class="total">Total:</td><td class="total">₹${(
-					parseFloat(booking.freight) +
-					parseFloat(booking.sgst) +
-					parseFloat(booking.cgst) +
-					parseFloat(booking.igst)
-				).toFixed(2)}</td></tr>
+			parseFloat(booking.freight) +
+			parseFloat(booking.sgst) +
+			parseFloat(booking.cgst) +
+			parseFloat(booking.igst)
+		).toFixed(2)}</td></tr>
 			</table>
 			<hr>
 			<p style="text-align:center;">Thank you for booking with us!</p>
@@ -609,8 +617,8 @@ document.getElementById("bookingForm").addEventListener("submit", async function
 		cgst: document.getElementById("cgst").value,
 		igst: document.getElementById("igst").value,
 		grandTotal: document.getElementById("grandTotal").value,
-		 companyCode:userData.companyAndBranchDeatils.companyCode,
-    branchCode:userData.companyAndBranchDeatils.branchCode,
+		companyCode: userData.companyAndBranchDeatils.companyCode,
+		branchCode: userData.companyAndBranchDeatils.branchCode,
 	};
 
 	try {
@@ -827,3 +835,91 @@ document.getElementById("consignorGST").addEventListener("blur", function() {
 document.getElementById("consigneeGST").addEventListener("blur", function() {
 	validateGST("consigneeGST");
 });
+function dispatchSelected() {
+	const selected = Array.from(document.querySelectorAll('.bookingCheckbox:checked'))
+		.map(cb => cb.value);
+
+	if (selected.length === 0) {
+		alert("Please select at least one booking.");
+		return;
+	}
+
+	fetch('/api/bookings/dispatchLoad', {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(selected)
+	})
+		.then(res => res.json())
+		.then(data => {
+			alert("Dispatch successful!");
+
+			const dispatchedBookings = Array.isArray(data) ? data : (data.data || []);
+
+			generateBookingReport(); 
+			openPrintWindow(dispatchedBookings); 
+		})
+		.catch(err => {
+			console.error("Dispatch error:", err);
+			alert("Error dispatching bookings.");
+		});
+	
+}
+function openPrintWindow(bookings) {
+	const printWindow = window.open('', '', 'width=1000,height=700');
+
+	let html = `
+    <html>
+    <head>
+      <title>Dispatched Booking Report</title>
+      <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        h2 { text-align: center; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #000; padding: 8px; text-align: left; font-size: 13px; }
+        th { background-color: #f2f2f2; }
+      </style>
+    </head>
+    <body>
+      <h2>Dispatched Bookings Report</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>LoadingReciept</th>
+            <th>Consignor</th>
+            <th>Consignee</th>
+            <th>Freight</th>
+            <th>Status</th>
+            <th>Dispatched Date</th>
+          </tr>
+        </thead>
+        <tbody>`;
+
+	bookings.forEach(booking => {
+		html += `
+      <tr>
+        <td>${booking.loadingReciept}</td>
+        <td>${booking.consignorName}</td>
+        <td>${booking.consigneeName}</td>
+        <td>${booking.freight}</td>
+        <td>${booking.consignStatus}</td>
+        <td>${booking.dispatchedDate ? new Date(booking.dispatchedDate).toLocaleString() : ''}</td>
+      </tr>
+    `;
+	});
+
+	html += `
+        </tbody>
+      </table>
+      <script>
+        window.onload = function() {
+          window.print();
+        };
+      </script>
+    </body>
+    </html>
+  `;
+
+	printWindow.document.write(html);
+	printWindow.document.close();
+}
+
