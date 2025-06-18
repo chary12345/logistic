@@ -56,15 +56,15 @@ public class BookingController {
     @GetMapping("/report")
     public ResponseEntity<?> getBookingReport(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime fromDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime toDate) {
-        return ResponseEntity.ok(bookingService.getBookingReportsBetweenDates(fromDate, toDate));
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime toDate,  @RequestParam(required = false) String status) {
+        return ResponseEntity.ok(bookingService.getBookingReportsBetweenDates(fromDate, toDate,status));
     }
     
     @GetMapping("/todayReports")
     public ResponseEntity<?> toDayBookingRepoprts(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime fromDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime toDate) {
-        return ResponseEntity.ok(bookingService.getBookingReportsBetweenDates(fromDate, toDate));
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime toDate,String status) {
+        return ResponseEntity.ok(bookingService.getBookingReportsBetweenDates(fromDate, toDate,status));
     }
     @PostMapping("/dispatchLoad")
     public ResponseEntity<List<Booking>> dispatchLoad(@RequestBody List<String> loadingReceipts) {

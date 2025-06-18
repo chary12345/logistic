@@ -73,9 +73,10 @@ public class BookingService {
 		return save;
 	}
 
-	public BookingPageResponse getBookingReportsBetweenDates(LocalDateTime fromDate, LocalDateTime toDate) {
+	public BookingPageResponse getBookingReportsBetweenDates(LocalDateTime fromDate, LocalDateTime toDate,String status) {
 		Pageable pageable = PageRequest.of(0, 10, Sort.by("bookingDate").descending());
-		Page<Booking> page = bookingRepo.findByBookingDateBetween(fromDate, toDate, "BOOKED", pageable);
+		System.out.println("status is :"+status);
+		Page<Booking> page = bookingRepo.findByBookingDateBetween(fromDate, toDate, status, pageable);
 		BookingPageResponse response = new BookingPageResponse();
 		response.setContent(page.getContent());
 		response.setPageNumber(page.getNumber());
