@@ -231,7 +231,7 @@ document.getElementById('city').addEventListener('focus', function() {
 });
 
 function showReportForm(reportType) {
-	if (reportType === 'booking') {
+	
 		document.getElementById('bookingReportForm').style.display = 'block';
 		document.getElementById('bookingFormContainer').style.display = 'none';
 		document.getElementById('CreateBranchContainer').style.display = 'none';
@@ -239,7 +239,16 @@ function showReportForm(reportType) {
 		document.getElementById('reportTableContainer').innerHTML = ''; // Clear previous report
 		document.getElementById('reportMessage').style.display = 'none';
 		hideChangePasswordForm(); // Ensure password form is hidden
+	// Set status based on report type
+	let status = "";
+	if (reportType === "booking") {
+		status = "BOOKED";
+	} else if (reportType === "dispatched") {
+		status = "DISPATCHED";
 	}
+
+	// Store selected status in hidden input
+	document.getElementById("reportStatusHidden").value = status;
 }
 
 let reportData = []; // Store the fetched report data globally
@@ -265,8 +274,15 @@ function generateBookingReport() {
 	reportMessage.style.display = 'none';
 	reportActions.style.display = 'none'; // Hide buttons before new report
 
-	// Fetch data from the API
-	fetch(`/api/bookings/report?fromDate=${fromDate}&toDate=${toDate}`)
+	const status = document.getElementById('reportStatusHidden').value;
+	
+	let apiUrl = `/api/bookings/report?fromDate=${fromDate}&toDate=${toDate}`;
+if (status) {
+	apiUrl += `&status=${status}`;
+}
+
+
+	fetch(apiUrl)
 		.then(response => response.json())
 		.then(data => {
 			if (data.content && data.content.length > 0) {
