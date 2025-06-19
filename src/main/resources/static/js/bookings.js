@@ -231,25 +231,54 @@ document.getElementById('city').addEventListener('focus', function() {
 });
 
 function showReportForm(reportType) {
-	
-		document.getElementById('bookingReportForm').style.display = 'block';
-		document.getElementById('bookingFormContainer').style.display = 'none';
-		document.getElementById('CreateBranchContainer').style.display = 'none';
-		document.getElementById('reportActions').style.display = 'none'; // Initially hide the download buttons
-		document.getElementById('reportTableContainer').innerHTML = ''; // Clear previous report
-		document.getElementById('reportMessage').style.display = 'none';
-		hideChangePasswordForm(); // Ensure password form is hidden
-	// Set status based on report type
-	let status = "";
-	if (reportType === "booking") {
-		status = "BOOKED";
-	} else if (reportType === "dispatched") {
-		status = "DISPATCHED";
-	}
+  document.getElementById('bookingReportForm').style.display = 'block';
+  document.getElementById('bookingFormContainer').style.display = 'none';
+  document.getElementById('CreateBranchContainer').style.display = 'none';
+  document.getElementById('reportActions').style.display = 'none';
+  document.getElementById('reportTableContainer').innerHTML = '';
+  document.getElementById('reportMessage').style.display = 'none';
+  hideChangePasswordForm();
 
-	// Store selected status in hidden input
-	document.getElementById("reportStatusHidden").value = status;
+  let status = "";
+  let headingText = "";
+
+  switch (reportType) {
+    case "booking":
+      status = "BOOKED";
+      headingText = "Booking Report";
+      document.getElementById("dispatchSelectedButton").style.display = "inline-block";
+      break;
+    case "dispatched":
+      status = "DISPATCHED";
+      headingText = "Dispatch Report";
+      document.getElementById("dispatchSelectedButton").style.display = "none";
+      break;
+    case "received":
+      status = "RECEIVED";
+      headingText = "Receive Report";
+      document.getElementById("dispatchSelectedButton").style.display = "none";
+      break;
+    case "delivered":
+      status = "DELIVERED";
+      headingText = "Delivery Report";
+      document.getElementById("dispatchSelectedButton").style.display = "none";
+      break;
+  }
+
+  document.getElementById("reportStatusHidden").value = status;
+  document.querySelector("#bookingReportForm h3").textContent = headingText;
 }
+
+// Add this to generateBookingReport() after reading status:
+function updateDispatchButtonVisibility(status) {
+  const btn = document.getElementById("dispatchSelectedButton");
+  if (status === "BOOKED") {
+    btn.style.display = "inline-block";
+  } else {
+    btn.style.display = "none";
+  }
+}
+
 
 let reportData = []; // Store the fetched report data globally
 
@@ -275,6 +304,9 @@ function generateBookingReport() {
 	reportActions.style.display = 'none'; // Hide buttons before new report
 
 	const status = document.getElementById('reportStatusHidden').value;
+	
+	updateDispatchButtonVisibility(status); 
+	
 	
 	let apiUrl = `/api/bookings/report?fromDate=${fromDate}&toDate=${toDate}`;
 if (status) {
@@ -939,3 +971,146 @@ function openPrintWindow(bookings) {
 	printWindow.document.close();
 }
 
+function showCreateEmployeeForm() {
+    document.getElementById('createEmployeeFormContainer').style.display = 'block';
+    document.getElementById('bookingReportForm').style.display = 'none';
+    document.getElementById('bookingFormContainer').style.display = 'none';
+    document.getElementById('CreateBranchContainer').style.display = 'none';
+    hideChangePasswordForm();
+    loadBranchesByCompanyCode(userData.companyAndBranchDeatils.companyCode);
+}
+// JavaScript to handle form submission using AJAX
+document.getElementById("submitButton").addEventListener("click", function() {
+    const password = document.getElementById("password").value;
+    const confirmPassword = document.getElementById("confirmPassword").value;
+
+    // Password and Confirm Password Validation on Submit
+    if (password !== confirmPassword) {
+        document.getElementById("confirmPasswordError").textContent = "Passwords do not match!";
+        return;
+    } else {
+        document.getElementById("confirmPasswordError").textContent = "";
+    }
+
+    let masterData = {
+        firstName: document.getElementById("firstName").value,
+        lastName: document.getElementById("lastName").value,
+        userName: document.getElementById("userName").value,
+        password: password,
+        phone: document.getElementById("phone").value,
+        email: document.getElementById("email").value,
+        role: document.getElementById("role").value,
+        companyDetails: {
+
+            companyCode: userData.companyAndBranchDeatils.companyCode,
+
+            companyBranch: {
+
+                branchCode: document.getElementById("branchSelect").value,
+
+            }
+        }
+    };
+
+    fetch('addEmployee', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(masterData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status) {
+
+            // Show toast success message
+            const toast = document.getElementById('toastNotification');
+            const toastMessage = document.getElementById('toastMessage');
+
+            toastMessage.textContent = "Employee Created!";
+            toast.style.display = 'block';
+
+        // Hide toast after 5 seconds and then redirect
+            setTimeout(() => {
+                toast.style.display = 'none';
+                window.location.href = "/createEmployee";
+            }, 3000);
+        } else {
+            document.getElementById("formMessage").innerHTML = "<div class='alert alert-danger'>Error: " + data.message + "</div>";
+        }
+    })
+    .catch(error => {
+        document.getElementById("formMessage").innerHTML = "<div class='alert alert-danger'>Something went wrong. Please try again.</div>";
+    });
+});
+
+// Function to validate username on input
+async function validateUsername(username) {
+    try {
+        const CompanyCode= userData.companyAndBranchDeatils.companyCode;
+
+        const response = await fetch('/master/admin/validate-username', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                username: username,
+                companyCode: CompanyCode
+            })
+        });
+
+        const data = await response.json();
+        document.getElementById('usernameError').textContent = data.status;
+    } catch (error) {
+        document.getElementById('usernameError').textContent = 'Error validating username. Please try again later.';
+    }
+}
+
+document.getElementById('userName').addEventListener('input', function () {
+    const username = this.value.trim();
+    if (username) {
+        validateUsername(username);
+    } else {
+        document.getElementById('usernameError').textContent = '';
+    }
+});
+
+// Password and Confirm Password Match Check
+document
+    .getElementById("confirmPassword")
+    .addEventListener(
+        "input",
+        function() {
+            const password = document
+                    .getElementById("password").value;
+            const confirmPassword = this.value;
+
+            if (confirmPassword !== password) {
+                document.getElementById("confirmPasswordError").textContent = "Passwords do not match!";
+            } else {
+                document.getElementById("confirmPasswordError").textContent = "";
+            }
+        });
+        
+        
+ function loadBranchesByCompanyCode(companyCode) {
+    fetch(`BranchesByCompanyCode/${companyCode}`)
+        .then(response => response.json())
+        .then(data => {
+            const select = document.getElementById("branchSelect");
+            select.innerHTML = '<option selected>---- Select Branch ----</option>';
+
+            if (data.status === "SUCCESS" && Array.isArray(data.data)) {
+                data.data.forEach(branch => {
+                    const option = document.createElement("option");
+                    option.value = branch.branchCode;
+                    option.textContent = `${branch.branchName} [${branch.branchType}]`;
+                    select.appendChild(option);
+                });
+            } else {
+                console.error("No branches found.");
+            }
+        })
+        .catch(error => console.error("Error fetching branches:", error));
+}
