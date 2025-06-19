@@ -3,6 +3,7 @@ package com.logic.logistic.controller;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -19,10 +20,15 @@ import com.logic.logistic.service.BookingService;
 
 @RestController
 @RequestMapping("/api/bookings")
+
 public class BookingController {
 
 	@Autowired
 	private BookingService bookingService;
+
+	private static final long serialVersionUID = 1L;
+
+	private static org.apache.logging.log4j.Logger logger = LogManager.getLogger();
 
 	@PostMapping("/bookLoad")
 	public ResponseEntity<Booking> createBooking(@RequestBody BookingDTO dto) {

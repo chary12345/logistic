@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.logic.logistic.LogisticApplication;
 import com.logic.logistic.model.Branch;
 import com.logic.logistic.model.BranchMap;
 import com.logic.logistic.service.CompanyRegisterService;
@@ -23,6 +26,10 @@ import com.logic.logistic.service.CompanyRegisterService;
 
 @RestController
 public class CompanyBranchController {
+	
+	private static final long serialVersionUID=1L;
+	
+	private static Logger logger = LogManager.getLogger();
 	
 	@Autowired
 	private CompanyRegisterService companyRegisterService;
@@ -34,15 +41,18 @@ public class CompanyBranchController {
 			String isCompanyCodeExists = companyRegisterService.isCompanyCodeExists(companyCode);
 			if ("SUCCESS".equalsIgnoreCase(isCompanyCodeExists)) {
 
+				logger.info("success");
 				map.put("status", "");
 				return ResponseEntity.ok(map);
 			} else {
 				map.put("status", "COMPANYCODE already taken");
+				logger.info("COMPANYCODE already taken");
 
 				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(map);
 			}
 		} catch (Exception e) {
 			map.put("status", e.getMessage());
+			logger.error("Exception in validateCompanyCode"+e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(map);
 		}
 	}
@@ -59,9 +69,11 @@ public class CompanyBranchController {
 			} else {
 				map.put("status", "BranchCode already taken");
 
+				logger.info("BranchCode already taken");
 				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(map);
 			}
 		} catch (Exception e) {
+			logger.error("Exception in validateBrancCode"+e);
 			map.put("status", e.getMessage());
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(map);
 		}
@@ -75,19 +87,23 @@ public class CompanyBranchController {
 			String branchCreationResponse = companyRegisterService.craeteBranch(branchData);
 			if ("SUCCESS".equalsIgnoreCase(branchCreationResponse)) {
 				map.put("message", branchCreationResponse);
+				logger.info("SUCCESS"+branchCreationResponse);
 				map.put("status", branchCreationResponse);
 				return ResponseEntity.ok(map);
 			} else if ("FAILURE".equalsIgnoreCase(branchCreationResponse)) {
+				logger.info("FAILURE"+branchCreationResponse);
 				map.put("message", branchCreationResponse);
 				map.put("status", branchCreationResponse);
 				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(map);
 			} else {
+				logger.info("message & status"+branchCreationResponse);
 				map.put("status", branchCreationResponse);
 				map.put("message", branchCreationResponse);
 				return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(map);
 			}
 
 		} catch (Exception e) {
+			logger.error("Exception in createBranch"+e);
 			map.put("status", e.getMessage());
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(map);
 		}
@@ -101,16 +117,21 @@ public class CompanyBranchController {
 			List<BranchMap> branchList = companyRegisterService.getBranchesByCompanyCode(companyCode);
 			if (branchList != null) {
 
+				logger.info("SUCCESS data"+branchList);
+				
 				map.put("status", "SUCCESS");
 				map.put("data", branchList);
 				return ResponseEntity.ok(map);
 			} else {
+				logger.info("FAILURE data"+branchList);
+				
 				map.put("status", "FAILURE");
 				map.put("data", branchList);
 
 				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(map);
 			}
 		} catch (Exception e) {
+			logger.error("Exception in getBranchesBycompanyCode"+e);
 			map.put("status", e.getMessage());
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(map);
 		}
