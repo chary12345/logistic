@@ -1,8 +1,10 @@
 package com.logic.logistic.service;
 
+import java.lang.System.Logger;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 //For paged result
 import org.springframework.data.domain.Page;
@@ -23,6 +25,10 @@ import jakarta.transaction.Transactional;
 
 @Service
 public class BookingService {
+	
+	private static final long serialVersionUID=1L;
+
+	private static org.apache.logging.log4j.Logger logger = LogManager.getLogger();
 
 	@Autowired
 	private BookingReceiptSequenceRepository sequenceRepo;
@@ -39,7 +45,9 @@ public class BookingService {
 				BookingReceiptSequence s = new BookingReceiptSequence();
 				s.setKeyCode(key);
 				s.setLastNumber(0);
+				logger.info("set key and 0 to BookingReceiptSequence: "+s);
 				return s;
+				
 			});
 
 			int newSerial = sequence.getLastNumber() + 1;
@@ -69,12 +77,14 @@ public class BookingService {
 			save = bookingRepo.save(booking);
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
+			logger.error("Exception in saveBooking: "+e);
 		}
 		return save;
 	}
 
 	public BookingPageResponse getBookingReportsBetweenDates(LocalDateTime fromDate, LocalDateTime toDate,String status) {
 		Pageable pageable = PageRequest.of(0, 10, Sort.by("bookingDate").descending());
+
 		System.out.println("status is :"+status);
 		Page<Booking> page = bookingRepo.findByBookingDateBetween(fromDate, toDate, status, pageable);
 		BookingPageResponse response = new BookingPageResponse();
@@ -84,6 +94,9 @@ public class BookingService {
 		response.setTotalElements(page.getTotalElements());
 		response.setTotalPages(page.getTotalPages());
 		response.setLast(page.isLast());
+
+
+		    logger.info("BookingPageResponse: "+response);
 		return response;
 
 	}
@@ -100,9 +113,11 @@ public class BookingService {
 			}
 
 			bookingRepo.saveAll(dispatchBookings);
+			logger.info("save all dispatchbookings : ");
 
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
+			logger.error("Exception in dispatchLoad : "+e);
 		}
 		return dispatchBookings;
 	}

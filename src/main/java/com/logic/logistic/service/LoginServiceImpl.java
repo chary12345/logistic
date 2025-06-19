@@ -3,6 +3,7 @@ package com.logic.logistic.service;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +17,10 @@ import com.logic.logistic.repository.UserRepository;
 @Service
 public class LoginServiceImpl implements LoginService {
 
+	private static final long serialVersionUID=1L;
+
+	private static org.apache.logging.log4j.Logger logger = LogManager.getLogger();
+	
 	@Autowired
 	private UserRepository userRepository;
 
@@ -74,14 +79,17 @@ public class LoginServiceImpl implements LoginService {
 				map.put("message", "invalid credentials");
 				map.put("loginResponse", "");
 			}
+			logger.info("Print userData :" +userData);
 		} catch (Exception e) {
 			status = e.getMessage();
 			map.put("status", status);
 			map.put("message", status);
 			map.put("loginResponse", "");
+			logger.error("Exception in userData : "+e);
 		}
 
 		System.out.println("Login user status is : " + status);
+		logger.info("Login user status is : " + status);
 
 		return map;
 	}
@@ -104,6 +112,7 @@ public class LoginServiceImpl implements LoginService {
 			loginResponse.setBlockUser(userDto.isBlockUser()); // Boolean field, no need to check for null
 			loginResponse.setBlockedBy(userDto.getBlockedBy() != null ? userDto.getBlockedBy() : null);
 		}
+		logger.info("loginResponse : "+loginResponse);
 		return loginResponse;
 	}
 }
