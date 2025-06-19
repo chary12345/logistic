@@ -10,9 +10,12 @@
 <link rel="stylesheet"
 	href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <link rel="stylesheet" href="/css/style_v2.css">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link
+	href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+	rel="stylesheet">
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script
+	src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <script
 	src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
@@ -36,8 +39,10 @@
 				<a href="#">Reports</a>
 				<div class="dropdown-content">
 					<a href="#" onclick="showReportForm('booking')">Booking Report</a>
-					<a href="#" onclick="showReportForm('dispatched')">Dispatch Report</a> <a href="#">Receive Report</a> <a
-						href="#">Delivery Report</a>
+					<a href="#" onclick="showReportForm('dispatched')">Dispatch
+						Report</a> <a href="#" onclick="showReportForm('received')">Receive
+						Report</a> <a href="#" onclick="showReportForm('delivered')">Delivery
+						Report</a>
 				</div>
 			</div>
 			<!-- Inside the Manage dropdown -->
@@ -46,7 +51,9 @@
 				<div class="dropdown-content">
 					<!-- <li><a id="createBranchLink" class="dropdown-item" href="#">Create
 							Branch</a></li> -->
-							<a href="#" onclick="showCreateBranchForm()">Branch Manage</a>
+					<a href="#" onclick="showCreateBranchForm()">Branch Manage</a>
+					<a  href="#" onclick="showCreateEmployeeForm()">Create Employee</a>
+					
 				</div>
 			</div>
 		</div>
@@ -81,17 +88,16 @@
 			for="newPassword">New Password:</label> <input type="password"
 			id="newPassword"> <label for="confirmPassword">Confirm
 			New Password:</label> <input type="password" id="confirmPassword">
-		<button onclick="changePassword()">Change Password</button>
+		<button class="btn btn-primary" onclick="submitChangePassword()">Submit</button>
+		<button class="btn btn-secondary" onclick="hideChangePasswordForm()">Cancel</button>
 		<div id="passwordMessage"
 			style="margin-top: 10px; display: none; color: red;"></div>
 	</div>
 	<div id="bookingReportForm" class="report-form">
 		<h3>Booking Report</h3>
-		<input type="hidden" id="reportStatusHidden" />
-		
-		<label for="fromDate">From Date:</label> <input type="date"
-			id="fromDate"> <label for="toDate">To Date:</label> <input
-			type="date" id="toDate">
+		<input type="hidden" id="reportStatusHidden" /> <label for="fromDate">From
+			Date:</label> <input type="date" id="fromDate"> <label for="toDate">To
+			Date:</label> <input type="date" id="toDate">
 		<button onclick="generateBookingReport()">Generate Report</button>
 		<div id="reportMessage"
 			style="margin-top: 10px; display: none; color: red;"></div>
@@ -100,24 +106,27 @@
 			<button onclick="downloadBookingReport()">Download PDF</button>
 			<button onclick="downloadBookingReportExcel()">Download
 				Excel</button>
-				<button onclick="dispatchSelected()">Dispatch Selected</button>
+			<button id="dispatchSelectedButton" onclick="dispatchSelected()">Dispatch
+				Selected</button>
 		</div>
 	</div>
-	<div class="container" id="bookingFormContainer" style="display: block;">
+	<div class="container" id="bookingFormContainer"
+		style="display: block;">
 		<h2>Logistics Booking Form</h2>
 		<form id="bookingForm">
-			<label for="deliveryDestination">Delivery Destination:</label>
-		<input type="text" id="deliveryDestination" list="destinationList"  autocomplete="off">
-		<datalist id="destinationList"></datalist>
+			<label for="deliveryDestination">Delivery Destination:</label> <input
+				type="text" id="deliveryDestination" list="destinationList"
+				autocomplete="off">
+			<datalist id="destinationList"></datalist>
+
+
 
 		
-		
-			</datalist>
 			<h3>Consignor (From)</h3>
 			<label for="consignorName">Name:</label> <input type="text"
-				id="consignorName" required > <label for="consignorMobile">Mobile
-				No:</label> <input type="text" id="consignorMobile" inputmode="numeric" pattern="^[0-9]{10}$" 
-					         maxlength="10"  required 
+				id="consignorName" required> <label for="consignorMobile">Mobile
+				No:</label> <input type="text" id="consignorMobile" inputmode="numeric"
+				pattern="^[0-9]{10}$" maxlength="10" required
 				title="Please enter valid phone number"> <label
 				for="consignorGST">GST No:</label> <input type="text"
 				id="consignorGST"> <label for="consignorAddress">Address:</label>
@@ -125,9 +134,8 @@
 			<h3>Consignee (To)</h3>
 			<label for="consigneeName">Name:</label> <input type="text"
 				id="consigneeName" required> <label for="consigneeMobile">Mobile
-				No:</label> <input type="text" id="consigneeMobile" inputmode="numeric" pattern="^[0-9]{10}$" 
-				maxlength="10" required 
-				placeholder="Please enter valid phone number"> <label
+				No:</label> <input type="text" id="consigneeMobile" inputmode="numeric"
+				pattern="^[0-9]{10}$" maxlength="10" required> <label
 				for="consigneeGST">GST No:</label> <input type="text"
 				id="consigneeGST"> <label for="consigneeAddress">Address:</label>
 			<input type="text" id="consigneeAddress">
@@ -146,13 +154,12 @@
 				</thead>
 				<tbody>
 					<tr>
-						
+
 						<td><select id="article">
-							<option value="Article">Article</option>
-							<option value="Weight">Weight</option>
-							<option value="Fix">Fix</option>
-							</select>
-						</td>
+								<option value="Article">Article</option>
+								<option value="Weight">Weight</option>
+								<option value="Fix">Fix</option>
+						</select></td>
 						<td><input type="number" id="artQuantity" value="0"></td>
 						<td><select id="artType">
 								<option value="Auto Parts">Auto Parts</option>
@@ -167,16 +174,16 @@
 						<td><input type="number" id="artAmount" value="0"></td>
 						<td><span id="totalAmount">0</span></td>
 						<td><button type="button" onclick="addArticle()">Add</button></td>
-					</tr>			
-					
+					</tr>
+
 				</tbody>
-			
+
 			</table>
-			
-			<input type="text" id="INVOICE NO." placeholder="INVOICE NO." >
-			<input type="text" id=" " placeholder=" 0">	
-			<input type="text" id="E-Waybill" placeholder="E-Waybill">
-			
+
+			<input type="text" id="INVOICE NO." placeholder="INVOICE NO.">
+			<input type="text" id=" " placeholder=" 0"> <input
+				type="text" id="E-Waybill" placeholder="E-Waybill">
+
 			<h3>Charges</h3>
 			<div class="charges">
 				<label for="freight">Freight:</label> <input type="number"
@@ -194,20 +201,24 @@
 
 
 
-<div id="CreateBranchContainer" style="display: flex; justify-content: center; align-items: center; height: 50vh; padding: 10px; overflow: visible;">
- <!-- Toast Container -->
-  <div class="toast-container position-fixed top-0 end-0 p-3">
-    <div id="liveToast" class="toast bg-success text-white" role="alert" aria-live="assertive" aria-atomic="true">
-      <div class="toast-header">
-        <strong class="me-auto">Notification</strong>
-        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-      </div>
-      <div class="toast-body" id="toastMessage"></div>
-    </div>
-  </div>
-  <div class="container" style="max-width: 1000px;">
-  <h2>Branch Manage Form</h2>
-    <form id="branchForm" class="row g-3 bg-white p-4 rounded shadow" style="height: 100%;">
+	<div id="CreateBranchContainer"
+		style="display: flex; justify-content: center; align-items: center; height: 50vh; padding: 10px; overflow: visible;">
+		<!-- Toast Container -->
+		<div class="toast-container position-fixed top-0 end-0 p-3">
+			<div id="liveToast" class="toast bg-success text-white" role="alert"
+				aria-live="assertive" aria-atomic="true">
+				<div class="toast-header">
+					<strong class="me-auto">Notification</strong>
+					<button type="button" class="btn-close" data-bs-dismiss="toast"
+						aria-label="Close"></button>
+				</div>
+				<div class="toast-body" id="toastMessage"></div>
+			</div>
+		</div>
+		<div class="container" style="max-width: 1000px;">
+			<h2>Branch Manage Form</h2>
+			<form id="branchForm" class="row g-3 bg-white p-4 rounded shadow"
+				style="height: 100%;">
 				<div class="row">
 					<div class="col-6">
 						<label class="form-label">Branch Name *</label> <input type="text"
@@ -335,40 +346,86 @@
 				</div>
 
 				<div class="btn-group mt-2 gap-2">
-				<button type="submit" id="submitBtn" class="btn btn-primary" disabled>Add</button>
-					
+					<button type="submit" id="submitBtn" class="btn btn-primary"
+						disabled>Add</button>
+
 					<button type="button" class="btn btn-success">Edit</button>
 					<button type="button" class="btn btn-danger">Delete</button>
 					<button type="button" class="btn btn-warning text-white"
 						id="resetBtn">Reset</button>
 					<button type="button" class="btn btn-secondary">Deactivate</button>
-					
-					
-				</div>
-			</form>
-			<!-- <div id="responseMessage" class="response-message success"></div> -->
 
+
+				</div>
+				
+					
+				
+			</form>
+		<div id="createEmployeeFormContainer" style="display: none;" class="container mt-4">
+    <h3 class="text-center mb-4">Create Employee</h3>
+    <div id="formMessage"></div>
+    <form id="createEmployeeForm" autocomplete="off">
+        <div class="row mb-3">
+            <div class="col-3">
+                <select class="form-select" id="branchSelect">
+                    <option selected>---- Select Branch ----</option>
+                </select>
+            </div>
+            <div class="col-1">
+                <button type="reset" class="btn btn-secondary w-100">Reset</button>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header"><h5>User Information</h5></div>
+            <div class="card-body">
+                <div class="row mb-2">
+                    <div class="col-md-3"><label class="form-label">First Name</label><input type="text" id="firstName" class="form-control" required oninput="this.value = this.value.toUpperCase()"></div>
+                    <div class="col-md-3"><label class="form-label">Last Name</label><input type="text" id="lastName" class="form-control" required oninput="this.value = this.value.toUpperCase()"></div>
+                    <div class="col-md-3"><label class="form-label">Username</label><input type="text" id="userName" class="form-control" required><div id="usernameError" class="text-danger small"></div></div>
+                    <div class="col-md-3"><label class="form-label">Password</label><input type="password" id="password" class="form-control" required></div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-md-3"><label class="form-label">Confirm Password</label><input type="password" id="confirmPassword" class="form-control" required><div id="confirmPasswordError" class="text-danger small"></div></div>
+                    <div class="col-md-3"><label class="form-label">Phone</label><input type="text" id="phone" class="form-control" maxlength="10" pattern="\d{10}" required></div>
+                    <div class="col-md-3"><label class="form-label">Email</label><input type="email" id="email" class="form-control"></div>
+                    <div class="col-md-3"><label class="form-label">Role</label>
+                        <select class="form-select" id="role" required>
+                            <option value="Employee">Employee</option>
+                            <option value="Admin">Admin</option>
+                            <option value="SuperAdmin">SuperAdmin</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="text-end mt-3">
+                    <button type="button" class="btn btn-success" id="submitButton">Create Employee</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+			
 		</div>
-		</div>
+	</div>
 	</div>
 
 
 
 
 	<div id="overlay" class="overlay"></div>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  
-  <script>   
+	<script
+		src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+	<script>   
 	document.getElementById("consignorMobile").addEventListener("input", function (e){
   			this.value = this.value.replace(/[^0-9]/g, '');
   		});
 		</script>
-		
+
 	<script>   
 			document.getElementById("consigneeMobile").addEventListener("input", function (e){
 		  			this.value = this.value.replace(/[^0-9]/g, '');
 		  		});
-	</script>	
+	</script>
 
 	<script>
 			  document.getElementById('deliveryDestination').addEventListener('click',(e)=>{
@@ -378,7 +435,7 @@
 
 			
 	</script>
-			
+
 	<script src="/js/bookings.js"></script>
 </body>
 </html>

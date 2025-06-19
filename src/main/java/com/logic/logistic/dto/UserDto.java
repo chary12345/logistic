@@ -12,6 +12,7 @@ import jakarta.persistence.Table;
 public class UserDto {
 
 	@Id
+	private String userId;
 	private String userName;
 	private String firstName;
 	private String lastName;
@@ -137,6 +138,12 @@ public class UserDto {
 	}
 	public void setCompanyCode(String companyCode) {
 		this.companyCode = companyCode;
+	}
+	public String getUserId() {
+		return userId;
+	}
+	public void setUserId(String userId) {
+		this.userId = userId;
 	}
 	
 	
