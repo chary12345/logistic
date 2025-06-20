@@ -6,4 +6,6 @@ public interface EmployeecreationService {
 
 	String addNewEmployee(User employee);
 
+	String existsByUserName(String string);
+
 }
