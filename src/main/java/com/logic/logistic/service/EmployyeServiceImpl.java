@@ -52,6 +52,15 @@ public class EmployyeServiceImpl implements EmployeecreationService{
 			
 			return status;
 		}
+	@Override
+	public String existsByUserName(String userId) {
+		String status = "FAILURE";
+		UserDto findByUsername = userRepository.findByUsername(userId); // Check if username exists
+		if (findByUsername == null) {
+			status = "SUCCESS";
+		}
+		return status;
+	}
 	
 
 }

@@ -977,71 +977,50 @@ function showCreateEmployeeForm() {
     document.getElementById('bookingFormContainer').style.display = 'none';
     document.getElementById('CreateBranchContainer').style.display = 'none';
     hideChangePasswordForm();
-    loadBranchesByCompanyCode(userData.companyAndBranchDeatils.companyCode);
-}
-// JavaScript to handle form submission using AJAX
-document.getElementById("submitButton").addEventListener("click", function() {
-    const password = document.getElementById("password").value;
-    const confirmPassword = document.getElementById("confirmPassword").value;
 
-    // Password and Confirm Password Validation on Submit
-    if (password !== confirmPassword) {
-        document.getElementById("confirmPasswordError").textContent = "Passwords do not match!";
-        return;
-    } else {
-        document.getElementById("confirmPasswordError").textContent = "";
+    if (!userData || !userData.companyAndBranchDeatils) {
+        userData = JSON.parse(sessionStorage.getItem('user') || "{}");
     }
 
-    let masterData = {
-        firstName: document.getElementById("firstName").value,
-        lastName: document.getElementById("lastName").value,
-        userName: document.getElementById("userName").value,
-        password: password,
-        phone: document.getElementById("phone").value,
-        email: document.getElementById("email").value,
-        role: document.getElementById("role").value,
-        companyDetails: {
+    if (userData?.companyAndBranchDeatils?.companyCode) {
+        loadBranchesByCompanyCode(userData.companyAndBranchDeatils.companyCode);
+    } else {
+        alert("User session not available.");
+    }
+}
 
-            companyCode: userData.companyAndBranchDeatils.companyCode,
+// ✅ Attach event listeners only after DOM is ready
+document.addEventListener("DOMContentLoaded", function () {
+    const submitBtn = document.getElementById("submitButton");
+    if (submitBtn) {
+        submitBtn.addEventListener("click", submitEmployeeForm);
+    }
 
-            companyBranch: {
-
-                branchCode: document.getElementById("branchSelect").value,
-
+    const userInput = document.getElementById("userName");
+    if (userInput) {
+        userInput.addEventListener("input", function () {
+            const username = this.value.trim();
+            if (username) {
+                validateUsername(username);
+            } else {
+                document.getElementById('usernameError').textContent = '';
             }
-        }
-    };
+        });
+    }
 
-    fetch('addEmployee', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(masterData)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status) {
+    const confirmPasswordInput = document.getElementById("confirmPassword");
+    if (confirmPasswordInput) {
+        confirmPasswordInput.addEventListener("input", function () {
+            const password = document.getElementById("password").value;
+            const confirmPassword = this.value;
 
-            // Show toast success message
-            const toast = document.getElementById('toastNotification');
-            const toastMessage = document.getElementById('toastMessage');
-
-            toastMessage.textContent = "Employee Created!";
-            toast.style.display = 'block';
-
-        // Hide toast after 5 seconds and then redirect
-            setTimeout(() => {
-                toast.style.display = 'none';
-                window.location.href = "/createEmployee";
-            }, 3000);
-        } else {
-            document.getElementById("formMessage").innerHTML = "<div class='alert alert-danger'>Error: " + data.message + "</div>";
-        }
-    })
-    .catch(error => {
-        document.getElementById("formMessage").innerHTML = "<div class='alert alert-danger'>Something went wrong. Please try again.</div>";
-    });
+            if (confirmPassword !== password) {
+                document.getElementById("confirmPasswordError").textContent = "Passwords do not match!";
+            } else {
+                document.getElementById("confirmPasswordError").textContent = "";
+            }
+        });
+    }
 });
 
 // Function to validate username on input
@@ -1049,7 +1028,7 @@ async function validateUsername(username) {
     try {
         const CompanyCode= userData.companyAndBranchDeatils.companyCode;
 
-        const response = await fetch('/master/admin/validate-username', {
+        const response = await fetch('/validate-username', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -1066,13 +1045,92 @@ async function validateUsername(username) {
         document.getElementById('usernameError').textContent = 'Error validating username. Please try again later.';
     }
 }
+// 🔁 Global function to submit employee form
+function submitEmployeeForm() {
+    const password = document.getElementById("employeepassword").value;
+    const confirmPassword = document.getElementById("employeeconfirmPassword").value;
 
-document.getElementById('userName').addEventListener('input', function () {
-    const username = this.value.trim();
-    if (username) {
-        validateUsername(username);
+    // Password and Confirm Password Validation
+    if (password !== confirmPassword) {
+        document.getElementById("employeeconfirmPasswordError").textContent = "Passwords do not match!";
+        return;
     } else {
-        document.getElementById('usernameError').textContent = '';
+        document.getElementById("employeeconfirmPasswordError").textContent = "";
+    }
+
+    let masterData = {
+        firstName: document.getElementById("employeefirstName").value,
+        lastName: document.getElementById("employeelastName").value,
+        userName: document.getElementById("employeeuserName").value,
+        password: password,
+        phone: document.getElementById("employeephone").value,
+        email: document.getElementById("employeeemail").value,
+        role: document.getElementById("employeerole").value,
+        companyDetails: {
+            companyCode: userData.companyAndBranchDeatils.companyCode,
+            companyBranch: {
+                branchCode: document.getElementById("branchSelect").value,
+            }
+        }
+    };
+
+    fetch('addEmployee', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(masterData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status) {
+            /*const toast = document.getElementById('toastNotification');
+            const toastMessage = document.getElementById('toastMessage');
+            toastMessage.textContent = "Employee Created!";
+            toast.style.display = 'block';
+
+            setTimeout(() => {
+                toast.style.display = 'none';
+                window.location.href = "/createEmployee";
+            }, 3000);*/
+            alert("New Employee created successful!");
+             resetEmployeeForm();
+        } else {
+            document.getElementById("formMessage").innerHTML = `<div class='alert alert-danger'>Error: ${data.message}</div>`;
+        }
+    })
+    .catch(error => {
+        document.getElementById("formMessage").innerHTML = "<div class='alert alert-danger'>Something went wrong. Please try again.</div>";
+    });
+}
+function resetEmployeeForm() {
+    document.getElementById("createEmployeeForm").reset();
+
+    // Clear custom error/spinner messages too
+    document.getElementById("employeeconfirmPasswordError").textContent = '';
+    document.getElementById("usernameError").textContent = '';
+    document.getElementById("formMessage").innerHTML = '';
+}
+
+function debounce(func, delay) {
+    let timer;
+    return function (...args) {
+        clearTimeout(timer);
+        timer = setTimeout(() => func.apply(this, args), delay);
+    };
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    const userInput = document.getElementById('employeeUserName');
+    if (userInput) {
+        userInput.addEventListener('input', debounce(function () {
+            const username = this.value.trim();
+            if (username) {
+                validateUsername(username);
+            } else {
+                document.getElementById('usernameError').textContent = '';
+            }
+        }, 300)); // 300ms delay after user stops typing
     }
 });
 
