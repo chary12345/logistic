@@ -68,6 +68,9 @@ public class Booking {
     @Column(name = "consign_status")
     private String  consignStatus;
     
+    @Column(name = "bill_type")
+    private String billType;
+    
     @Transient
     private String companyCode;
     @Transient
@@ -245,6 +248,14 @@ public class Booking {
 
 	public void setLastNumber(int lastNumber) {
 		this.lastNumber = lastNumber;
+	}
+
+	public String getBillType() {
+		return billType;
+	}
+
+	public void setBillType(String billType) {
+		this.billType = billType;
 	}
 	
 

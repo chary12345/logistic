@@ -45,7 +45,8 @@ document.getElementById("branchForm").addEventListener("submit", async function(
 			postalCode: document.getElementById("postalCode").value,
 
 
-		}
+		},
+		 
 	};
 	try {
 		const response = await fetch("/createBranch", {
@@ -594,6 +595,8 @@ function printBookingReceipt(booking) {
 				<tr><td><strong>Address:</strong></td><td>${booking.consigneeAddress}</td></tr>
 				<tr><td><strong>Freight:</strong></td><td>₹${booking.freight}</td></tr>
 				<tr><td><strong>Status:</strong></td><td>Booked</td></tr>
+				tr><td><strong>PaymentMode:</strong><td>${booking.billType}</td></tr>
+				
 				<tr><td><strong>SGST:</strong></td><td>₹${booking.sgst}</td></tr>
 				<tr><td><strong>CGST:</strong></td><td>₹${booking.cgst}</td></tr>
 				<tr><td><strong>IGST:</strong></td><td>₹${booking.igst}</td></tr>
@@ -629,6 +632,7 @@ document.getElementById("bookingForm").addEventListener("submit", async function
 	const selectedBranchCode = match ? match[1] : null;
 
 	const currentBranchCode = userData?.companyAndBranchDeatils?.branchCode;
+	const paymentMode = document.getElementById("paymentMode").value;
 
 	if (selectedBranchCode && selectedBranchCode === currentBranchCode) {
 		alert("Destination branch cannot be the same as your current branch.");
@@ -667,6 +671,7 @@ document.getElementById("bookingForm").addEventListener("submit", async function
 		grandTotal: document.getElementById("grandTotal").value,
 		companyCode: userData.companyAndBranchDeatils.companyCode,
 		branchCode: userData.companyAndBranchDeatils.branchCode,
+		billType: paymentMode,
 	};
 
 	try {
@@ -938,6 +943,7 @@ function openPrintWindow(bookings) {
             <th>Freight</th>
             <th>Status</th>
             <th>Dispatched Date</th>
+            <th>Payment Mode</th>
           </tr>
         </thead>
         <tbody>`;
@@ -951,6 +957,7 @@ function openPrintWindow(bookings) {
         <td>${booking.freight}</td>
         <td>${booking.consignStatus}</td>
         <td>${booking.dispatchedDate ? new Date(booking.dispatchedDate).toLocaleString() : ''}</td>
+         <td>${booking.billType}</td>
       </tr>
     `;
 	});
@@ -1172,3 +1179,48 @@ document
         })
         .catch(error => console.error("Error fetching branches:", error));
 }
+
+function setPaymentMode(mode) {
+    const hiddenInput = document.getElementById("paymentMode");
+    const displayBox = document.getElementById("selectedPaymentModeDisplay");
+    const label = document.getElementById("selectedModeLabel");
+
+    // Update hidden field
+    if (hiddenInput) hiddenInput.value = mode;
+
+    // Show selected mode visually
+    if (displayBox && label) {
+        displayBox.style.display = "block";
+        label.textContent = mode;
+    }
+
+    // Reset highlight
+    document.querySelectorAll(".key-box").forEach(btn => {
+        btn.classList.remove("selected-mode");
+    });
+
+    // Highlight the clicked one
+    const allKeys = {
+        "PAID": ".f7",
+        "TO PAY": ".f8",
+        "TBB": ".f9"
+    };
+    const selector = allKeys[mode];
+    if (selector) {
+        const btn = document.querySelector(selector);
+        if (btn) btn.classList.add("selected-mode");
+    }
+}
+
+document.addEventListener("keydown", function(e) {
+    if (e.key === "F7") {
+        e.preventDefault();
+        setPaymentMode('PAID');
+    } else if (e.key === "F8") {
+        e.preventDefault();
+        setPaymentMode('TO PAY');
+    } else if (e.key === "F9") {
+        e.preventDefault();
+        setPaymentMode('TBB');
+    }
+});
