@@ -74,6 +74,7 @@ public class BookingService {
 			booking.setIgst(dto.getIgst());
 			booking.setBookingDate(LocalDateTime.now());
 			booking.setConsignStatus("BOOKED");
+			booking.setBillType(dto.getBillType());
 			save = bookingRepo.save(booking);
 		} catch (Exception e) {
 			System.out.println(e.getMessage());

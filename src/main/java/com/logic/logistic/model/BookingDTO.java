@@ -27,6 +27,7 @@ public class BookingDTO {
     private String companyCode;
     private String branchCode;
     private String consignStatus;
+    private String billType;
 	public String getConsignorName() {
 		return consignorName;
 	}
@@ -140,6 +141,12 @@ public class BookingDTO {
 	}
 	public void setConsignStatus(String consignStatus) {
 		this.consignStatus = consignStatus;
+	}
+	public String getBillType() {
+		return billType;
+	}
+	public void setBillType(String billType) {
+		this.billType = billType;
 	}
 
     
