@@ -501,56 +501,65 @@ function calculateCharges() {
 }
 
 function addArticle() {
-	let tableBody = document.querySelector("#bookingForm table tbody");
-	let newRow = tableBody.insertRow(-1); // Insert at the end of the tbody
+  let tableBody = document.querySelector("#bookingForm table tbody");
+  let newRow = tableBody.insertRow(-1);
 
-	let articleCell = newRow.insertCell();
-	let artQtyCell = newRow.insertCell();
-	let artTypeCell = newRow.insertCell();
-	let saidToContainCell = newRow.insertCell();
-	let artAmtCell = newRow.insertCell();
-	let totalCell = newRow.insertCell();
-	let actionCell = newRow.insertCell();
+  let articleCell = newRow.insertCell();
+  let artQtyCell = newRow.insertCell();
+  let artTypeCell = newRow.insertCell();
+  let saidToContainCell = newRow.insertCell();
+  let artAmtCell = newRow.insertCell();
+  let totalCell = newRow.insertCell();
+  let actionCell = newRow.insertCell();
 
-	articleCell.textContent = document.getElementById("article").value;
-	artQtyCell.textContent = document.getElementById("artQuantity").value;
-	artTypeCell.textContent = document.getElementById("artType").value;
-	saidToContainCell.textContent = document.getElementById("saidToContain").value;
-	artAmtCell.textContent = document.getElementById("artAmount").value;
-	totalCell.textContent = parseInt(document.getElementById("artQuantity").value) * parseInt(document.getElementById("artAmount").value);
+  articleCell.textContent = document.getElementById("article").value;
+  artQtyCell.textContent = document.getElementById("artQuantity").value;
+  artTypeCell.textContent = document.getElementById("artType").value;
+  saidToContainCell.textContent = document.getElementById("saidToContain").value;
+  artAmtCell.textContent = document.getElementById("artAmount").value;
+  totalCell.textContent =
+    parseInt(document.getElementById("artQuantity").value) *
+    parseInt(document.getElementById("artAmount").value);
 
-	let deleteButton = document.createElement("button");
-	deleteButton.type = "button";
-	deleteButton.textContent = "Delete";
-	deleteButton.onclick = function() {
-		deleteRow(this);
-	};
-	actionCell.appendChild(deleteButton);
+  let deleteButton = document.createElement("button");
+  deleteButton.className = "btn btn-danger btn-sm";
+  deleteButton.textContent = "Delete";
+  deleteButton.onclick = function () {
+    deleteRow(this);
+  };
+  actionCell.appendChild(deleteButton);
 
-	// Clear the input fields in the *first* row (the template row)
-	document.getElementById("article").value = "";
-	document.getElementById("artQuantity").value = "0";
-	document.getElementById("artType").selectedIndex = 0;
-	document.getElementById("saidToContain").selectedIndex = 0;
-	document.getElementById("artAmount").value = "0";
-	document.getElementById("totalAmount").textContent = "0";
-	const chargesSection = document.querySelector('.charges');
-	if (chargesSection && document.querySelector("#bookingForm table tbody").rows.length > 0) {
-		chargesSection.style.display = 'flex';
-		updateFreight();
-	}
+  // Clear input fields
+  document.getElementById("article").value = "Article";
+  document.getElementById("artQuantity").value = "0";
+  document.getElementById("artType").selectedIndex = 0;
+  document.getElementById("saidToContain").selectedIndex = 0;
+  document.getElementById("artAmount").value = "0";
+  document.getElementById("totalAmount").textContent = "0";
+
+  // Show Charges panel and recalculate
+  document.getElementById("chargesPanel").style.display = "block";
+  updateFreight();
 }
+
 
 function deleteRow(btn) {
-	let row = btn.parentNode.parentNode;
-	row.parentNode.removeChild(row);
-	let tableBody = document.querySelector("#bookingForm table tbody");
-	if (tableBody.rows.length <= 1) {
-		hideChargesSection();
-	} else {
-		updateFreight();
-	}
+  let row = btn.parentNode.parentNode;
+  row.remove();
+
+  let tableBody = document.querySelector("#bookingForm table tbody");
+  if (tableBody.rows.length <= 1) {
+    document.getElementById("chargesPanel").style.display = "none";
+    document.getElementById("freight").value = 0;
+    document.getElementById("sgst").value = 0;
+    document.getElementById("cgst").value = 0;
+    document.getElementById("igst").value = 0;
+    document.getElementById("grandTotal").value = 0;
+  } else {
+    updateFreight();
+  }
 }
+
 
 function updateFreight() {
 	let totalFreight = 0;
@@ -694,6 +703,10 @@ document.getElementById("bookingForm").addEventListener("submit", async function
 	}
 });
 
+window.onload = function() {
+	populateUserData();
+	loadBranchDestinations();
+};
 
 function hideChargesSection() {
 	const chargesSection = document.querySelector('.charges');
@@ -835,8 +848,6 @@ showBookingForm();
 
 async function loadBranchDestinations() {
 	const companyCode = userData?.companyAndBranchDeatils?.companyCode;
-	console.log("Company code:", companyCode); // debug
-
 	if (!companyCode) return;
 
 	try {
@@ -845,22 +856,23 @@ async function loadBranchDestinations() {
 
 		const result = await response.json();
 
-		if (result.status === "SUCCESS" && Array.isArray(result.data)) {
-			const destinationList = document.getElementById("destinationList");
-			destinationList.innerHTML = "";
+		
+		const dropdown = document.getElementById("deliveryDestination");
+		dropdown.innerHTML = '<option value="">-- Select Destination --</option>';
 
+		if (result.status === "SUCCESS" && Array.isArray(result.data)) {
 			result.data.forEach(branch => {
 				const option = document.createElement("option");
 				option.value = `${branch.branchName} (${branch.branchCode})`;
-				destinationList.appendChild(option);
+				option.textContent = `${branch.branchName} (${branch.branchCode})`;
+				dropdown.appendChild(option);
 			});
-		} else {
-			console.warn("No branch data returned.");
 		}
 	} catch (error) {
 		console.error("Error loading branch destinations:", error);
 	}
 }
+
 
 document.getElementById("deliveryDestination").addEventListener("focus", loadBranchDestinations);
 
