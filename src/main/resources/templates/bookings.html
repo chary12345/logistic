@@ -437,5 +437,59 @@
 	</script>
 
 	<script src="/js/bookings.js"></script>
+	
+	
+	<script>
+	    let idleTime = 0;
+	    const maxIdleMinutes = 2;
+		
+		document.onmousemove = document.onkeypress = document.onclick = () => idleTime = 0;
+
+	   <!-- function resetTimer() {
+	        idleTime = 0;
+	    }
+
+	    window.onload = resetTimer;
+	    document.onmousemove = resetTimer;
+	    document.onkeypress = resetTimer;
+	    document.onclick = resetTimer;
+	    document.onscroll = resetTimer;-->
+
+	    setInterval(() => {
+	        idleTime++;
+	        if (idleTime >= maxIdleMinutes) {
+	            window.location.href = '/login?session=expired'; // change as needed
+	        }
+	    }, 60000); // check every 1 minute
+	</script>
+	
+	@using Microsoft.AspNetCore.Http;
+	@inject IHttpContextAccessor HttpContextAccessor
+
+	<div id="session">
+	</div>
+
+	<!--<script>
+	    $(document).ready(function () {
+	        var session = '@HttpContextAccessor.HttpContext.Session.GetString("UserName")';
+	        if (session == "") {
+	            SessionLogOut();
+	        }
+	    });
+	    function SessionLogOut() {
+	        $("div#session").append("<div id=\"TimeOut\" class=\"text-center\">Your session has expired, please<a href=\"/Home/Index\" class=\"btn signout\" style=\"padding: 1px 5px 1px 5px;\">click here to login</a>again</div>");
+
+	    }
+		
+	</script>-->
+	
+	
+	<!--services.AddSession(options =>
+			{
+			      options.IdleTimeout = TimeSpan.FromSeconds(2);
+			});-->
+	
+			
+			
 </body>
 </html>

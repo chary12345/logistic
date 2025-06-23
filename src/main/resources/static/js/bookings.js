@@ -711,6 +711,7 @@ document.addEventListener('DOMContentLoaded', function() {
 function logout() {
 	sessionStorage.removeItem('user');  // Remove the stored user object from sessionStorage
 	window.location.href = '/'; // Redirect to logout route
+//window.location.href = '/login?logout=true'; // Redirect to logout route
 }
 
 document.addEventListener("DOMContentLoaded", function() {
@@ -816,11 +817,24 @@ function changePassword() {
 }
 let userData = {};
 function populateUserData() {
-	userData = JSON.parse(sessionStorage.getItem('user'));
+	
+	const user = sessionStorage.getItem('user');
+		if (!user) {
+			// Not logged in, redirect to login page
+			window.location.href = '/login?session=expired';
+			return;
+		}
 
-	document.getElementById('userFirstName').textContent = userData.firstName;
-	document.getElementById('userLastName').textContent = userData.lastName;
-	//document.getElementById('userPhone').textContent = userData.phone;
+		userData = JSON.parse(user);
+
+		document.getElementById('userFirstName').textContent = userData.firstName;
+		document.getElementById('userLastName').textContent = userData.lastName;
+	
+	//userData = JSON.parse(sessionStorage.getItem('user'));
+
+//	document.getElementById('userFirstName').textContent = userData.firstName;
+//	document.getElementById('userLastName').textContent = userData.lastName;
+//	//document.getElementById('userPhone').textContent = userData.phone;
 	//document.getElementById('userEmail').textContent = userData.email;
 	//document.getElementById('userRole').textContent = userData.role;
 }
@@ -1114,3 +1128,4 @@ document
         })
         .catch(error => console.error("Error fetching branches:", error));
 }
+
