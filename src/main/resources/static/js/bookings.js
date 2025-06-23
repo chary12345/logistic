@@ -1,15 +1,24 @@
+function safeHide(id) {
+	const el = document.getElementById(id);
+	if (el) el.style.display = 'none';
+}
+function hideAllForms() {
+	safeHide('bookingReportForm');
+	safeHide('bookingFormContainer');
+	safeHide('CreateBranchContainer');
+	safeHide('createEmployeeFormContainer');
+	safeHide('changePasswordForm');
+	safeHide('overlay');
+}
+
 function showBookingForm() {
+	hideAllForms();
 	document.getElementById('bookingFormContainer').style.display = 'block';
-	document.getElementById('bookingReportForm').style.display = 'none';
-	document.getElementById('CreateBranchContainer').style.display = 'none';
-	hideChangePasswordForm(); // Ensure password form is hidden
 }
 
 function showCreateBranchForm() {
+	hideAllForms();
 	document.getElementById('CreateBranchContainer').style.display = 'block';
-	document.getElementById('bookingFormContainer').style.display = 'none';
-	document.getElementById('bookingReportForm').style.display = 'none';
-	hideChangePasswordForm(); // Hide the change password form if open
 }
 
 
@@ -46,7 +55,7 @@ document.getElementById("branchForm").addEventListener("submit", async function(
 
 
 		},
-		 
+
 	};
 	try {
 		const response = await fetch("/createBranch", {
@@ -232,52 +241,47 @@ document.getElementById('city').addEventListener('focus', function() {
 });
 
 function showReportForm(reportType) {
-  document.getElementById('bookingReportForm').style.display = 'block';
-  document.getElementById('bookingFormContainer').style.display = 'none';
-  document.getElementById('CreateBranchContainer').style.display = 'none';
-  document.getElementById('reportActions').style.display = 'none';
-  document.getElementById('reportTableContainer').innerHTML = '';
-  document.getElementById('reportMessage').style.display = 'none';
-  hideChangePasswordForm();
+	hideAllForms();
+	document.getElementById('bookingReportForm').style.display = 'block';
+	
+	let status = "";
+	let headingText = "";
 
-  let status = "";
-  let headingText = "";
+	switch (reportType) {
+		case "booking":
+			status = "BOOKED";
+			headingText = "Booking Report";
+			document.getElementById("dispatchSelectedButton").style.display = "inline-block";
+			break;
+		case "dispatched":
+			status = "DISPATCHED";
+			headingText = "Dispatch Report";
+			document.getElementById("dispatchSelectedButton").style.display = "none";
+			break;
+		case "received":
+			status = "RECEIVED";
+			headingText = "Receive Report";
+			document.getElementById("dispatchSelectedButton").style.display = "none";
+			break;
+		case "delivered":
+			status = "DELIVERED";
+			headingText = "Delivery Report";
+			document.getElementById("dispatchSelectedButton").style.display = "none";
+			break;
+	}
 
-  switch (reportType) {
-    case "booking":
-      status = "BOOKED";
-      headingText = "Booking Report";
-      document.getElementById("dispatchSelectedButton").style.display = "inline-block";
-      break;
-    case "dispatched":
-      status = "DISPATCHED";
-      headingText = "Dispatch Report";
-      document.getElementById("dispatchSelectedButton").style.display = "none";
-      break;
-    case "received":
-      status = "RECEIVED";
-      headingText = "Receive Report";
-      document.getElementById("dispatchSelectedButton").style.display = "none";
-      break;
-    case "delivered":
-      status = "DELIVERED";
-      headingText = "Delivery Report";
-      document.getElementById("dispatchSelectedButton").style.display = "none";
-      break;
-  }
-
-  document.getElementById("reportStatusHidden").value = status;
-  document.querySelector("#bookingReportForm h3").textContent = headingText;
+	document.getElementById("reportStatusHidden").value = status;
+	document.querySelector("#bookingReportForm h3").textContent = headingText;
 }
 
 // Add this to generateBookingReport() after reading status:
 function updateDispatchButtonVisibility(status) {
-  const btn = document.getElementById("dispatchSelectedButton");
-  if (status === "BOOKED") {
-    btn.style.display = "inline-block";
-  } else {
-    btn.style.display = "none";
-  }
+	const btn = document.getElementById("dispatchSelectedButton");
+	if (status === "BOOKED") {
+		btn.style.display = "inline-block";
+	} else {
+		btn.style.display = "none";
+	}
 }
 
 
@@ -305,14 +309,14 @@ function generateBookingReport() {
 	reportActions.style.display = 'none'; // Hide buttons before new report
 
 	const status = document.getElementById('reportStatusHidden').value;
-	
-	updateDispatchButtonVisibility(status); 
-	
-	
+
+	updateDispatchButtonVisibility(status);
+
+
 	let apiUrl = `/api/bookings/report?fromDate=${fromDate}&toDate=${toDate}`;
-if (status) {
-	apiUrl += `&status=${status}`;
-}
+	if (status) {
+		apiUrl += `&status=${status}`;
+	}
 
 
 	fetch(apiUrl)
@@ -501,63 +505,63 @@ function calculateCharges() {
 }
 
 function addArticle() {
-  let tableBody = document.querySelector("#bookingForm table tbody");
-  let newRow = tableBody.insertRow(-1);
+	let tableBody = document.querySelector("#bookingForm table tbody");
+	let newRow = tableBody.insertRow(-1);
 
-  let articleCell = newRow.insertCell();
-  let artQtyCell = newRow.insertCell();
-  let artTypeCell = newRow.insertCell();
-  let saidToContainCell = newRow.insertCell();
-  let artAmtCell = newRow.insertCell();
-  let totalCell = newRow.insertCell();
-  let actionCell = newRow.insertCell();
+	let articleCell = newRow.insertCell();
+	let artQtyCell = newRow.insertCell();
+	let artTypeCell = newRow.insertCell();
+	let saidToContainCell = newRow.insertCell();
+	let artAmtCell = newRow.insertCell();
+	let totalCell = newRow.insertCell();
+	let actionCell = newRow.insertCell();
 
-  articleCell.textContent = document.getElementById("article").value;
-  artQtyCell.textContent = document.getElementById("artQuantity").value;
-  artTypeCell.textContent = document.getElementById("artType").value;
-  saidToContainCell.textContent = document.getElementById("saidToContain").value;
-  artAmtCell.textContent = document.getElementById("artAmount").value;
-  totalCell.textContent =
-    parseInt(document.getElementById("artQuantity").value) *
-    parseInt(document.getElementById("artAmount").value);
+	articleCell.textContent = document.getElementById("article").value;
+	artQtyCell.textContent = document.getElementById("artQuantity").value;
+	artTypeCell.textContent = document.getElementById("artType").value;
+	saidToContainCell.textContent = document.getElementById("saidToContain").value;
+	artAmtCell.textContent = document.getElementById("artAmount").value;
+	totalCell.textContent =
+		parseInt(document.getElementById("artQuantity").value) *
+		parseInt(document.getElementById("artAmount").value);
 
-  let deleteButton = document.createElement("button");
-  deleteButton.className = "btn btn-danger btn-sm";
-  deleteButton.textContent = "Delete";
-  deleteButton.onclick = function () {
-    deleteRow(this);
-  };
-  actionCell.appendChild(deleteButton);
+	let deleteButton = document.createElement("button");
+	deleteButton.className = "btn btn-danger btn-sm";
+	deleteButton.textContent = "Delete";
+	deleteButton.onclick = function() {
+		deleteRow(this);
+	};
+	actionCell.appendChild(deleteButton);
 
-  // Clear input fields
-  document.getElementById("article").value = "Article";
-  document.getElementById("artQuantity").value = "0";
-  document.getElementById("artType").selectedIndex = 0;
-  document.getElementById("saidToContain").selectedIndex = 0;
-  document.getElementById("artAmount").value = "0";
-  document.getElementById("totalAmount").textContent = "0";
+	// Clear input fields
+	document.getElementById("article").value = "Article";
+	document.getElementById("artQuantity").value = "0";
+	document.getElementById("artType").selectedIndex = 0;
+	document.getElementById("saidToContain").selectedIndex = 0;
+	document.getElementById("artAmount").value = "0";
+	document.getElementById("totalAmount").textContent = "0";
 
-  // Show Charges panel and recalculate
-  document.getElementById("chargesPanel").style.display = "block";
-  updateFreight();
+	// Show Charges panel and recalculate
+	document.getElementById("chargesPanel").style.display = "block";
+	updateFreight();
 }
 
 
 function deleteRow(btn) {
-  let row = btn.parentNode.parentNode;
-  row.remove();
+	let row = btn.parentNode.parentNode;
+	row.remove();
 
-  let tableBody = document.querySelector("#bookingForm table tbody");
-  if (tableBody.rows.length <= 1) {
-    document.getElementById("chargesPanel").style.display = "none";
-    document.getElementById("freight").value = 0;
-    document.getElementById("sgst").value = 0;
-    document.getElementById("cgst").value = 0;
-    document.getElementById("igst").value = 0;
-    document.getElementById("grandTotal").value = 0;
-  } else {
-    updateFreight();
-  }
+	let tableBody = document.querySelector("#bookingForm table tbody");
+	if (tableBody.rows.length <= 1) {
+		document.getElementById("chargesPanel").style.display = "none";
+		document.getElementById("freight").value = 0;
+		document.getElementById("sgst").value = 0;
+		document.getElementById("cgst").value = 0;
+		document.getElementById("igst").value = 0;
+		document.getElementById("grandTotal").value = 0;
+	} else {
+		updateFreight();
+	}
 }
 
 
@@ -681,6 +685,9 @@ document.getElementById("bookingForm").addEventListener("submit", async function
 		companyCode: userData.companyAndBranchDeatils.companyCode,
 		branchCode: userData.companyAndBranchDeatils.branchCode,
 		billType: paymentMode,
+		invoiceNumber:document.getElementById("invoiceNo").value,
+		invoiceValue:document.getElementById("Invoicevalue").value,
+		eWayBillNumber:document.getElementById("ewayBill").value,
 	};
 
 	try {
@@ -856,7 +863,7 @@ async function loadBranchDestinations() {
 
 		const result = await response.json();
 
-		
+
 		const dropdown = document.getElementById("deliveryDestination");
 		dropdown.innerHTML = '<option value="">-- Select Destination --</option>';
 
@@ -920,14 +927,14 @@ function dispatchSelected() {
 
 			const dispatchedBookings = Array.isArray(data) ? data : (data.data || []);
 
-			generateBookingReport(); 
-			openPrintWindow(dispatchedBookings); 
+			generateBookingReport();
+			openPrintWindow(dispatchedBookings);
 		})
 		.catch(err => {
 			console.error("Dispatch error:", err);
 			alert("Error dispatching bookings.");
 		});
-	
+
 }
 function openPrintWindow(bookings) {
 	const printWindow = window.open('', '', 'width=1000,height=700');
@@ -991,248 +998,258 @@ function openPrintWindow(bookings) {
 }
 
 function showCreateEmployeeForm() {
-    document.getElementById('createEmployeeFormContainer').style.display = 'block';
-    document.getElementById('bookingReportForm').style.display = 'none';
-    document.getElementById('bookingFormContainer').style.display = 'none';
-    document.getElementById('CreateBranchContainer').style.display = 'none';
-    hideChangePasswordForm();
+	hideAllForms();
+	document.getElementById('createEmployeeFormContainer').style.display = 'block';
 
-    if (!userData || !userData.companyAndBranchDeatils) {
-        userData = JSON.parse(sessionStorage.getItem('user') || "{}");
-    }
+	if (!userData || !userData.companyAndBranchDeatils) {
+		userData = JSON.parse(sessionStorage.getItem('user') || "{}");
+	}
 
-    if (userData?.companyAndBranchDeatils?.companyCode) {
-        loadBranchesByCompanyCode(userData.companyAndBranchDeatils.companyCode);
-    } else {
-        alert("User session not available.");
-    }
+	if (userData?.companyAndBranchDeatils?.companyCode) {
+		loadBranchesByCompanyCode(userData.companyAndBranchDeatils.companyCode);
+	} else {
+		alert("User session not available.");
+	}
 }
 
 // ✅ Attach event listeners only after DOM is ready
-document.addEventListener("DOMContentLoaded", function () {
-    const submitBtn = document.getElementById("submitButton");
-    if (submitBtn) {
-        submitBtn.addEventListener("click", submitEmployeeForm);
-    }
+document.addEventListener("DOMContentLoaded", function() {
+	const submitBtn = document.getElementById("submitButton");
+	if (submitBtn) {
+		submitBtn.addEventListener("click", submitEmployeeForm);
+	}
 
-    const userInput = document.getElementById("userName");
-    if (userInput) {
-        userInput.addEventListener("input", function () {
-            const username = this.value.trim();
-            if (username) {
-                validateUsername(username);
-            } else {
-                document.getElementById('usernameError').textContent = '';
-            }
-        });
-    }
+	const userInput = document.getElementById("userName");
+	if (userInput) {
+		userInput.addEventListener("input", function() {
+			const username = this.value.trim();
+			if (username) {
+				validateUsername(username);
+			} else {
+				document.getElementById('usernameError').textContent = '';
+			}
+		});
+	}
 
-    const confirmPasswordInput = document.getElementById("confirmPassword");
-    if (confirmPasswordInput) {
-        confirmPasswordInput.addEventListener("input", function () {
-            const password = document.getElementById("password").value;
-            const confirmPassword = this.value;
+	const confirmPasswordInput = document.getElementById("employeeconfirmPassword");
+	if (confirmPasswordInput) {
+		confirmPasswordInput.addEventListener("input", function() {
+			const password = document.getElementById("employeepassword").value;
+			const confirmPassword = this.value;
 
-            if (confirmPassword !== password) {
-                document.getElementById("confirmPasswordError").textContent = "Passwords do not match!";
-            } else {
-                document.getElementById("confirmPasswordError").textContent = "";
-            }
-        });
-    }
+			if (confirmPassword !== password) {
+				document.getElementById("employeeconfirmPasswordError").textContent = "Passwords do not match!";
+			} else {
+				document.getElementById("employeeconfirmPasswordError").textContent = "";
+			}
+		});
+	}
 });
 
 // Function to validate username on input
 async function validateUsername(username) {
-    try {
-        const CompanyCode= userData.companyAndBranchDeatils.companyCode;
+	try {
+		const CompanyCode = userData.companyAndBranchDeatils.companyCode;
 
-        const response = await fetch('/validate-username', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                username: username,
-                companyCode: CompanyCode
-            })
-        });
+		const response = await fetch('/validate-username', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({
+				username: username,
+				companyCode: CompanyCode
+			})
+		});
 
-        const data = await response.json();
-        document.getElementById('usernameError').textContent = data.status;
-    } catch (error) {
-        document.getElementById('usernameError').textContent = 'Error validating username. Please try again later.';
-    }
+		const data = await response.json();
+		document.getElementById('usernameError').textContent = data.status;
+	} catch (error) {
+		document.getElementById('usernameError').textContent = 'Error validating username. Please try again later.';
+	}
 }
 // 🔁 Global function to submit employee form
 function submitEmployeeForm() {
-    const password = document.getElementById("employeepassword").value;
-    const confirmPassword = document.getElementById("employeeconfirmPassword").value;
+	const password = document.getElementById("employeepassword").value;
+	const confirmPassword = document.getElementById("employeeconfirmPassword").value;
 
-    // Password and Confirm Password Validation
-    if (password !== confirmPassword) {
-        document.getElementById("employeeconfirmPasswordError").textContent = "Passwords do not match!";
-        return;
-    } else {
-        document.getElementById("employeeconfirmPasswordError").textContent = "";
-    }
+	// Password and Confirm Password Validation
+	if (password !== confirmPassword) {
+		document.getElementById("employeeconfirmPasswordError").textContent = "Passwords do not match!";
+		return;
+	} else {
+		document.getElementById("employeeconfirmPasswordError").textContent = "";
+	}
 
-    let masterData = {
-        firstName: document.getElementById("employeefirstName").value,
-        lastName: document.getElementById("employeelastName").value,
-        userName: document.getElementById("employeeuserName").value,
-        password: password,
-        phone: document.getElementById("employeephone").value,
-        email: document.getElementById("employeeemail").value,
-        role: document.getElementById("employeerole").value,
-        companyDetails: {
-            companyCode: userData.companyAndBranchDeatils.companyCode,
-            companyBranch: {
-                branchCode: document.getElementById("branchSelect").value,
-            }
-        }
-    };
+	let masterData = {
+		firstName: document.getElementById("employeefirstName").value,
+		lastName: document.getElementById("employeelastName").value,
+		userName: document.getElementById("employeeuserName").value,
+		password: password,
+		phone: document.getElementById("employeephone").value,
+		email: document.getElementById("employeeemail").value,
+		role: document.getElementById("employeerole").value,
+		companyDetails: {
+			companyCode: userData.companyAndBranchDeatils.companyCode,
+			companyBranch: {
+				branchCode: document.getElementById("branchSelect").value,
+			}
+		}
+	};
 
-    fetch('addEmployee', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(masterData)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status) {
-            /*const toast = document.getElementById('toastNotification');
-            const toastMessage = document.getElementById('toastMessage');
-            toastMessage.textContent = "Employee Created!";
-            toast.style.display = 'block';
-
-            setTimeout(() => {
-                toast.style.display = 'none';
-                window.location.href = "/createEmployee";
-            }, 3000);*/
-            alert("New Employee created successful!");
-             resetEmployeeForm();
-        } else {
-            document.getElementById("formMessage").innerHTML = `<div class='alert alert-danger'>Error: ${data.message}</div>`;
-        }
-    })
-    .catch(error => {
-        document.getElementById("formMessage").innerHTML = "<div class='alert alert-danger'>Something went wrong. Please try again.</div>";
-    });
+	fetch('addEmployee', {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json'
+		},
+		body: JSON.stringify(masterData)
+	})
+		.then(response => response.json())
+		.then(data => {
+			if (data.status) {
+				/*const toast = document.getElementById('toastNotification');
+				const toastMessage = document.getElementById('toastMessage');
+				toastMessage.textContent = "Employee Created!";
+				toast.style.display = 'block';
+	
+				setTimeout(() => {
+					toast.style.display = 'none';
+					window.location.href = "/createEmployee";
+				}, 3000);*/
+				alert("New Employee created successful!");
+				resetEmployeeForm();
+			} else {
+				document.getElementById("formMessage").innerHTML = `<div class='alert alert-danger'>Error: ${data.message}</div>`;
+			}
+		})
+		.catch(error => {
+			document.getElementById("formMessage").innerHTML = "<div class='alert alert-danger'>Something went wrong. Please try again.</div>";
+		});
 }
 function resetEmployeeForm() {
-    document.getElementById("createEmployeeForm").reset();
+	document.getElementById("createEmployeeForm").reset();
 
-    // Clear custom error/spinner messages too
-    document.getElementById("employeeconfirmPasswordError").textContent = '';
-    document.getElementById("usernameError").textContent = '';
-    document.getElementById("formMessage").innerHTML = '';
+	// Clear custom error/spinner messages too
+	document.getElementById("employeeconfirmPasswordError").textContent = '';
+	document.getElementById("usernameError").textContent = '';
+	document.getElementById("formMessage").innerHTML = '';
 }
 
 function debounce(func, delay) {
-    let timer;
-    return function (...args) {
-        clearTimeout(timer);
-        timer = setTimeout(() => func.apply(this, args), delay);
-    };
+	let timer;
+	return function(...args) {
+		clearTimeout(timer);
+		timer = setTimeout(() => func.apply(this, args), delay);
+	};
 }
 
-document.addEventListener("DOMContentLoaded", function () {
-    const userInput = document.getElementById('employeeUserName');
-    if (userInput) {
-        userInput.addEventListener('input', debounce(function () {
-            const username = this.value.trim();
-            if (username) {
-                validateUsername(username);
-            } else {
-                document.getElementById('usernameError').textContent = '';
-            }
-        }, 300)); // 300ms delay after user stops typing
-    }
+document.addEventListener("DOMContentLoaded", function() {
+	const userInput = document.getElementById('employeeUserName');
+	if (userInput) {
+		userInput.addEventListener('input', debounce(function() {
+			const username = this.value.trim();
+			if (username) {
+				validateUsername(username);
+			} else {
+				document.getElementById('usernameError').textContent = '';
+			}
+		}, 300)); // 300ms delay after user stops typing
+	}
 });
 
 // Password and Confirm Password Match Check
 document
-    .getElementById("confirmPassword")
-    .addEventListener(
-        "input",
-        function() {
-            const password = document
-                    .getElementById("password").value;
-            const confirmPassword = this.value;
+	.getElementById("confirmPassword")
+	.addEventListener(
+		"input",
+		function() {
+			const password = document
+				.getElementById("employeepassword").value;
+			const confirmPassword = this.value;
 
-            if (confirmPassword !== password) {
-                document.getElementById("confirmPasswordError").textContent = "Passwords do not match!";
-            } else {
-                document.getElementById("confirmPasswordError").textContent = "";
-            }
-        });
-        
-        
- function loadBranchesByCompanyCode(companyCode) {
-    fetch(`BranchesByCompanyCode/${companyCode}`)
-        .then(response => response.json())
-        .then(data => {
-            const select = document.getElementById("branchSelect");
-            select.innerHTML = '<option selected>---- Select Branch ----</option>';
+			if (confirmPassword !== password) {
+				document.getElementById("employeeconfirmPasswordError").textContent = "Passwords do not match!";
+			} else {
+				document.getElementById("confirmPasswordError").textContent = "";
+			}
+		});
 
-            if (data.status === "SUCCESS" && Array.isArray(data.data)) {
-                data.data.forEach(branch => {
-                    const option = document.createElement("option");
-                    option.value = branch.branchCode;
-                    option.textContent = `${branch.branchName} [${branch.branchType}]`;
-                    select.appendChild(option);
-                });
-            } else {
-                console.error("No branches found.");
-            }
-        })
-        .catch(error => console.error("Error fetching branches:", error));
+
+function loadBranchesByCompanyCode(companyCode) {
+	fetch(`BranchesByCompanyCode/${companyCode}`)
+		.then(response => response.json())
+		.then(data => {
+			const select = document.getElementById("branchSelect");
+			select.innerHTML = '<option selected>---- Select Branch ----</option>';
+
+			if (data.status === "SUCCESS" && Array.isArray(data.data)) {
+				data.data.forEach(branch => {
+					const option = document.createElement("option");
+					option.value = branch.branchCode;
+					option.textContent = `${branch.branchName} [${branch.branchType}]`;
+					select.appendChild(option);
+				});
+			} else {
+				console.error("No branches found.");
+			}
+		})
+		.catch(error => console.error("Error fetching branches:", error));
 }
 
 function setPaymentMode(mode) {
-    const hiddenInput = document.getElementById("paymentMode");
-    const displayBox = document.getElementById("selectedPaymentModeDisplay");
-    const label = document.getElementById("selectedModeLabel");
+	const hiddenInput = document.getElementById("paymentMode");
+	const displayBox = document.getElementById("selectedPaymentModeDisplay");
+	const label = document.getElementById("selectedModeLabel");
 
-    // Update hidden field
-    if (hiddenInput) hiddenInput.value = mode;
+	// Update hidden field
+	if (hiddenInput) hiddenInput.value = mode;
 
-    // Show selected mode visually
-    if (displayBox && label) {
-        displayBox.style.display = "block";
-        label.textContent = mode;
-    }
+	// Show selected mode visually
+	if (displayBox && label) {
+		displayBox.style.display = "block";
+		label.textContent = mode;
+	}
 
-    // Reset highlight
-    document.querySelectorAll(".key-box").forEach(btn => {
-        btn.classList.remove("selected-mode");
-    });
+	// Reset highlight
+	document.querySelectorAll(".key-box").forEach(btn => {
+		btn.classList.remove("selected-mode");
+	});
 
-    // Highlight the clicked one
-    const allKeys = {
-        "PAID": ".f7",
-        "TO PAY": ".f8",
-        "TBB": ".f9"
-    };
-    const selector = allKeys[mode];
-    if (selector) {
-        const btn = document.querySelector(selector);
-        if (btn) btn.classList.add("selected-mode");
-    }
+	// Highlight the clicked one
+	const allKeys = {
+		"PAID": ".f7",
+		"TO PAY": ".f8",
+		"TBB": ".f9"
+	};
+	const selector = allKeys[mode];
+	if (selector) {
+		const btn = document.querySelector(selector);
+		if (btn) btn.classList.add("selected-mode");
+	}
 }
 
 document.addEventListener("keydown", function(e) {
-    if (e.key === "F7") {
-        e.preventDefault();
-        setPaymentMode('PAID');
-    } else if (e.key === "F8") {
-        e.preventDefault();
-        setPaymentMode('TO PAY');
-    } else if (e.key === "F9") {
-        e.preventDefault();
-        setPaymentMode('TBB');
-    }
+	if (e.key === "F7") {
+		e.preventDefault();
+		setPaymentMode('PAID');
+	} else if (e.key === "F8") {
+		e.preventDefault();
+		setPaymentMode('TO PAY');
+	} else if (e.key === "F9") {
+		e.preventDefault();
+		setPaymentMode('TBB');
+	}
 });
+// Set default to TO PAY when page loads (only if not set already)
+window.addEventListener("DOMContentLoaded", () => {
+	setPaymentMode("TO PAY");
+});
+document.getElementById("consignorMobile").addEventListener("input",
+	function(e) {
+		this.value = this.value.replace(/[^0-9]/g, '');
+	});
+
+document.getElementById("consigneeMobile").addEventListener("input",
+	function(e) {
+		this.value = this.value.replace(/[^0-9]/g, '');
+	});

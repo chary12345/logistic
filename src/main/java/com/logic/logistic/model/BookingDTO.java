@@ -28,6 +28,10 @@ public class BookingDTO {
     private String branchCode;
     private String consignStatus;
     private String billType;
+    private String invoiceNumber;
+    private Double  invoiceValue;
+    private String eWayBillNumber;
+    
 	public String getConsignorName() {
 		return consignorName;
 	}
@@ -147,6 +151,25 @@ public class BookingDTO {
 	}
 	public void setBillType(String billType) {
 		this.billType = billType;
+	}
+	public String getInvoiceNumber() {
+		return invoiceNumber;
+	}
+	public void setInvoiceNumber(String invoiceNumber) {
+		this.invoiceNumber = invoiceNumber;
+	}
+	
+	public Double getInvoiceValue() {
+		return invoiceValue;
+	}
+	public void setInvoiceValue(Double invoiceValue) {
+		this.invoiceValue = invoiceValue;
+	}
+	public String geteWayBillNumber() {
+		return eWayBillNumber;
+	}
+	public void seteWayBillNumber(String eWayBillNumber) {
+		this.eWayBillNumber = eWayBillNumber;
 	}
 
     
