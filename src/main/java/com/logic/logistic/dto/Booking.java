@@ -71,6 +71,15 @@ public class Booking {
     @Column(name = "bill_type")
     private String billType;
     
+    @Column(name = "invoice_number")
+    private String invoiceNumber;
+    
+    @Column(name = "invoice_value")
+    private Double  invoiceValue;
+    
+    @Column(name = "eway_bill_number")
+    private String eWayBillNumber;
+    
     @Transient
     private String companyCode;
     @Transient
@@ -256,6 +265,32 @@ public class Booking {
 
 	public void setBillType(String billType) {
 		this.billType = billType;
+	}
+
+	public String getInvoiceNumber() {
+		return invoiceNumber;
+	}
+
+	public void setInvoiceNumber(String invoiceNumber) {
+		this.invoiceNumber = invoiceNumber;
+	}
+
+	public double getInvoiceValue() {
+		return (this.invoiceValue != null) ? this.invoiceValue : 0.0;
+	}
+
+	
+
+	public String geteWayBillNumber() {
+		return eWayBillNumber;
+	}
+
+	public void setInvoiceValue(Double invoiceValue) {
+		this.invoiceValue = invoiceValue;
+	}
+
+	public void seteWayBillNumber(String eWayBillNumber) {
+		this.eWayBillNumber = eWayBillNumber;
 	}
 	
 
