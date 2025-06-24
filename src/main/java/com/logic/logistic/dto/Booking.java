@@ -80,10 +80,12 @@ public class Booking {
     @Column(name = "eway_bill_number")
     private String eWayBillNumber;
     
+    @Column(name = "branch_code")
+    private String BranchCode;
+    
     @Transient
     private String companyCode;
-    @Transient
-    private String BranchCode;
+   
     @Transient
     private int lastNumber;
 

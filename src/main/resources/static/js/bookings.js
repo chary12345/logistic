@@ -240,10 +240,13 @@ document.getElementById('city').addEventListener('focus', function() {
 	}
 });
 
+
+
+
 function showReportForm(reportType) {
 	hideAllForms();
 	document.getElementById('bookingReportForm').style.display = 'block';
-	
+
 	let status = "";
 	let headingText = "";
 
@@ -273,120 +276,179 @@ function showReportForm(reportType) {
 	document.getElementById("reportStatusHidden").value = status;
 	document.querySelector("#bookingReportForm h3").textContent = headingText;
 }
-
-// Add this to generateBookingReport() after reading status:
 function updateDispatchButtonVisibility(status) {
 	const btn = document.getElementById("dispatchSelectedButton");
-	if (status === "BOOKED") {
-		btn.style.display = "inline-block";
-	} else {
-		btn.style.display = "none";
-	}
+	if (!btn) return;
+
+	// Show button only if status is "BOOKED"
+	btn.style.display = (status === "BOOKED") ? "inline-block" : "none";
 }
 
+let reportData = [];              // for download
+let reportPages = [];             // paginated cache
+let currentPage = 0;              // page index
+let lastSeenBookingId = null;     // for next page fetch
+let fromDateGlobal = "";
+let toDateGlobal = "";
+let currentReportStatus = "";
 
-let reportData = []; // Store the fetched report data globally
 
 function generateBookingReport() {
 	const fromDateRaw = document.getElementById('fromDate').value;
 	const toDateRaw = document.getElementById('toDate').value;
-	const reportMessage = document.getElementById('reportMessage');
-	const reportTableContainer = document.getElementById('reportTableContainer');
-	const reportActions = document.getElementById('reportActions');
 
 	if (!fromDateRaw || !toDateRaw) {
 		alert("Please select both From and To dates.");
 		return;
 	}
 
-	// Manually add time portion
-	const fromDate = `${fromDateRaw}T00:00:00`;
-	const toDate = `${toDateRaw}T23:59:59`;
-	// Clear previous report data and table
+	// Reset all global states
 	reportData = [];
-	reportTableContainer.innerHTML = '';
-	reportMessage.style.display = 'none';
-	reportActions.style.display = 'none'; // Hide buttons before new report
+	reportPages = [];
+	currentPage = 0;
+	lastSeenBookingId = null;
 
-	const status = document.getElementById('reportStatusHidden').value;
+	fromDateGlobal = `${fromDateRaw}T00:00:00`;
+	toDateGlobal = `${toDateRaw}T23:59:59`;
+	currentReportStatus = document.getElementById('reportStatusHidden').value;
 
-	updateDispatchButtonVisibility(status);
+	document.getElementById("reportTableContainer").innerHTML = '';
+	document.getElementById("reportMessage").style.display = 'none';
+	document.getElementById("reportActions").style.display = 'none';
+	document.getElementById("paginationControls").style.display = 'none';
+
+	updateDispatchButtonVisibility(currentReportStatus);
+	loadNextPage(); // start with page 1
+}
 
 
-	let apiUrl = `/api/bookings/report?fromDate=${fromDate}&toDate=${toDate}`;
-	if (status) {
-		apiUrl += `&status=${status}`;
+function loadNextPage() {
+	let apiUrl = `/api/bookings/report?fromDate=${fromDateGlobal}&toDate=${toDateGlobal}&status=${currentReportStatus}`;
+	if (lastSeenBookingId) {
+		apiUrl += `&lastId=${lastSeenBookingId}`;
 	}
-
-
+	branchCode=userData.companyAndBranchDeatils.branchCode;
+if (branchCode) {
+	apiUrl += `&branchCode=${branchCode}`;
+}
 	fetch(apiUrl)
 		.then(response => response.json())
 		.then(data => {
 			if (data.content && data.content.length > 0) {
-				reportData = data.content; // Store the fetched data
+				lastSeenBookingId = data.content[data.content.length - 1].loadingReciept;
+
+				// Cache this page
+				reportPages.push(data.content);
+				currentPage = reportPages.length - 1;
+
 				displayReportData(data.content);
-				reportMessage.style.display = 'none';
-				reportActions.style.display = 'block'; // Show buttons after report is generated
+				reportData = [...reportData, ...data.content];
+				updatePageDisplay();
+
+				document.getElementById("paginationControls").style.display = "block";
+				document.getElementById("reportActions").style.display = "block";
+				document.getElementById("nextPageButton").disabled = false;
+				document.getElementById("prevPageButton").disabled = currentPage === 0;
 			} else {
-				reportMessage.textContent = "No Records Found";
-				reportMessage.style.display = 'block';
-				reportActions.style.display = 'none';
+				document.getElementById("nextPageButton").disabled = true;
+
+				if (reportData.length === 0) {
+					document.getElementById("reportMessage").textContent = "No Records Found";
+					document.getElementById("reportMessage").style.display = "block";
+					document.getElementById("paginationControls").style.display = "none";
+				}
 			}
 		})
 		.catch(error => {
 			console.error("Error fetching report data:", error);
-			reportMessage.textContent = "Error fetching report data.";
-			reportMessage.style.display = 'block';
-			reportActions.style.display = 'none';
+			document.getElementById("reportMessage").textContent = "Error fetching report data.";
+			document.getElementById("reportMessage").style.display = "block";
 		});
+}
+function goToPreviousPage() {
+	if (currentPage > 0) {
+		currentPage--;
+		const previousData = reportPages[currentPage];
+		displayReportData(previousData);
+		updatePageDisplay();
+
+		document.getElementById("nextPageButton").disabled = false;
+		document.getElementById("prevPageButton").disabled = currentPage === 0;
+	}
 }
 
 function displayReportData(data) {
-	let reportTable = document.createElement('table');
-	reportTable.innerHTML = `
-            <tr>
-            <th><input type="checkbox" id="selectAll" onclick="toggleAllCheckboxes(this)"></th>
-                <th>LoadingReciept</th>
-                <th>Consignor Name</th>
-                <th>Consignor Mobile</th>
-                <th>Consignee Name</th>
-                <th>Consignee Mobile</th>
-                <th>Article Type</th>
-                <th>Article Weight</th>
-                <th>Freight</th>
-                <th>SGST</th>
-                <th>CGST</th>
-                <th>IGST</th>
-                <th>ConsignStatus</th>
-                <th>Booking Date</th>
-            </tr>
-        `;
-	let seen = new Set();
+	const container = document.getElementById('reportTableContainer');
+
+	// If table exists, reuse it and clear tbody only
+	let table = container.querySelector("table");
+	let tbody;
+
+	if (table) {
+		tbody = table.querySelector("tbody");
+		tbody.innerHTML = ''; // clear old rows
+	} else {
+		// Create table if not exists
+		table = document.createElement('table');
+		table.className = 'table table-bordered';
+		table.innerHTML = `
+			<thead>
+			<tr>
+				<th><input type="checkbox" id="selectAll" onclick="toggleAllCheckboxes(this)"></th>
+				<th>LoadingReciept</th>
+				<th>Consignor Name</th>
+				<th>Consignor Mobile</th>
+				<th>Consignee Name</th>
+				<th>Consignee Mobile</th>
+				<th>Article Type</th>
+				<th>Article Weight</th>
+				<th>Freight</th>
+				<th>SGST</th>
+				<th>CGST</th>
+				<th>IGST</th>
+				<th>ConsignStatus</th>
+				<th>Booking Date</th>
+			</tr>
+			</thead>
+			<tbody></tbody>`;
+		container.appendChild(table);
+		tbody = table.querySelector("tbody");
+	}
+
+	// Populate new data into tbody
 	data.forEach(booking => {
-		if (seen.has(booking.loadingReciept)) return;
-		seen.add(booking.loadingReciept);
-		let row = reportTable.insertRow();
+		const row = document.createElement("tr");
 		row.innerHTML = `
-		<td><input type="checkbox" class="bookingCheckbox" value="${booking.loadingReciept}"></td>
-                <td>${booking.loadingReciept}</td>
-                <td>${booking.consignorName}</td>
-                <td>${booking.consignorMobile}</td>
-                <td>${booking.consigneeName}</td>
-                <td>${booking.consigneeMobile}</td>
-                <td>${booking.articleType}</td>
-                <td>${booking.articleWeight}</td>
-                <td>${booking.freight}</td>
-                <td>${booking.sgst}</td>
-                <td>${booking.cgst}</td>
-                <td>${booking.igst}</td>
-                 <td>${booking.consignStatus}</td>
-                <td>${new Date(booking.bookingDate).toLocaleDateString()}</td>
-            `;
+			<td><input type="checkbox" class="bookingCheckbox" value="${booking.loadingReciept}"></td>
+			<td>${booking.loadingReciept}</td>
+			<td>${booking.consignorName}</td>
+			<td>${booking.consignorMobile}</td>
+			<td>${booking.consigneeName}</td>
+			<td>${booking.consigneeMobile}</td>
+			<td>${booking.articleType}</td>
+			<td>${booking.articleWeight}</td>
+			<td>${booking.freight}</td>
+			<td>${booking.sgst}</td>
+			<td>${booking.cgst}</td>
+			<td>${booking.igst}</td>
+			<td>${booking.consignStatus}</td>
+			<td>${new Date(booking.bookingDate).toLocaleDateString()}</td>
+		`;
+		tbody.appendChild(row);
 	});
 
-	const reportContainer = document.getElementById('reportTableContainer');
-	reportContainer.appendChild(reportTable);
+	// ⛳️ If you want to collect full report data for download
+	reportData = [...reportData, ...data];
 }
+
+function updatePageDisplay() {
+	const totalPages = reportPages.length;
+	const display = `Page ${currentPage + 1} of ${totalPages}`;
+	document.getElementById("pageNumberDisplay").textContent = display;
+}
+
+
+
 function toggleAllCheckboxes(source) {
 	const checkboxes = document.querySelectorAll('.bookingCheckbox');
 	checkboxes.forEach(cb => cb.checked = source.checked);
@@ -685,9 +747,9 @@ document.getElementById("bookingForm").addEventListener("submit", async function
 		companyCode: userData.companyAndBranchDeatils.companyCode,
 		branchCode: userData.companyAndBranchDeatils.branchCode,
 		billType: paymentMode,
-		invoiceNumber:document.getElementById("invoiceNo").value,
-		invoiceValue:document.getElementById("Invoicevalue").value,
-		eWayBillNumber:document.getElementById("ewayBill").value,
+		invoiceNumber: document.getElementById("invoiceNo").value,
+		invoiceValue: document.getElementById("Invoicevalue").value,
+		eWayBillNumber: document.getElementById("ewayBill").value,
 	};
 
 	try {

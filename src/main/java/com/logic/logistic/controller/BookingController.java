@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.logic.logistic.dto.Booking;
 import com.logic.logistic.model.BookingDTO;
+import com.logic.logistic.model.BookingPageResponse;
 import com.logic.logistic.service.BookingService;
 
 @RestController
@@ -36,12 +37,21 @@ public class BookingController {
 		return ResponseEntity.ok(saved);
 	}
 
-	@GetMapping("/report")
+	// @GetMapping("/report")
 	public ResponseEntity<?> getBookingReport(
 			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime fromDate,
 			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime toDate,
 			@RequestParam(required = false) String status) {
 		return ResponseEntity.ok(bookingService.getBookingReportsBetweenDates(fromDate, toDate, status));
+	}
+
+	@GetMapping("/report")
+	public ResponseEntity<BookingPageResponse> getReport(
+			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fromDate,
+			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime toDate,
+			@RequestParam String status, @RequestParam(required = false) String lastId,@RequestParam(required = false) String branchCode) {
+		BookingPageResponse response = bookingService.getReports(fromDate, toDate, status, lastId,branchCode);
+		return ResponseEntity.ok(response);
 	}
 
 	@GetMapping("/todayReports")

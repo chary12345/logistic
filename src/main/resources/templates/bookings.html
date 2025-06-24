@@ -118,6 +118,19 @@
 		<div id="reportMessage"
 			style="margin-top: 10px; display: none; color: red;"></div>
 		<div id="reportTableContainer"></div>
+		<div id="paginationControls" class="text-center mt-3"
+			style="display: none;">
+			<button class="btn btn-secondary me-2" onclick="goToPreviousPage()"
+				id="prevPageButton">Prev</button>
+			<span id="pageNumberDisplay" style="font-weight: bold;">Page 1
+				of 1</span>
+			<button class="btn btn-primary ms-2" onclick="loadNextPage()"
+				id="nextPageButton">Next</button>
+
+		</div>
+
+
+
 		<div id="reportActions" style="display: none;">
 			<button onclick="downloadBookingReport()">Download PDF</button>
 			<button onclick="downloadBookingReportExcel()">Download
