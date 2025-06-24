@@ -18,6 +18,15 @@ public interface BookRepository extends JpaRepository<Booking, String> {
 	Page<Booking> findByBookingDateBetween(@Param("fromDate") LocalDateTime fromDate,
 			@Param("toDate") LocalDateTime toDate, @Param("status") String status, Pageable pageable);
 
+	@Query("SELECT b FROM Booking b WHERE b.bookingDate BETWEEN :from AND :to AND b.consignStatus = :status AND b.BranchCode= :branchCode ORDER BY b.bookingDate DESC")
+	List<Booking> findFirstPage(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to,
+			@Param("status") String status, Pageable pageable, @Param("branchCode") String branchCode);
+
+	@Query("SELECT b FROM Booking b WHERE b.bookingDate BETWEEN :from AND :to AND b.consignStatus = :status AND b.BranchCode= :branchCode AND b.id < :lastId ORDER BY b.bookingDate DESC")
+	List<Booking> findNextPage(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to,
+			@Param("status") String status, @Param("lastId") String lastId, Pageable pageable,
+			@Param("branchCode") String branchCode);
+
 	@Query("SELECT b FROM Booking b WHERE b.loadingReciept IN :receipts")
 	List<Booking> findByLoadingRecieptIn(List<String> receipts);
 }

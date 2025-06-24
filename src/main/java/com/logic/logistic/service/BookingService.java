@@ -1,6 +1,5 @@
 package com.logic.logistic.service;
 
-import java.lang.System.Logger;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -92,6 +91,9 @@ public class BookingService {
 				booking.seteWayBillNumber(dto.geteWayBillNumber());
 			if (dto.getBillType() != null)
 				booking.setBillType(dto.getBillType());
+			
+			if (dto.getBranchCode() != null)
+				booking.setBranchCode(dto.getBranchCode());
 
 			save = bookingRepo.save(booking);
 		} catch (Exception e) {
@@ -143,4 +145,27 @@ public class BookingService {
 		}
 		return dispatchBookings;
 	}
+
+	public BookingPageResponse getReports(LocalDateTime from, LocalDateTime to, String status, String lastId,String branchCode) {
+	    int limit = 10;
+	    Pageable pageable = PageRequest.of(0, limit, Sort.by("bookingDate").descending());
+	    List<Booking> bookings;
+
+	    if (lastId == null) {
+	        bookings = bookingRepo.findFirstPage(from, to, status, pageable,branchCode);
+	    } else {
+	        bookings = bookingRepo.findNextPage(from, to, status, lastId, pageable,branchCode);
+	    }
+
+	    BookingPageResponse response = new BookingPageResponse();
+	    response.setContent(bookings);
+	    response.setPageSize(limit);
+	    response.setPageNumber(0);
+	    response.setTotalElements(bookings.size());
+	    response.setTotalPages(1);
+	    response.setLast(bookings.size() < limit);
+
+	    return response;
+	}
+
 }
