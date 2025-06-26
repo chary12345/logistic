@@ -315,6 +315,7 @@ function generateBookingReport() {
 		return;
 	}
 
+	// Reset state
 	reportData = [];
 	reportPages = [];
 	currentPage = 0;
@@ -330,10 +331,24 @@ function generateBookingReport() {
 	document.getElementById("paginationControls").style.display = 'none';
 
 	updateDispatchButtonVisibility(currentReportStatus);
-	loadNextPage();
+
+	// 🚀 Always fetch first page fresh
+	loadPage(0);
 }
 
-function loadNextPage() {
+
+function loadPage(pageIndex) {
+	if (reportPages[pageIndex]) {
+		// ✅ Cached page
+		currentPage = pageIndex;
+		displayReportData(reportPages[currentPage]);
+		updatePageDisplay();
+		document.getElementById("nextPageButton").disabled = reportPages.length <= currentPage + 1;
+		document.getElementById("prevPageButton").disabled = currentPage === 0;
+		return;
+	}
+
+	// 🚀 If not cached, fetch from server
 	const branchCode = userData.companyAndBranchDeatils.branchCode;
 	let apiUrl = `/api/bookings/report?fromDate=${fromDateGlobal}&toDate=${toDateGlobal}&status=${currentReportStatus}`;
 
@@ -348,20 +363,10 @@ function loadNextPage() {
 		.then(response => response.json())
 		.then(data => {
 			if (data.content && data.content.length > 0) {
-				// Prevent duplicate record fetch
-				const lastItem = data.content[data.content.length - 1];
-				lastSeenBookingId = lastItem.loadingReciept;
-
-				// Avoid pushing duplicate page
-				const alreadyCached = reportPages.some(page =>
-					page.length > 0 &&
-					page[0].loadingReciept === data.content[0].loadingReciept
-				);
-
-				if (!alreadyCached) {
-					reportPages.push(data.content);
-					currentPage = reportPages.length - 1;
-				}
+				// Save for later use
+				lastSeenBookingId = data.content[data.content.length - 1].loadingReciept;
+				reportPages.push(data.content);
+				currentPage = reportPages.length - 1;
 
 				displayReportData(data.content);
 				updatePageDisplay();
@@ -372,7 +377,6 @@ function loadNextPage() {
 				document.getElementById("prevPageButton").disabled = currentPage === 0;
 			} else {
 				document.getElementById("nextPageButton").disabled = true;
-
 				if (reportData.length === 0) {
 					document.getElementById("reportMessage").textContent = "No Records Found";
 					document.getElementById("reportMessage").style.display = "block";
@@ -386,17 +390,16 @@ function loadNextPage() {
 		});
 }
 
+function loadNextPage() {
+	loadPage(currentPage + 1);
+}
+
 function goToPreviousPage() {
 	if (currentPage > 0) {
-		currentPage--;
-		const previousData = reportPages[currentPage];
-		displayReportData(previousData);
-		updatePageDisplay();
-
-		document.getElementById("nextPageButton").disabled = false;
-		document.getElementById("prevPageButton").disabled = currentPage === 0;
+		loadPage(currentPage - 1);
 	}
 }
+
 
 function displayReportData(data) {
 	const container = document.getElementById('reportTableContainer');
