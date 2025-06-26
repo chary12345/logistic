@@ -1,3 +1,5 @@
+
+
 function safeHide(id) {
 	const el = document.getElementById(id);
 	if (el) el.style.display = 'none';
@@ -245,7 +247,14 @@ document.getElementById('city').addEventListener('focus', function() {
 
 function showReportForm(reportType) {
 	hideAllForms();
-	document.getElementById('bookingReportForm').style.display = 'block';
+
+	// Reset state to make sure report reloads correctly
+	reportData = [];
+	reportPages = [];
+	currentPage = 0;
+	lastSeenBookingId = null;
+
+	document.getElementById("bookingReportForm").style.display = 'block';
 
 	let status = "";
 	let headingText = "";
@@ -254,28 +263,32 @@ function showReportForm(reportType) {
 		case "booking":
 			status = "BOOKED";
 			headingText = "Booking Report";
-			document.getElementById("dispatchSelectedButton").style.display = "inline-block";
 			break;
 		case "dispatched":
 			status = "DISPATCHED";
 			headingText = "Dispatch Report";
-			document.getElementById("dispatchSelectedButton").style.display = "none";
 			break;
 		case "received":
 			status = "RECEIVED";
 			headingText = "Receive Report";
-			document.getElementById("dispatchSelectedButton").style.display = "none";
 			break;
 		case "delivered":
 			status = "DELIVERED";
 			headingText = "Delivery Report";
-			document.getElementById("dispatchSelectedButton").style.display = "none";
 			break;
 	}
 
 	document.getElementById("reportStatusHidden").value = status;
 	document.querySelector("#bookingReportForm h3").textContent = headingText;
+	updateDispatchButtonVisibility(status);
+
+	// Optional: clear previous table
+	document.getElementById("reportTableContainer").innerHTML = '';
+	document.getElementById("paginationControls").style.display = 'none';
+	document.getElementById("reportActions").style.display = 'none';
+	document.getElementById("reportMessage").style.display = 'none';
 }
+
 function updateDispatchButtonVisibility(status) {
 	const btn = document.getElementById("dispatchSelectedButton");
 	if (!btn) return;
@@ -302,7 +315,6 @@ function generateBookingReport() {
 		return;
 	}
 
-	// Reset all global states
 	reportData = [];
 	reportPages = [];
 	currentPage = 0;
@@ -318,31 +330,40 @@ function generateBookingReport() {
 	document.getElementById("paginationControls").style.display = 'none';
 
 	updateDispatchButtonVisibility(currentReportStatus);
-	loadNextPage(); // start with page 1
+	loadNextPage();
 }
 
-
 function loadNextPage() {
+	const branchCode = userData.companyAndBranchDeatils.branchCode;
 	let apiUrl = `/api/bookings/report?fromDate=${fromDateGlobal}&toDate=${toDateGlobal}&status=${currentReportStatus}`;
+
 	if (lastSeenBookingId) {
 		apiUrl += `&lastId=${lastSeenBookingId}`;
 	}
-	branchCode=userData.companyAndBranchDeatils.branchCode;
-if (branchCode) {
-	apiUrl += `&branchCode=${branchCode}`;
-}
+	if (branchCode) {
+		apiUrl += `&branchCode=${branchCode}`;
+	}
+
 	fetch(apiUrl)
 		.then(response => response.json())
 		.then(data => {
 			if (data.content && data.content.length > 0) {
-				lastSeenBookingId = data.content[data.content.length - 1].loadingReciept;
+				// Prevent duplicate record fetch
+				const lastItem = data.content[data.content.length - 1];
+				lastSeenBookingId = lastItem.loadingReciept;
 
-				// Cache this page
-				reportPages.push(data.content);
-				currentPage = reportPages.length - 1;
+				// Avoid pushing duplicate page
+				const alreadyCached = reportPages.some(page =>
+					page.length > 0 &&
+					page[0].loadingReciept === data.content[0].loadingReciept
+				);
+
+				if (!alreadyCached) {
+					reportPages.push(data.content);
+					currentPage = reportPages.length - 1;
+				}
 
 				displayReportData(data.content);
-				reportData = [...reportData, ...data.content];
 				updatePageDisplay();
 
 				document.getElementById("paginationControls").style.display = "block";
@@ -355,7 +376,6 @@ if (branchCode) {
 				if (reportData.length === 0) {
 					document.getElementById("reportMessage").textContent = "No Records Found";
 					document.getElementById("reportMessage").style.display = "block";
-					document.getElementById("paginationControls").style.display = "none";
 				}
 			}
 		})
@@ -365,6 +385,7 @@ if (branchCode) {
 			document.getElementById("reportMessage").style.display = "block";
 		});
 }
+
 function goToPreviousPage() {
 	if (currentPage > 0) {
 		currentPage--;
@@ -1315,3 +1336,19 @@ document.getElementById("consigneeMobile").addEventListener("input",
 	function(e) {
 		this.value = this.value.replace(/[^0-9]/g, '');
 	});
+	
+// Auto redirect after 2 minutes of inactivity
+        let timer;
+        function resetTimer() {
+            clearTimeout(timer);
+            timer = setTimeout(() => {
+                logout();
+            }, 2 * 60 * 1000); // 2 minutes
+        }
+
+        document.onload = resetTimer;
+        document.onmousemove = resetTimer;
+        document.onkeypress = resetTimer;
+        
+
+ 
