@@ -9,6 +9,7 @@ function hideAllForms() {
 	safeHide('bookingFormContainer');
 	safeHide('CreateBranchContainer');
 	safeHide('createEmployeeFormContainer');
+		document.getElementById("bookingSummaryContainer").innerHTML = "";
 	safeHide('changePasswordForm');
 	safeHide('overlay');
 }
@@ -288,6 +289,18 @@ function showReportForm(reportType) {
 	document.getElementById("reportActions").style.display = 'none';
 	document.getElementById("reportMessage").style.display = 'none';
 }
+function resetReportView() {
+	document.getElementById("reportTableContainer").innerHTML = "";
+	document.getElementById("bookingSummaryContainer").innerHTML = "";
+	document.getElementById("reportMessage").style.display = "none";
+	document.getElementById("reportActions").style.display = "none";
+	document.getElementById("paginationControls").style.display = "none";
+
+	reportData = [];
+	reportPages = [];
+	currentPage = 0;
+	lastSeenBookingId = null;
+}
 
 function updateDispatchButtonVisibility(status) {
 	const btn = document.getElementById("dispatchSelectedButton");
@@ -404,15 +417,13 @@ function goToPreviousPage() {
 function displayReportData(data) {
 	const container = document.getElementById('reportTableContainer');
 
-	// If table exists, reuse it and clear tbody only
 	let table = container.querySelector("table");
 	let tbody;
 
 	if (table) {
 		tbody = table.querySelector("tbody");
-		tbody.innerHTML = ''; // clear old rows
+		tbody.innerHTML = '';
 	} else {
-		// Create table if not exists
 		table = document.createElement('table');
 		table.className = 'table table-bordered';
 		table.innerHTML = `
@@ -439,7 +450,6 @@ function displayReportData(data) {
 		tbody = table.querySelector("tbody");
 	}
 
-	// Populate new data into tbody
 	data.forEach(booking => {
 		const row = document.createElement("tr");
 		row.innerHTML = `
@@ -461,9 +471,83 @@ function displayReportData(data) {
 		tbody.appendChild(row);
 	});
 
-	// ⛳️ If you want to collect full report data for download
 	reportData = [...reportData, ...data];
+
+	// ✅ Add this to always show current page summary
+	if (currentPage === reportPages.length - 1 || reportPages.length === 1) {
+		displayBookingSummary(data);
+	}
 }
+
+
+function displayBookingSummary(dataArray) {
+	const container = document.getElementById("bookingSummaryContainer");
+	if (!container) return;
+	container.innerHTML = "";
+
+	const summary = {
+		auto: { freight: 0, gst: 0, grandTotal: 0 },
+		manual: { freight: 0, gst: 0, grandTotal: 0 },
+		total: { freight: 0, gst: 0, grandTotal: 0 }
+	};
+
+	dataArray.forEach(row => {
+		const type = row.type?.toLowerCase() === "manual" ? "manual" : "auto";
+		const freight = Number(row.freight || 0);
+		const sgst = Number(row.sgst || 0);
+		const cgst = Number(row.cgst || 0);
+		const igst = Number(row.igst || 0);
+		const gst = sgst + cgst + igst;
+		const grandTotal = freight + gst;
+
+		summary[type].freight += freight;
+		summary[type].gst += gst;
+		summary[type].grandTotal += grandTotal;
+
+		summary.total.freight += freight;
+		summary.total.gst += gst;
+		summary.total.grandTotal += grandTotal;
+	});
+
+	const html = `
+		<div class="mt-4">
+			<h5 class="text-center text-success">BOOKING SUMMARY</h5>
+			<table class="table table-bordered text-center">
+				<thead class="table-light">
+					<tr>
+						<th>Type</th>
+						<th>Total Freight</th>
+						<th>GST (SGST+CGST+IGST)</th>
+						<th>Grand Total</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td>Auto</td>
+						<td>${summary.auto.freight.toFixed(2)}</td>
+						<td>${summary.auto.gst.toFixed(2)}</td>
+						<td>${summary.auto.grandTotal.toFixed(2)}</td>
+					</tr>
+					<tr>
+						<td>Manual</td>
+						<td>${summary.manual.freight.toFixed(2)}</td>
+						<td>${summary.manual.gst.toFixed(2)}</td>
+						<td>${summary.manual.grandTotal.toFixed(2)}</td>
+					</tr>
+					<tr class="table-danger fw-bold">
+						<td>Total</td>
+						<td>${summary.total.freight.toFixed(2)}</td>
+						<td>${summary.total.gst.toFixed(2)}</td>
+						<td>${summary.total.grandTotal.toFixed(2)}</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	`;
+
+	container.innerHTML = html;
+}
+
 
 function updatePageDisplay() {
 	const totalPages = reportPages.length;
@@ -1339,19 +1423,18 @@ document.getElementById("consigneeMobile").addEventListener("input",
 	function(e) {
 		this.value = this.value.replace(/[^0-9]/g, '');
 	});
-	
+
 // Auto redirect after 2 minutes of inactivity
-        let timer;
-        function resetTimer() {
-            clearTimeout(timer);
-            timer = setTimeout(() => {
-                logout();
-            }, 2 * 60 * 1000); // 2 minutes
-        }
+let timer;
+function resetTimer() {
+	clearTimeout(timer);
+	timer = setTimeout(() => {
+		logout();
+	}, 2 * 60 * 1000); // 2 minutes
+}
 
-        document.onload = resetTimer;
-        document.onmousemove = resetTimer;
-        document.onkeypress = resetTimer;
-        
+document.onload = resetTimer;
+document.onmousemove = resetTimer;
+document.onkeypress = resetTimer;
 
- 
+

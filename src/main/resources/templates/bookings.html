@@ -109,15 +109,22 @@
 		<div id="passwordMessage"
 			style="margin-top: 10px; display: none; color: red;"></div>
 	</div>
-	<div id="bookingReportForm" class="report-form">
+	<div id="bookingReportForm" class="report-form"
+		style="padding-bottom: 100px; overflow-y: auto; max-height: calc(100vh - 120px);">
 		<h3>Booking Report</h3>
 		<input type="hidden" id="reportStatusHidden" /> <label for="fromDate">From
 			Date:</label> <input type="date" id="fromDate"> <label for="toDate">To
 			Date:</label> <input type="date" id="toDate">
 		<button onclick="generateBookingReport()">Generate Report</button>
+
+		<!-- Error message -->
 		<div id="reportMessage"
 			style="margin-top: 10px; display: none; color: red;"></div>
-		<div id="reportTableContainer"></div>
+
+		<!-- Report table will be injected here -->
+		<div id="reportTableContainer" style="overflow-x: auto;"></div>
+
+		<!-- Pagination controls -->
 		<div id="paginationControls" class="text-center mt-3"
 			style="display: none;">
 			<button class="btn btn-secondary me-2" onclick="goToPreviousPage()"
@@ -126,19 +133,21 @@
 				of 1</span>
 			<button class="btn btn-primary ms-2" onclick="loadNextPage()"
 				id="nextPageButton">Next</button>
-
 		</div>
 
-
-
-		<div id="reportActions" style="display: none;">
+		<!-- Export & Dispatch Buttons -->
+		<div id="reportActions" style="display: none;" class="mt-3">
 			<button onclick="downloadBookingReport()">Download PDF</button>
 			<button onclick="downloadBookingReportExcel()">Download
 				Excel</button>
 			<button id="dispatchSelectedButton" onclick="dispatchSelected()">Dispatch
 				Selected</button>
 		</div>
+
+		<!-- Booking summary will appear here -->
+		<div id="bookingSummaryContainer" class="mt-4"></div>
 	</div>
+
 	<div class="container" id="bookingFormContainer"
 		style="display: block;">
 		<h2>Logistics Booking Form</h2>
