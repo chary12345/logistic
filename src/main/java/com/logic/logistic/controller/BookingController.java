@@ -6,6 +6,7 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -66,4 +67,19 @@ public class BookingController {
 		List<Booking> dispatchLoad = bookingService.dispatchLoad(loadingReceipts);
 		return ResponseEntity.ok(dispatchLoad);
 	}
+	// BookingController.java
+	@GetMapping("/searchBylr")
+	public ResponseEntity<?> searchByLR(@RequestParam String lr) {
+	    try {
+	    	Booking booking = bookingService.findByLoadingReciept(lr);
+	        if (booking != null) {
+	            return ResponseEntity.ok(booking);
+	        } else {
+	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No record found");
+	        }
+	    } catch (Exception e) {
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
+	    }
+	}
+
 }

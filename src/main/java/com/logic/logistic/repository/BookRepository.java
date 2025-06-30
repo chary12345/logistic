@@ -29,4 +29,7 @@ public interface BookRepository extends JpaRepository<Booking, String> {
 
 	@Query("SELECT b FROM Booking b WHERE b.loadingReciept IN :receipts")
 	List<Booking> findByLoadingRecieptIn(List<String> receipts);
+
+	@Query("SELECT b FROM Booking b WHERE b.loadingReciept= :lr")
+	Booking findByLoadingReciept(String lr);
 }

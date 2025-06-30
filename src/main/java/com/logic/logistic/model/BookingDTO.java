@@ -26,6 +26,7 @@ public class BookingDTO {
 
     private String companyCode;
     private String branchCode;
+    private String destinationBranchCode;
     private String consignStatus;
     private String billType;
     private String invoiceNumber;
@@ -170,6 +171,12 @@ public class BookingDTO {
 	}
 	public void seteWayBillNumber(String eWayBillNumber) {
 		this.eWayBillNumber = eWayBillNumber;
+	}
+	public String getDestinationBranchCode() {
+		return destinationBranchCode;
+	}
+	public void setDestinationBranchCode(String destinationBranchCode) {
+		this.destinationBranchCode = destinationBranchCode;
 	}
 
     
