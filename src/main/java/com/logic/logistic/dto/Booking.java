@@ -83,6 +83,12 @@ public class Booking {
     @Column(name = "branch_code")
     private String BranchCode;
     
+    @Column(name = "dest_branch_code")
+    private String destinationBranchCode;
+    
+    @Column(name = "booking_type")
+    private String bookingtype;
+    
     @Transient
     private String companyCode;
    
@@ -293,6 +299,22 @@ public class Booking {
 
 	public void seteWayBillNumber(String eWayBillNumber) {
 		this.eWayBillNumber = eWayBillNumber;
+	}
+
+	public String getDestinationBranchCode() {
+		return destinationBranchCode;
+	}
+
+	public void setDestinationBranchCode(String destinationBranchCode) {
+		this.destinationBranchCode = destinationBranchCode;
+	}
+
+	public String getBookingtype() {
+		return bookingtype;
+	}
+
+	public void setBookingtype(String bookingtype) {
+		this.bookingtype = bookingtype;
 	}
 	
 

@@ -73,6 +73,17 @@
 
 		<div class="navbar-right">
 
+			<div class="navbar-lr-search" style="margin-right: 10px;">
+				<input type="text" id="lrSearchInput"
+					class="form-control d-inline-block" placeholder="Search LR" autocomplete="off"
+					style="width: 180px; display: inline-block;" />
+				<button id="lrSearchBtn" class="btn btn-primary"
+					style="margin-left: -5px;">
+					<i class="fas fa-search"></i>
+				</button>
+			</div>
+
+
 			<div class="user-dropdown">
 				<div class="user-icon">
 					<i class="fas fa-user"></i>
@@ -96,6 +107,9 @@
 			</div>
 		</div>
 	</div>
+	<div id="lrSearchResultContainer" class="container" style="display: none;"></div>
+
+	
 	<div id="changePasswordForm" class="change-password-form">
 		<h3>Change Password</h3>
 		<label for="currentPassword">Current Password:</label> <input
@@ -109,6 +123,7 @@
 		<div id="passwordMessage"
 			style="margin-top: 10px; display: none; color: red;"></div>
 	</div>
+	
 	<div id="bookingReportForm" class="report-form"
 		style="padding-bottom: 100px; overflow-y: auto; max-height: calc(100vh - 120px);">
 		<h3>Booking Report</h3>

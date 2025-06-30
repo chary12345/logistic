@@ -89,12 +89,20 @@ public class BookingService {
 			booking.setInvoiceValue(dto.getInvoiceValue());
 			if (dto.geteWayBillNumber() != null)
 				booking.seteWayBillNumber(dto.geteWayBillNumber());
-			if (dto.getBillType() != null)
+			if (dto.getBillType() != null) {
 				booking.setBillType(dto.getBillType());
+				if(dto.getBillType().equalsIgnoreCase("TO PAY")||dto.getBillType().equalsIgnoreCase("PAID")||dto.getBillType().equalsIgnoreCase("TBD")) {
+					booking.setBookingtype("AUTO");
+				}
+				else {
+					booking.setBookingtype("MANUAL");
+				}
+			}
 			
 			if (dto.getBranchCode() != null)
 				booking.setBranchCode(dto.getBranchCode());
-
+			if (dto.getDestinationBranchCode() != null)
+				booking.setDestinationBranchCode(dto.getDestinationBranchCode());
 			save = bookingRepo.save(booking);
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
@@ -166,6 +174,10 @@ public class BookingService {
 	    response.setLast(bookings.size() < limit);
 
 	    return response;
+	}
+	
+	public Booking findByLoadingReciept(String lr) {
+	    return bookingRepo.findByLoadingReciept(lr);
 	}
 
 }

@@ -9,7 +9,8 @@ function hideAllForms() {
 	safeHide('bookingFormContainer');
 	safeHide('CreateBranchContainer');
 	safeHide('createEmployeeFormContainer');
-		document.getElementById("bookingSummaryContainer").innerHTML = "";
+	document.getElementById("bookingSummaryContainer").innerHTML = "";
+	safeHide('lrSearchResultContainer');
 	safeHide('changePasswordForm');
 	safeHide('overlay');
 }
@@ -854,7 +855,9 @@ document.getElementById("bookingForm").addEventListener("submit", async function
 		grandTotal: document.getElementById("grandTotal").value,
 		companyCode: userData.companyAndBranchDeatils.companyCode,
 		branchCode: userData.companyAndBranchDeatils.branchCode,
+		destinationBranchCode: document.getElementById("deliveryDestination").value,
 		billType: paymentMode,
+
 		invoiceNumber: document.getElementById("invoiceNo").value,
 		invoiceValue: document.getElementById("Invoicevalue").value,
 		eWayBillNumber: document.getElementById("ewayBill").value,
@@ -1397,6 +1400,164 @@ function setPaymentMode(mode) {
 		if (btn) btn.classList.add("selected-mode");
 	}
 }
+
+function searchLRByNumber(lrNumber) {
+	const container = document.getElementById("lrSearchResultContainer");
+	container.innerHTML = ""; // Clear previous
+
+	fetch(`/api/bookings/searchBylr?lr=${encodeURIComponent(lrNumber)}`)
+		.then(res => {
+			if (!res.ok) throw new Error("No data found");
+			return res.json();
+		})
+		.then(data => {
+
+
+			const gst = (data.sgst || 0) + (data.cgst || 0) + (data.igst || 0);
+			const grandTotal = (data.freight || 0) + gst;
+
+			const html = `
+  <div class="lr-search-card">
+
+					<h5 class="text-primary mb-3">🔍 Loading Reciept: ${data.loadingReciept}</h5>
+					
+					<!-- ✅ Edit Button -->
+		<div class="text-end mt-3">
+			<button class="btn btn-warning btn-sm" onclick='editLRRecord(${JSON.stringify(data)})'>✏️ Edit</button>
+		</div>
+	</div>
+				
+					<div class="row mb-2">
+						<div class="col-md-6"><strong>Status:</strong> ${data.consignStatus || 'N/A'}</div>
+						<div class="col-md-6"><strong>Booked On:</strong> ${formatDate(data.bookingDate)}</div>
+					</div>
+
+					<div class="row mb-2">
+						<div class="col-md-6"><strong>From Branch:</strong> ${data.branchCode}</div>
+						<div class="col-md-6"><strong>To Branch:</strong> ${data.destinationBranchCode}</div>
+					</div>
+
+					<hr>
+
+					<div class="row mb-2">
+						<div class="col-md-6"><strong>Consignor:</strong> ${data.consignorName} (${data.consignorMobile})</div>
+						<div class="col-md-6"><strong>Consignee:</strong> ${data.consigneeName} (${data.consigneeMobile})</div>
+					</div>
+
+					<div class="row mb-2">
+						<div class="col-md-6"><strong>Invoice:</strong> ${data.invoiceNumber || '-'} (₹${data.invoiceValue || 0})</div>
+						<div class="col-md-6"><strong>E-WayBill:</strong> ${data.ewayBillNumber || '-'}</div>
+					</div>
+
+					<hr>
+
+					<div class="row mb-2">
+						<div class="col-md-6"><strong>Article Type:</strong> ${data.articleType || 'N/A'}</div>
+						<div class="col-md-6"><strong>Weight:</strong> ${data.articleWeight || 0} kg</div>
+					</div>
+
+					<div class="row mb-2">
+						<div class="col-md-4"><strong>Freight:</strong> ₹${data.freight || 0}</div>
+						<div class="col-md-4"><strong>GST:</strong> ₹${gst.toFixed(2)}</div>
+						<div class="col-md-4"><strong>Grand Total:</strong> ₹${grandTotal.toFixed(2)}</div>
+					</div>
+				</div>
+			`;
+
+
+			hideAllForms();
+
+
+			const container = document.getElementById("lrSearchResultContainer");
+			container.innerHTML = html;
+			container.style.display = "block";
+
+
+			document.getElementById("lrSearchInput").value = "";
+
+
+			container.scrollIntoView({ behavior: "smooth" });
+		})
+		.catch(err => {
+			console.error(err);
+			container.innerHTML = `<div class="alert alert-danger mt-3">No record found for LR: <strong>${lrNumber}</strong></div>`;
+			container.style.display = 'block';
+
+		});
+}
+
+function formatDate(dt) {
+	if (!dt) return '-';
+	const date = new Date(dt);
+	return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+}
+
+function editLRRecord(data) {
+	// 1. Hide LR result
+	document.getElementById("lrSearchResultContainer").style.display = "none";
+
+	// 2. Show booking form
+	showBookingForm();
+
+	// 3. Fill the form fields using data
+	document.getElementById("deliveryDestination").value = data.destinationBranchCode || "";
+	document.getElementById("consignorName").value = data.consignorName || "";
+	document.getElementById("consignorMobile").value = data.consignorMobile || "";
+	document.getElementById("consignorGst").value = data.consignorGst || "";
+	document.getElementById("consignorAddress").value = data.consignorAddress || "";
+
+	document.getElementById("consigneeName").value = data.consigneeName || "";
+	document.getElementById("consigneeMobile").value = data.consigneeMobile || "";
+	document.getElementById("consigneeGst").value = data.consigneeGst || "";
+	document.getElementById("consigneeAddress").value = data.consigneeAddress || "";
+
+	document.getElementById("articleType").value = data.articleType || "";
+	document.getElementById("articleWeight").value = data.articleWeight || "";
+	document.getElementById("freight").value = data.freight || "";
+	document.getElementById("sgst").value = data.sgst || "";
+	document.getElementById("cgst").value = data.cgst || "";
+	document.getElementById("igst").value = data.igst || "";
+
+	document.getElementById("invoiceNumber").value = data.invoiceNumber || "";
+	document.getElementById("invoiceValue").value = data.invoiceValue || "";
+	document.getElementById("eWayBillNumber").value = data.ewayBillNumber || "";
+
+	// Optional: Store LR ID to be used while updating
+	sessionStorage.setItem("editLR", data.loadingReciept);
+}
+
+
+function setupLRSearch() {
+
+	const searchInput = document.getElementById("lrSearchInput");
+	const searchButton = document.getElementById("lrSearchBtn");
+
+	searchButton.addEventListener("click", () => {
+		const lrNumber = searchInput.value.trim();
+		if (!lrNumber) {
+			alert("Please enter LR number to search.");
+			return;
+		}
+		searchLRByNumber(lrNumber);
+	});
+
+	searchInput.addEventListener("keypress", function(e) {
+		if (e.key === "Enter") {
+			searchButton.click();
+		}
+	});
+}
+
+
+document.addEventListener("DOMContentLoaded", setupLRSearch);
+
+document.getElementById("lrSearchInput").addEventListener("input", (e) => {
+	const val = e.target.value.trim();
+	if (!val) {
+		document.getElementById("lrSearchResultContainer").style.display = "none";
+	}
+});
+
 
 document.addEventListener("keydown", function(e) {
 	if (e.key === "F7") {
