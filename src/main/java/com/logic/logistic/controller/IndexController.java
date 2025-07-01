@@ -28,5 +28,11 @@ public class IndexController {
 			return "branchcreate.html";
 			
 		}
+	  
+	  @GetMapping("/search-report")
+		public String searchreportInfo() {
+			return "search-report.html";
+			
+		}
 		
 }

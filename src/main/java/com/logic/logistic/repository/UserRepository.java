@@ -20,4 +20,6 @@ public interface UserRepository extends JpaRepository<UserDto, String> {
     @Transactional
     @Query(value = "UPDATE logistics_logic.user_data SET password = :newPassword WHERE user_name = :username", nativeQuery = true)
     int updatePassword(@Param("username") String username, @Param("newPassword") String newPassword);
+    
+    
 }

@@ -43,6 +43,9 @@
 						Report</a> <a href="#" onclick="showReportForm('received')">Receive
 						Report</a> <a href="#" onclick="showReportForm('delivered')">Delivery
 						Report</a>
+						<!--<a href="#" onclick="showReportForm('Searching')">Search Report</a>-->
+					<!--	<li><a class="dropdown-item" href="/search-report.html">Search Report</a></li>-->
+					<a href="/search-report.html">Search Report</a>
 				</div>
 			</div>
 			<!-- Inside the Manage dropdown -->
@@ -51,13 +54,39 @@
 				<div class="dropdown-content">
 					<!-- <li><a id="createBranchLink" class="dropdown-item" href="#">Create
 							Branch</a></li> -->
-					<a href="#" onclick="showCreateBranchForm()">Branch Manage</a>
-					<a  href="#" onclick="showCreateEmployeeForm()">Create Employee</a>
-					
+					<a href="#" onclick="showCreateBranchForm()">Branch Manage</a> <a
+						href="#" onclick="showCreateEmployeeForm()">Create Employee</a>
+
 				</div>
 			</div>
+
+
+
 		</div>
+
+		<!-- CENTER -->
+		<div class="navbar-center">
+			<div class="shortcut-dashboard-box">
+				<span class="key-box f7" onclick="setPaymentMode('PAID')">F7</span>
+				: PAID <span class="key-box f8" onclick="setPaymentMode('TO PAY')">F8</span>
+				: TO PAY <span class="key-box f9" onclick="setPaymentMode('TBB')">F9</span>
+				: TBB
+			</div>
+		</div>
+
 		<div class="navbar-right">
+
+			<div class="navbar-lr-search" style="margin-right: 10px;">
+				<input type="text" id="lrSearchInput"
+					class="form-control d-inline-block" placeholder="Search LR" autocomplete="off"
+					style="width: 180px; display: inline-block;" />
+				<button id="lrSearchBtn" class="btn btn-primary"
+					style="margin-left: -5px;">
+					<i class="fas fa-search"></i>
+				</button>
+			</div>
+
+
 			<div class="user-dropdown">
 				<div class="user-icon">
 					<i class="fas fa-user"></i>
@@ -81,6 +110,9 @@
 			</div>
 		</div>
 	</div>
+	<div id="lrSearchResultContainer" class="container" style="display: none;"></div>
+
+	
 	<div id="changePasswordForm" class="change-password-form">
 		<h3>Change Password</h3>
 		<label for="currentPassword">Current Password:</label> <input
@@ -88,40 +120,76 @@
 			for="newPassword">New Password:</label> <input type="password"
 			id="newPassword"> <label for="confirmPassword">Confirm
 			New Password:</label> <input type="password" id="confirmPassword">
-		<button class="btn btn-primary" onclick="submitChangePassword()">Submit</button>
+		<button class="btn btn-primary" onclick="changePassword()">Submit</button>
+
 		<button class="btn btn-secondary" onclick="hideChangePasswordForm()">Cancel</button>
 		<div id="passwordMessage"
 			style="margin-top: 10px; display: none; color: red;"></div>
 	</div>
-	<div id="bookingReportForm" class="report-form">
+	
+	<div id="bookingReportForm" class="report-form"
+		style="padding-bottom: 100px; overflow-y: auto; max-height: calc(100vh - 120px);">
 		<h3>Booking Report</h3>
 		<input type="hidden" id="reportStatusHidden" /> <label for="fromDate">From
 			Date:</label> <input type="date" id="fromDate"> <label for="toDate">To
 			Date:</label> <input type="date" id="toDate">
 		<button onclick="generateBookingReport()">Generate Report</button>
+
+		<!-- Error message -->
 		<div id="reportMessage"
 			style="margin-top: 10px; display: none; color: red;"></div>
-		<div id="reportTableContainer"></div>
-		<div id="reportActions" style="display: none;">
+
+		<!-- Report table will be injected here -->
+		<div id="reportTableContainer" style="overflow-x: auto;"></div>
+
+		<!-- Pagination controls -->
+		<div id="paginationControls" class="text-center mt-3"
+			style="display: none;">
+			<button class="btn btn-secondary me-2" onclick="goToPreviousPage()"
+				id="prevPageButton">Prev</button>
+			<span id="pageNumberDisplay" style="font-weight: bold;">Page 1
+				of 1</span>
+			<button class="btn btn-primary ms-2" onclick="loadNextPage()"
+				id="nextPageButton">Next</button>
+		</div>
+
+		<!-- Export & Dispatch Buttons -->
+		<div id="reportActions" style="display: none;" class="mt-3">
 			<button onclick="downloadBookingReport()">Download PDF</button>
 			<button onclick="downloadBookingReportExcel()">Download
 				Excel</button>
 			<button id="dispatchSelectedButton" onclick="dispatchSelected()">Dispatch
 				Selected</button>
 		</div>
+
+		<!-- Booking summary will appear here -->
+		<div id="bookingSummaryContainer" class="mt-4"></div>
 	</div>
+
 	<div class="container" id="bookingFormContainer"
 		style="display: block;">
 		<h2>Logistics Booking Form</h2>
+		<div id="selectedPaymentModeDisplay"
+			style="margin-bottom: 10px; display: none;">
+			<span class="badge bg-primary" id="selectedModeLabel"></span>
+		</div>
+
 		<form id="bookingForm">
-			<label for="deliveryDestination">Delivery Destination:</label> <input
-				type="text" id="deliveryDestination" list="destinationList"
-				autocomplete="off">
-			<datalist id="destinationList"></datalist>
+			<input type="hidden" id="paymentMode" name="paymentMode">
+			<!-- Delivery Destination -->
+			<div class="row mb-4">
+				<div class="col-md-6">
+					<label for="deliveryDestination" class="form-label">Delivery
+						Destination:</label> <select id="deliveryDestination" class="form-select">
+						<option value="">-- Select Destination --</option>
+					</select>
+				</div>
+			</div>
 
 
 
-		
+
+
 			<h3>Consignor (From)</h3>
 			<label for="consignorName">Name:</label> <input type="text"
 				id="consignorName" required> <label for="consignorMobile">Mobile
@@ -139,62 +207,105 @@
 				for="consigneeGST">GST No:</label> <input type="text"
 				id="consigneeGST"> <label for="consigneeAddress">Address:</label>
 			<input type="text" id="consigneeAddress">
+
+
 			<h3>Article Details</h3>
-			<table>
-				<thead>
-					<tr>
-						<th>Article</th>
-						<th>Art Quantity</th>
-						<th>Art Type</th>
-						<th>Said To Contains</th>
-						<th>Art Amt</th>
-						<th>Total</th>
-						<th>Action</th>
-					</tr>
-				</thead>
-				<tbody>
-					<tr>
+			<div class="row align-items-start">
+				<!-- Article Form -->
+				<div class="col-md-8">
+					<table class="table table-bordered">
+						<thead>
+							<tr>
+								<th>Article</th>
+								<th>Art Quantity</th>
+								<th>Art Type</th>
+								<th>Said To Contains</th>
+								<th>Art Amt</th>
+								<th>Total</th>
+								<th>Action</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td><select id="article" class="form-select">
+										<option value="Article">Article</option>
+										<option value="Weight">Weight</option>
+										<option value="Fix">Fix</option>
+								</select></td>
+								<td><input type="number" id="artQuantity" value="0"
+									class="form-control"></td>
+								<td><select id="artType" class="form-select">
+										<option value="Auto Parts">Auto Parts</option>
+										<option value="Electronics">Electronics</option>
+										<option value="Garments">Garments</option>
+								</select></td>
+								<td><select id="saidToContain" class="form-select">
+										<option value="Spare Parts">Spare Parts</option>
+										<option value="Components">Components</option>
+										<option value="Accessories">Accessories</option>
+								</select></td>
+								<td><input type="number" id="artAmount" value="0"
+									class="form-control"></td>
+								<td><span id="totalAmount">0</span></td>
+								<td><button type="button" class="btn btn-sm btn-success"
+										onclick="addArticle()">Add</button></td>
+							</tr>
+						</tbody>
+					</table>
+					<!-- Invoice / E-Waybill Row (Tightly below article inputs) -->
+					<div class="row g-2 mb-3" style="margin-top: -10px;">
+						<div class="col-md-4">
+							<input type="text" id="invoiceNo"
+								class="form-control form-control-sm" placeholder="INVOICE NO.">
+						</div>
+						<div class="col-md-2">
+							<input type="text" id="Invoicevalue"
+								class="form-control form-control-sm" placeholder="0">
+						</div>
+						<div class="col-md-6">
+							<input type="text" id="ewayBill"
+								class="form-control form-control-sm" placeholder="E-Waybill">
+						</div>
+					</div>
 
-						<td><select id="article">
-								<option value="Article">Article</option>
-								<option value="Weight">Weight</option>
-								<option value="Fix">Fix</option>
-						</select></td>
-						<td><input type="number" id="artQuantity" value="0"></td>
-						<td><select id="artType">
-								<option value="Auto Parts">Auto Parts</option>
-								<option value="Electronics">Electronics</option>
-								<option value="Garments">Garments</option>
-						</select></td>
-						<td><select id="saidToContain">
-								<option value="Spare Parts">Spare Parts</option>
-								<option value="Components">Components</option>
-								<option value="Accessories">Accessories</option>
-						</select></td>
-						<td><input type="number" id="artAmount" value="0"></td>
-						<td><span id="totalAmount">0</span></td>
-						<td><button type="button" onclick="addArticle()">Add</button></td>
-					</tr>
+				</div>
 
-				</tbody>
 
-			</table>
 
-			<input type="text" id="INVOICE NO." placeholder="INVOICE NO.">
-			<input type="text" id=" " placeholder=" 0"> <input
-				type="text" id="E-Waybill" placeholder="E-Waybill">
+				<!-- Charges Section - Right Side -->
+				<div class="col-md-4">
+					<div id="chargesPanel"
+						style="display: none; border: 1px solid #ccc; padding: 12px; border-radius: 4px;">
+						<h6 class="text-center mb-2">Charges</h6>
 
-			<h3>Charges</h3>
-			<div class="charges">
-				<label for="freight">Freight:</label> <input type="number"
-					id="freight" value="0" oninput="calculateCharges()" readonly>
-				<label for="sgst">SGST (2.5%):</label> <input type="number"
-					id="sgst" value="0" readonly> <label for="cgst">CGST
-					(2.25%):</label> <input type="number" id="cgst" value="0" readonly>
-				<label for="igst">IGST (5%):</label> <input type="number" id="igst"
-					value="0" readonly> <label for="grandTotal">Grand
-					Total:</label> <input type="number" id="grandTotal" readonly>
+						<div class="mb-2">
+							<label for="freight">Freight:</label> <input type="number"
+								id="freight" class="form-control" readonly>
+						</div>
+						<div class="mb-2">
+							<label for="sgst">SGST (2.5%):</label> <input type="number"
+								id="sgst" class="form-control" readonly>
+						</div>
+						<div class="mb-2">
+							<label for="cgst">CGST (2.5%):</label> <input type="number"
+								id="cgst" class="form-control" readonly>
+						</div>
+						<div class="mb-2">
+							<label for="igst">IGST (5%):</label> <input type="number"
+								id="igst" class="form-control" readonly>
+						</div>
+						<div class="mb-2">
+							<label for="grandTotal">Grand Total:</label> <input type="number"
+								id="grandTotal" class="form-control fw-bold" readonly>
+						</div>
+					</div>
+				</div>
+
+
+
 			</div>
+
+
 			<button type="submit">Booking</button>
 		</form>
 	</div>
@@ -357,53 +468,10 @@
 
 
 				</div>
-				
-					
-				
+
 			</form>
-		<div id="createEmployeeFormContainer" style="display: none;" class="container mt-4">
-    <h3 class="text-center mb-4">Create Employee</h3>
-    <div id="formMessage"></div>
-    <form id="createEmployeeForm" autocomplete="off">
-        <div class="row mb-3">
-            <div class="col-3">
-                <select class="form-select" id="branchSelect">
-                    <option selected>---- Select Branch ----</option>
-                </select>
-            </div>
-            <div class="col-1">
-                <button type="reset" class="btn btn-secondary w-100">Reset</button>
-            </div>
-        </div>
-        <div class="card">
-            <div class="card-header"><h5>User Information</h5></div>
-            <div class="card-body">
-                <div class="row mb-2">
-                    <div class="col-md-3"><label class="form-label">First Name</label><input type="text" id="firstName" class="form-control" required oninput="this.value = this.value.toUpperCase()"></div>
-                    <div class="col-md-3"><label class="form-label">Last Name</label><input type="text" id="lastName" class="form-control" required oninput="this.value = this.value.toUpperCase()"></div>
-                    <div class="col-md-3"><label class="form-label">Username</label><input type="text" id="userName" class="form-control" required><div id="usernameError" class="text-danger small"></div></div>
-                    <div class="col-md-3"><label class="form-label">Password</label><input type="password" id="password" class="form-control" required></div>
-                </div>
-                <div class="row mb-2">
-                    <div class="col-md-3"><label class="form-label">Confirm Password</label><input type="password" id="confirmPassword" class="form-control" required><div id="confirmPasswordError" class="text-danger small"></div></div>
-                    <div class="col-md-3"><label class="form-label">Phone</label><input type="text" id="phone" class="form-control" maxlength="10" pattern="\d{10}" required></div>
-                    <div class="col-md-3"><label class="form-label">Email</label><input type="email" id="email" class="form-control"></div>
-                    <div class="col-md-3"><label class="form-label">Role</label>
-                        <select class="form-select" id="role" required>
-                            <option value="Employee">Employee</option>
-                            <option value="Admin">Admin</option>
-                            <option value="SuperAdmin">SuperAdmin</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="text-end mt-3">
-                    <button type="button" class="btn btn-success" id="submitButton">Create Employee</button>
-                </div>
-            </div>
-        </div>
-    </form>
-</div>
-			
+
+
 		</div>
 	</div>
 	</div>
@@ -415,81 +483,11 @@
 	<script
 		src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-	<script>   
-	document.getElementById("consignorMobile").addEventListener("input", function (e){
-  			this.value = this.value.replace(/[^0-9]/g, '');
-  		});
-		</script>
 
-	<script>   
-			document.getElementById("consigneeMobile").addEventListener("input", function (e){
-		  			this.value = this.value.replace(/[^0-9]/g, '');
-		  		});
-	</script>
 
-	<script>
-			  document.getElementById('deliveryDestination').addEventListener('click',(e)=>{
-			    e.stopPropagation();
-			    document.getElementById('destinationList').style.display = 'block';
-			  });
 
-			
-	</script>
 
 	<script src="/js/bookings.js"></script>
-	
-	
-	<script>
-	    let idleTime = 0;
-	    const maxIdleMinutes = 2;
-		
-		document.onmousemove = document.onkeypress = document.onclick = () => idleTime = 0;
 
-	   <!-- function resetTimer() {
-	        idleTime = 0;
-	    }
-
-	    window.onload = resetTimer;
-	    document.onmousemove = resetTimer;
-	    document.onkeypress = resetTimer;
-	    document.onclick = resetTimer;
-	    document.onscroll = resetTimer;-->
-
-	    setInterval(() => {
-	        idleTime++;
-	        if (idleTime >= maxIdleMinutes) {
-	            window.location.href = '/login?session=expired'; // change as needed
-	        }
-	    }, 60000); // check every 1 minute
-	</script>
-	
-	@using Microsoft.AspNetCore.Http;
-	@inject IHttpContextAccessor HttpContextAccessor
-
-	<div id="session">
-	</div>
-
-	<!--<script>
-	    $(document).ready(function () {
-	        var session = '@HttpContextAccessor.HttpContext.Session.GetString("UserName")';
-	        if (session == "") {
-	            SessionLogOut();
-	        }
-	    });
-	    function SessionLogOut() {
-	        $("div#session").append("<div id=\"TimeOut\" class=\"text-center\">Your session has expired, please<a href=\"/Home/Index\" class=\"btn signout\" style=\"padding: 1px 5px 1px 5px;\">click here to login</a>again</div>");
-
-	    }
-		
-	</script>-->
-	
-	
-	<!--services.AddSession(options =>
-			{
-			      options.IdleTimeout = TimeSpan.FromSeconds(2);
-			});-->
-	
-			
-			
 </body>
 </html>

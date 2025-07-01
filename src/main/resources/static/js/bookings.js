@@ -1,15 +1,28 @@
+
+
+function safeHide(id) {
+	const el = document.getElementById(id);
+	if (el) el.style.display = 'none';
+}
+function hideAllForms() {
+	safeHide('bookingReportForm');
+	safeHide('bookingFormContainer');
+	safeHide('CreateBranchContainer');
+	safeHide('createEmployeeFormContainer');
+	document.getElementById("bookingSummaryContainer").innerHTML = "";
+	safeHide('lrSearchResultContainer');
+	safeHide('changePasswordForm');
+	safeHide('overlay');
+}
+
 function showBookingForm() {
+	hideAllForms();
 	document.getElementById('bookingFormContainer').style.display = 'block';
-	document.getElementById('bookingReportForm').style.display = 'none';
-	document.getElementById('CreateBranchContainer').style.display = 'none';
-	hideChangePasswordForm(); // Ensure password form is hidden
 }
 
 function showCreateBranchForm() {
+	hideAllForms();
 	document.getElementById('CreateBranchContainer').style.display = 'block';
-	document.getElementById('bookingFormContainer').style.display = 'none';
-	document.getElementById('bookingReportForm').style.display = 'none';
-	hideChangePasswordForm(); // Hide the change password form if open
 }
 
 
@@ -45,7 +58,8 @@ document.getElementById("branchForm").addEventListener("submit", async function(
 			postalCode: document.getElementById("postalCode").value,
 
 
-		}
+		},
+
 	};
 	try {
 		const response = await fetch("/createBranch", {
@@ -230,158 +244,320 @@ document.getElementById('city').addEventListener('focus', function() {
 	}
 });
 
+
+
+
 function showReportForm(reportType) {
-  document.getElementById('bookingReportForm').style.display = 'block';
-  document.getElementById('bookingFormContainer').style.display = 'none';
-  document.getElementById('CreateBranchContainer').style.display = 'none';
-  document.getElementById('reportActions').style.display = 'none';
-  document.getElementById('reportTableContainer').innerHTML = '';
-  document.getElementById('reportMessage').style.display = 'none';
-  hideChangePasswordForm();
+	hideAllForms();
 
-  let status = "";
-  let headingText = "";
+	// Reset state to make sure report reloads correctly
+	reportData = [];
+	reportPages = [];
+	currentPage = 0;
+	lastSeenBookingId = null;
 
-  switch (reportType) {
-    case "booking":
-      status = "BOOKED";
-      headingText = "Booking Report";
-      document.getElementById("dispatchSelectedButton").style.display = "inline-block";
-      break;
-    case "dispatched":
-      status = "DISPATCHED";
-      headingText = "Dispatch Report";
-      document.getElementById("dispatchSelectedButton").style.display = "none";
-      break;
-    case "received":
-      status = "RECEIVED";
-      headingText = "Receive Report";
-      document.getElementById("dispatchSelectedButton").style.display = "none";
-      break;
-    case "delivered":
-      status = "DELIVERED";
-      headingText = "Delivery Report";
-      document.getElementById("dispatchSelectedButton").style.display = "none";
-      break;
-  }
+	document.getElementById("bookingReportForm").style.display = 'block';
 
-  document.getElementById("reportStatusHidden").value = status;
-  document.querySelector("#bookingReportForm h3").textContent = headingText;
+	let status = "";
+	let headingText = "";
+
+	switch (reportType) {
+		case "booking":
+			status = "BOOKED";
+			headingText = "Booking Report";
+			break;
+		case "dispatched":
+			status = "DISPATCHED";
+			headingText = "Dispatch Report";
+			break;
+		case "received":
+			status = "RECEIVED";
+			headingText = "Receive Report";
+			break;
+		case "delivered":
+			status = "DELIVERED";
+			headingText = "Delivery Report";
+			break;
+	}
+
+	document.getElementById("reportStatusHidden").value = status;
+	document.querySelector("#bookingReportForm h3").textContent = headingText;
+	updateDispatchButtonVisibility(status);
+
+	// Optional: clear previous table
+	document.getElementById("reportTableContainer").innerHTML = '';
+	document.getElementById("paginationControls").style.display = 'none';
+	document.getElementById("reportActions").style.display = 'none';
+	document.getElementById("reportMessage").style.display = 'none';
+}
+function resetReportView() {
+	document.getElementById("reportTableContainer").innerHTML = "";
+	document.getElementById("bookingSummaryContainer").innerHTML = "";
+	document.getElementById("reportMessage").style.display = "none";
+	document.getElementById("reportActions").style.display = "none";
+	document.getElementById("paginationControls").style.display = "none";
+
+	reportData = [];
+	reportPages = [];
+	currentPage = 0;
+	lastSeenBookingId = null;
 }
 
-// Add this to generateBookingReport() after reading status:
 function updateDispatchButtonVisibility(status) {
-  const btn = document.getElementById("dispatchSelectedButton");
-  if (status === "BOOKED") {
-    btn.style.display = "inline-block";
-  } else {
-    btn.style.display = "none";
-  }
+	const btn = document.getElementById("dispatchSelectedButton");
+	if (!btn) return;
+
+	// Show button only if status is "BOOKED"
+	btn.style.display = (status === "BOOKED") ? "inline-block" : "none";
 }
 
+let reportData = [];              // for download
+let reportPages = [];             // paginated cache
+let currentPage = 0;              // page index
+let lastSeenBookingId = null;     // for next page fetch
+let fromDateGlobal = "";
+let toDateGlobal = "";
+let currentReportStatus = "";
 
-let reportData = []; // Store the fetched report data globally
 
 function generateBookingReport() {
 	const fromDateRaw = document.getElementById('fromDate').value;
 	const toDateRaw = document.getElementById('toDate').value;
-	const reportMessage = document.getElementById('reportMessage');
-	const reportTableContainer = document.getElementById('reportTableContainer');
-	const reportActions = document.getElementById('reportActions');
 
 	if (!fromDateRaw || !toDateRaw) {
 		alert("Please select both From and To dates.");
 		return;
 	}
 
-	// Manually add time portion
-	const fromDate = `${fromDateRaw}T00:00:00`;
-	const toDate = `${toDateRaw}T23:59:59`;
-	// Clear previous report data and table
+	// Reset state
 	reportData = [];
-	reportTableContainer.innerHTML = '';
-	reportMessage.style.display = 'none';
-	reportActions.style.display = 'none'; // Hide buttons before new report
+	reportPages = [];
+	currentPage = 0;
+	lastSeenBookingId = null;
 
-	const status = document.getElementById('reportStatusHidden').value;
-	
-	updateDispatchButtonVisibility(status); 
-	
-	
-	let apiUrl = `/api/bookings/report?fromDate=${fromDate}&toDate=${toDate}`;
-if (status) {
-	apiUrl += `&status=${status}`;
+	fromDateGlobal = `${fromDateRaw}T00:00:00`;
+	toDateGlobal = `${toDateRaw}T23:59:59`;
+	currentReportStatus = document.getElementById('reportStatusHidden').value;
+
+	document.getElementById("reportTableContainer").innerHTML = '';
+	document.getElementById("reportMessage").style.display = 'none';
+	document.getElementById("reportActions").style.display = 'none';
+	document.getElementById("paginationControls").style.display = 'none';
+
+	updateDispatchButtonVisibility(currentReportStatus);
+
+	// 🚀 Always fetch first page fresh
+	loadPage(0);
 }
 
+
+function loadPage(pageIndex) {
+	if (reportPages[pageIndex]) {
+		// ✅ Cached page
+		currentPage = pageIndex;
+		displayReportData(reportPages[currentPage]);
+		updatePageDisplay();
+		document.getElementById("nextPageButton").disabled = reportPages.length <= currentPage + 1;
+		document.getElementById("prevPageButton").disabled = currentPage === 0;
+		return;
+	}
+
+	// 🚀 If not cached, fetch from server
+	const branchCode = userData.companyAndBranchDeatils.branchCode;
+	let apiUrl = `/api/bookings/report?fromDate=${fromDateGlobal}&toDate=${toDateGlobal}&status=${currentReportStatus}`;
+
+	if (lastSeenBookingId) {
+		apiUrl += `&lastId=${lastSeenBookingId}`;
+	}
+	if (branchCode) {
+		apiUrl += `&branchCode=${branchCode}`;
+	}
 
 	fetch(apiUrl)
 		.then(response => response.json())
 		.then(data => {
 			if (data.content && data.content.length > 0) {
-				reportData = data.content; // Store the fetched data
+				// Save for later use
+				lastSeenBookingId = data.content[data.content.length - 1].loadingReciept;
+				reportPages.push(data.content);
+				currentPage = reportPages.length - 1;
+
 				displayReportData(data.content);
-				reportMessage.style.display = 'none';
-				reportActions.style.display = 'block'; // Show buttons after report is generated
+				updatePageDisplay();
+
+				document.getElementById("paginationControls").style.display = "block";
+				document.getElementById("reportActions").style.display = "block";
+				document.getElementById("nextPageButton").disabled = false;
+				document.getElementById("prevPageButton").disabled = currentPage === 0;
 			} else {
-				reportMessage.textContent = "No Records Found";
-				reportMessage.style.display = 'block';
-				reportActions.style.display = 'none';
+				document.getElementById("nextPageButton").disabled = true;
+				if (reportData.length === 0) {
+					document.getElementById("reportMessage").textContent = "No Records Found";
+					document.getElementById("reportMessage").style.display = "block";
+				}
 			}
 		})
 		.catch(error => {
 			console.error("Error fetching report data:", error);
-			reportMessage.textContent = "Error fetching report data.";
-			reportMessage.style.display = 'block';
-			reportActions.style.display = 'none';
+			document.getElementById("reportMessage").textContent = "Error fetching report data.";
+			document.getElementById("reportMessage").style.display = "block";
 		});
 }
 
+function loadNextPage() {
+	loadPage(currentPage + 1);
+}
+
+function goToPreviousPage() {
+	if (currentPage > 0) {
+		loadPage(currentPage - 1);
+	}
+}
+
+
 function displayReportData(data) {
-	let reportTable = document.createElement('table');
-	reportTable.innerHTML = `
-            <tr>
-            <th><input type="checkbox" id="selectAll" onclick="toggleAllCheckboxes(this)"></th>
-                <th>LoadingReciept</th>
-                <th>Consignor Name</th>
-                <th>Consignor Mobile</th>
-                <th>Consignee Name</th>
-                <th>Consignee Mobile</th>
-                <th>Article Type</th>
-                <th>Article Weight</th>
-                <th>Freight</th>
-                <th>SGST</th>
-                <th>CGST</th>
-                <th>IGST</th>
-                <th>ConsignStatus</th>
-                <th>Booking Date</th>
-            </tr>
-        `;
-	let seen = new Set();
+	const container = document.getElementById('reportTableContainer');
+
+	let table = container.querySelector("table");
+	let tbody;
+
+	if (table) {
+		tbody = table.querySelector("tbody");
+		tbody.innerHTML = '';
+	} else {
+		table = document.createElement('table');
+		table.className = 'table table-bordered';
+		table.innerHTML = `
+			<thead>
+			<tr>
+				<th><input type="checkbox" id="selectAll" onclick="toggleAllCheckboxes(this)"></th>
+				<th>LoadingReciept</th>
+				<th>Consignor Name</th>
+				<th>Consignor Mobile</th>
+				<th>Consignee Name</th>
+				<th>Consignee Mobile</th>
+				<th>Article Type</th>
+				<th>Article Weight</th>
+				<th>Freight</th>
+				<th>SGST</th>
+				<th>CGST</th>
+				<th>IGST</th>
+				<th>ConsignStatus</th>
+				<th>Booking Date</th>
+			</tr>
+			</thead>
+			<tbody></tbody>`;
+		container.appendChild(table);
+		tbody = table.querySelector("tbody");
+	}
+
 	data.forEach(booking => {
-		if (seen.has(booking.loadingReciept)) return;
-		seen.add(booking.loadingReciept);
-		let row = reportTable.insertRow();
+		const row = document.createElement("tr");
 		row.innerHTML = `
-		<td><input type="checkbox" class="bookingCheckbox" value="${booking.loadingReciept}"></td>
-                <td>${booking.loadingReciept}</td>
-                <td>${booking.consignorName}</td>
-                <td>${booking.consignorMobile}</td>
-                <td>${booking.consigneeName}</td>
-                <td>${booking.consigneeMobile}</td>
-                <td>${booking.articleType}</td>
-                <td>${booking.articleWeight}</td>
-                <td>${booking.freight}</td>
-                <td>${booking.sgst}</td>
-                <td>${booking.cgst}</td>
-                <td>${booking.igst}</td>
-                 <td>${booking.consignStatus}</td>
-                <td>${new Date(booking.bookingDate).toLocaleDateString()}</td>
-            `;
+			<td><input type="checkbox" class="bookingCheckbox" value="${booking.loadingReciept}"></td>
+			<td>${booking.loadingReciept}</td>
+			<td>${booking.consignorName}</td>
+			<td>${booking.consignorMobile}</td>
+			<td>${booking.consigneeName}</td>
+			<td>${booking.consigneeMobile}</td>
+			<td>${booking.articleType}</td>
+			<td>${booking.articleWeight}</td>
+			<td>${booking.freight}</td>
+			<td>${booking.sgst}</td>
+			<td>${booking.cgst}</td>
+			<td>${booking.igst}</td>
+			<td>${booking.consignStatus}</td>
+			<td>${new Date(booking.bookingDate).toLocaleDateString()}</td>
+		`;
+		tbody.appendChild(row);
 	});
 
-	const reportContainer = document.getElementById('reportTableContainer');
-	reportContainer.appendChild(reportTable);
+	reportData = [...reportData, ...data];
+
+	// ✅ Add this to always show current page summary
+	if (currentPage === reportPages.length - 1 || reportPages.length === 1) {
+		displayBookingSummary(data);
+	}
 }
+
+
+function displayBookingSummary(dataArray) {
+	const container = document.getElementById("bookingSummaryContainer");
+	if (!container) return;
+	container.innerHTML = "";
+
+	const summary = {
+		auto: { freight: 0, gst: 0, grandTotal: 0 },
+		manual: { freight: 0, gst: 0, grandTotal: 0 },
+		total: { freight: 0, gst: 0, grandTotal: 0 }
+	};
+
+	dataArray.forEach(row => {
+		const type = row.type?.toLowerCase() === "manual" ? "manual" : "auto";
+		const freight = Number(row.freight || 0);
+		const sgst = Number(row.sgst || 0);
+		const cgst = Number(row.cgst || 0);
+		const igst = Number(row.igst || 0);
+		const gst = sgst + cgst + igst;
+		const grandTotal = freight + gst;
+
+		summary[type].freight += freight;
+		summary[type].gst += gst;
+		summary[type].grandTotal += grandTotal;
+
+		summary.total.freight += freight;
+		summary.total.gst += gst;
+		summary.total.grandTotal += grandTotal;
+	});
+
+	const html = `
+		<div class="mt-4">
+			<h5 class="text-center text-success">BOOKING SUMMARY</h5>
+			<table class="table table-bordered text-center">
+				<thead class="table-light">
+					<tr>
+						<th>Type</th>
+						<th>Total Freight</th>
+						<th>GST (SGST+CGST+IGST)</th>
+						<th>Grand Total</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td>Auto</td>
+						<td>${summary.auto.freight.toFixed(2)}</td>
+						<td>${summary.auto.gst.toFixed(2)}</td>
+						<td>${summary.auto.grandTotal.toFixed(2)}</td>
+					</tr>
+					<tr>
+						<td>Manual</td>
+						<td>${summary.manual.freight.toFixed(2)}</td>
+						<td>${summary.manual.gst.toFixed(2)}</td>
+						<td>${summary.manual.grandTotal.toFixed(2)}</td>
+					</tr>
+					<tr class="table-danger fw-bold">
+						<td>Total</td>
+						<td>${summary.total.freight.toFixed(2)}</td>
+						<td>${summary.total.gst.toFixed(2)}</td>
+						<td>${summary.total.grandTotal.toFixed(2)}</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	`;
+
+	container.innerHTML = html;
+}
+
+
+function updatePageDisplay() {
+	const totalPages = reportPages.length;
+	const display = `Page ${currentPage + 1} of ${totalPages}`;
+	document.getElementById("pageNumberDisplay").textContent = display;
+}
+
+
+
 function toggleAllCheckboxes(source) {
 	const checkboxes = document.querySelectorAll('.bookingCheckbox');
 	checkboxes.forEach(cb => cb.checked = source.checked);
@@ -501,7 +677,7 @@ function calculateCharges() {
 
 function addArticle() {
 	let tableBody = document.querySelector("#bookingForm table tbody");
-	let newRow = tableBody.insertRow(-1); // Insert at the end of the tbody
+	let newRow = tableBody.insertRow(-1);
 
 	let articleCell = newRow.insertCell();
 	let artQtyCell = newRow.insertCell();
@@ -516,40 +692,49 @@ function addArticle() {
 	artTypeCell.textContent = document.getElementById("artType").value;
 	saidToContainCell.textContent = document.getElementById("saidToContain").value;
 	artAmtCell.textContent = document.getElementById("artAmount").value;
-	totalCell.textContent = parseInt(document.getElementById("artQuantity").value) * parseInt(document.getElementById("artAmount").value);
+	totalCell.textContent =
+		parseInt(document.getElementById("artQuantity").value) *
+		parseInt(document.getElementById("artAmount").value);
 
 	let deleteButton = document.createElement("button");
-	deleteButton.type = "button";
+	deleteButton.className = "btn btn-danger btn-sm";
 	deleteButton.textContent = "Delete";
 	deleteButton.onclick = function() {
 		deleteRow(this);
 	};
 	actionCell.appendChild(deleteButton);
 
-	// Clear the input fields in the *first* row (the template row)
-	document.getElementById("article").value = "";
+	// Clear input fields
+	document.getElementById("article").value = "Article";
 	document.getElementById("artQuantity").value = "0";
 	document.getElementById("artType").selectedIndex = 0;
 	document.getElementById("saidToContain").selectedIndex = 0;
 	document.getElementById("artAmount").value = "0";
 	document.getElementById("totalAmount").textContent = "0";
-	const chargesSection = document.querySelector('.charges');
-	if (chargesSection && document.querySelector("#bookingForm table tbody").rows.length > 0) {
-		chargesSection.style.display = 'flex';
-		updateFreight();
-	}
+
+	// Show Charges panel and recalculate
+	document.getElementById("chargesPanel").style.display = "block";
+	updateFreight();
 }
+
 
 function deleteRow(btn) {
 	let row = btn.parentNode.parentNode;
-	row.parentNode.removeChild(row);
+	row.remove();
+
 	let tableBody = document.querySelector("#bookingForm table tbody");
 	if (tableBody.rows.length <= 1) {
-		hideChargesSection();
+		document.getElementById("chargesPanel").style.display = "none";
+		document.getElementById("freight").value = 0;
+		document.getElementById("sgst").value = 0;
+		document.getElementById("cgst").value = 0;
+		document.getElementById("igst").value = 0;
+		document.getElementById("grandTotal").value = 0;
 	} else {
 		updateFreight();
 	}
 }
+
 
 function updateFreight() {
 	let totalFreight = 0;
@@ -594,6 +779,8 @@ function printBookingReceipt(booking) {
 				<tr><td><strong>Address:</strong></td><td>${booking.consigneeAddress}</td></tr>
 				<tr><td><strong>Freight:</strong></td><td>₹${booking.freight}</td></tr>
 				<tr><td><strong>Status:</strong></td><td>Booked</td></tr>
+				tr><td><strong>PaymentMode:</strong><td>${booking.billType}</td></tr>
+				
 				<tr><td><strong>SGST:</strong></td><td>₹${booking.sgst}</td></tr>
 				<tr><td><strong>CGST:</strong></td><td>₹${booking.cgst}</td></tr>
 				<tr><td><strong>IGST:</strong></td><td>₹${booking.igst}</td></tr>
@@ -629,6 +816,7 @@ document.getElementById("bookingForm").addEventListener("submit", async function
 	const selectedBranchCode = match ? match[1] : null;
 
 	const currentBranchCode = userData?.companyAndBranchDeatils?.branchCode;
+	const paymentMode = document.getElementById("paymentMode").value;
 
 	if (selectedBranchCode && selectedBranchCode === currentBranchCode) {
 		alert("Destination branch cannot be the same as your current branch.");
@@ -667,6 +855,12 @@ document.getElementById("bookingForm").addEventListener("submit", async function
 		grandTotal: document.getElementById("grandTotal").value,
 		companyCode: userData.companyAndBranchDeatils.companyCode,
 		branchCode: userData.companyAndBranchDeatils.branchCode,
+		destinationBranchCode: document.getElementById("deliveryDestination").value,
+		billType: paymentMode,
+
+		invoiceNumber: document.getElementById("invoiceNo").value,
+		invoiceValue: document.getElementById("Invoicevalue").value,
+		eWayBillNumber: document.getElementById("ewayBill").value,
 	};
 
 	try {
@@ -689,6 +883,10 @@ document.getElementById("bookingForm").addEventListener("submit", async function
 	}
 });
 
+window.onload = function() {
+	populateUserData();
+	loadBranchDestinations();
+};
 
 function hideChargesSection() {
 	const chargesSection = document.querySelector('.charges');
@@ -844,8 +1042,6 @@ showBookingForm();
 
 async function loadBranchDestinations() {
 	const companyCode = userData?.companyAndBranchDeatils?.companyCode;
-	console.log("Company code:", companyCode); // debug
-
 	if (!companyCode) return;
 
 	try {
@@ -854,22 +1050,23 @@ async function loadBranchDestinations() {
 
 		const result = await response.json();
 
-		if (result.status === "SUCCESS" && Array.isArray(result.data)) {
-			const destinationList = document.getElementById("destinationList");
-			destinationList.innerHTML = "";
 
+		const dropdown = document.getElementById("deliveryDestination");
+		dropdown.innerHTML = '<option value="">-- Select Destination --</option>';
+
+		if (result.status === "SUCCESS" && Array.isArray(result.data)) {
 			result.data.forEach(branch => {
 				const option = document.createElement("option");
 				option.value = `${branch.branchName} (${branch.branchCode})`;
-				destinationList.appendChild(option);
+				option.textContent = `${branch.branchName} (${branch.branchCode})`;
+				dropdown.appendChild(option);
 			});
-		} else {
-			console.warn("No branch data returned.");
 		}
 	} catch (error) {
 		console.error("Error loading branch destinations:", error);
 	}
 }
+
 
 document.getElementById("deliveryDestination").addEventListener("focus", loadBranchDestinations);
 
@@ -917,14 +1114,14 @@ function dispatchSelected() {
 
 			const dispatchedBookings = Array.isArray(data) ? data : (data.data || []);
 
-			generateBookingReport(); 
-			openPrintWindow(dispatchedBookings); 
+			generateBookingReport();
+			openPrintWindow(dispatchedBookings);
 		})
 		.catch(err => {
 			console.error("Dispatch error:", err);
 			alert("Error dispatching bookings.");
 		});
-	
+
 }
 function openPrintWindow(bookings) {
 	const printWindow = window.open('', '', 'width=1000,height=700');
@@ -952,6 +1149,7 @@ function openPrintWindow(bookings) {
             <th>Freight</th>
             <th>Status</th>
             <th>Dispatched Date</th>
+            <th>Payment Mode</th>
           </tr>
         </thead>
         <tbody>`;
@@ -965,6 +1163,7 @@ function openPrintWindow(bookings) {
         <td>${booking.freight}</td>
         <td>${booking.consignStatus}</td>
         <td>${booking.dispatchedDate ? new Date(booking.dispatchedDate).toLocaleString() : ''}</td>
+         <td>${booking.billType}</td>
       </tr>
     `;
 	});
@@ -986,146 +1185,165 @@ function openPrintWindow(bookings) {
 }
 
 function showCreateEmployeeForm() {
-    document.getElementById('createEmployeeFormContainer').style.display = 'block';
-    document.getElementById('bookingReportForm').style.display = 'none';
-    document.getElementById('bookingFormContainer').style.display = 'none';
-    document.getElementById('CreateBranchContainer').style.display = 'none';
-    hideChangePasswordForm();
-    loadBranchesByCompanyCode(userData.companyAndBranchDeatils.companyCode);
+	hideAllForms();
+	document.getElementById('createEmployeeFormContainer').style.display = 'block';
+
+	if (!userData || !userData.companyAndBranchDeatils) {
+		userData = JSON.parse(sessionStorage.getItem('user') || "{}");
+	}
+
+	if (userData?.companyAndBranchDeatils?.companyCode) {
+		loadBranchesByCompanyCode(userData.companyAndBranchDeatils.companyCode);
+	} else {
+		alert("User session not available.");
+	}
 }
-// JavaScript to handle form submission using AJAX
-document.getElementById("submitButton").addEventListener("click", function() {
-    const password = document.getElementById("password").value;
-    const confirmPassword = document.getElementById("confirmPassword").value;
 
-    // Password and Confirm Password Validation on Submit
-    if (password !== confirmPassword) {
-        document.getElementById("confirmPasswordError").textContent = "Passwords do not match!";
-        return;
-    } else {
-        document.getElementById("confirmPasswordError").textContent = "";
-    }
+// ✅ Attach event listeners only after DOM is ready
+document.addEventListener("DOMContentLoaded", function() {
+	const submitBtn = document.getElementById("submitButton");
+	if (submitBtn) {
+		submitBtn.addEventListener("click", submitEmployeeForm);
+	}
 
-    let masterData = {
-        firstName: document.getElementById("firstName").value,
-        lastName: document.getElementById("lastName").value,
-        userName: document.getElementById("userName").value,
-        password: password,
-        phone: document.getElementById("phone").value,
-        email: document.getElementById("email").value,
-        role: document.getElementById("role").value,
-        companyDetails: {
+	const userInput = document.getElementById("userName");
+	if (userInput) {
+		userInput.addEventListener("input", function() {
+			const username = this.value.trim();
+			if (username) {
+				validateUsername(username);
+			} else {
+				document.getElementById('usernameError').textContent = '';
+			}
+		});
+	}
 
-            companyCode: userData.companyAndBranchDeatils.companyCode,
+	const confirmPasswordInput = document.getElementById("employeeconfirmPassword");
+	if (confirmPasswordInput) {
+		confirmPasswordInput.addEventListener("input", function() {
+			const password = document.getElementById("employeepassword").value;
+			const confirmPassword = this.value;
 
-            companyBranch: {
-
-                branchCode: document.getElementById("branchSelect").value,
-
-            }
-        }
-    };
-
-    fetch('addEmployee', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(masterData)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status) {
-
-            // Show toast success message
-            const toast = document.getElementById('toastNotification');
-            const toastMessage = document.getElementById('toastMessage');
-
-            toastMessage.textContent = "Employee Created!";
-            toast.style.display = 'block';
-
-        // Hide toast after 5 seconds and then redirect
-            setTimeout(() => {
-                toast.style.display = 'none';
-                window.location.href = "/createEmployee";
-            }, 3000);
-        } else {
-            document.getElementById("formMessage").innerHTML = "<div class='alert alert-danger'>Error: " + data.message + "</div>";
-        }
-    })
-    .catch(error => {
-        document.getElementById("formMessage").innerHTML = "<div class='alert alert-danger'>Something went wrong. Please try again.</div>";
-    });
+			if (confirmPassword !== password) {
+				document.getElementById("employeeconfirmPasswordError").textContent = "Passwords do not match!";
+			} else {
+				document.getElementById("employeeconfirmPasswordError").textContent = "";
+			}
+		});
+	}
 });
 
 // Function to validate username on input
 async function validateUsername(username) {
-    try {
-        const CompanyCode= userData.companyAndBranchDeatils.companyCode;
+	try {
+		const CompanyCode = userData.companyAndBranchDeatils.companyCode;
 
-        const response = await fetch('/master/admin/validate-username', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                username: username,
-                companyCode: CompanyCode
-            })
-        });
+		const response = await fetch('/validate-username', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({
+				username: username,
+				companyCode: CompanyCode
+			})
+		});
 
-        const data = await response.json();
-        document.getElementById('usernameError').textContent = data.status;
-    } catch (error) {
-        document.getElementById('usernameError').textContent = 'Error validating username. Please try again later.';
-    }
+		const data = await response.json();
+		document.getElementById('usernameError').textContent = data.status;
+	} catch (error) {
+		document.getElementById('usernameError').textContent = 'Error validating username. Please try again later.';
+	}
+}
+// 🔁 Global function to submit employee form
+function submitEmployeeForm() {
+	const password = document.getElementById("employeepassword").value;
+	const confirmPassword = document.getElementById("employeeconfirmPassword").value;
+
+	// Password and Confirm Password Validation
+	if (password !== confirmPassword) {
+		document.getElementById("employeeconfirmPasswordError").textContent = "Passwords do not match!";
+		return;
+	} else {
+		document.getElementById("employeeconfirmPasswordError").textContent = "";
+	}
+
+	let masterData = {
+		firstName: document.getElementById("employeefirstName").value,
+		lastName: document.getElementById("employeelastName").value,
+		userName: document.getElementById("employeeuserName").value,
+		password: password,
+		phone: document.getElementById("employeephone").value,
+		email: document.getElementById("employeeemail").value,
+		role: document.getElementById("employeerole").value,
+		companyDetails: {
+			companyCode: userData.companyAndBranchDeatils.companyCode,
+			companyBranch: {
+				branchCode: document.getElementById("branchSelect").value,
+			}
+		}
+	};
+
+	fetch('addEmployee', {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json'
+		},
+		body: JSON.stringify(masterData)
+	})
+		.then(response => response.json())
+		.then(data => {
+			if (data.status) {
+				/*const toast = document.getElementById('toastNotification');
+				const toastMessage = document.getElementById('toastMessage');
+				toastMessage.textContent = "Employee Created!";
+				toast.style.display = 'block';
+	
+				setTimeout(() => {
+					toast.style.display = 'none';
+					window.location.href = "/createEmployee";
+				}, 3000);*/
+				alert("New Employee created successful!");
+				resetEmployeeForm();
+			} else {
+				document.getElementById("formMessage").innerHTML = `<div class='alert alert-danger'>Error: ${data.message}</div>`;
+			}
+		})
+		.catch(error => {
+			document.getElementById("formMessage").innerHTML = "<div class='alert alert-danger'>Something went wrong. Please try again.</div>";
+		});
+}
+function resetEmployeeForm() {
+	document.getElementById("createEmployeeForm").reset();
+
+	// Clear custom error/spinner messages too
+	document.getElementById("employeeconfirmPasswordError").textContent = '';
+	document.getElementById("usernameError").textContent = '';
+	document.getElementById("formMessage").innerHTML = '';
 }
 
-document.getElementById('userName').addEventListener('input', function () {
-    const username = this.value.trim();
-    if (username) {
-        validateUsername(username);
-    } else {
-        document.getElementById('usernameError').textContent = '';
-    }
+function debounce(func, delay) {
+	let timer;
+	return function(...args) {
+		clearTimeout(timer);
+		timer = setTimeout(() => func.apply(this, args), delay);
+	};
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+	const userInput = document.getElementById('employeeUserName');
+	if (userInput) {
+		userInput.addEventListener('input', debounce(function() {
+			const username = this.value.trim();
+			if (username) {
+				validateUsername(username);
+			} else {
+				document.getElementById('usernameError').textContent = '';
+			}
+		}, 300)); // 300ms delay after user stops typing
+	}
 });
 
 // Password and Confirm Password Match Check
 document
-    .getElementById("confirmPassword")
-    .addEventListener(
-        "input",
-        function() {
-            const password = document
-                    .getElementById("password").value;
-            const confirmPassword = this.value;
-
-            if (confirmPassword !== password) {
-                document.getElementById("confirmPasswordError").textContent = "Passwords do not match!";
-            } else {
-                document.getElementById("confirmPasswordError").textContent = "";
-            }
-        });
-        
-        
- function loadBranchesByCompanyCode(companyCode) {
-    fetch(`BranchesByCompanyCode/${companyCode}`)
-        .then(response => response.json())
-        .then(data => {
-            const select = document.getElementById("branchSelect");
-            select.innerHTML = '<option selected>---- Select Branch ----</option>';
-
-            if (data.status === "SUCCESS" && Array.isArray(data.data)) {
-                data.data.forEach(branch => {
-                    const option = document.createElement("option");
-                    option.value = branch.branchCode;
-                    option.textContent = `${branch.branchName} [${branch.branchType}]`;
-                    select.appendChild(option);
-                });
-            } else {
-                console.error("No branches found.");
-            }
-        })
-        .catch(error => console.error("Error fetching branches:", error));
-}
 

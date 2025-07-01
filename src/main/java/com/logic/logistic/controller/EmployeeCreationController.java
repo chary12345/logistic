@@ -46,4 +46,22 @@ public class EmployeeCreationController {
 		}
 
 	}
+	
+	// API endpoint to validate username availability
+    @PostMapping("/validate-username")
+    public ResponseEntity<Map<String,String>> validateUsername(@RequestBody Map<String, String> request) {
+		Map<String, String> map = new HashMap<String, String>();
+		String username = request.get("username");
+	    String companyCode = request.get("companyCode");
+    	String existsByUserName = employeecreationService.existsByUserName(username+companyCode);
+    	if ("SUCCESS".equalsIgnoreCase(existsByUserName)) {
+			map.put("status", "");
+			return ResponseEntity.ok(map);
+		}
+		else if ("FAILURE".equalsIgnoreCase(existsByUserName)) {
+			map.put("status", "User Name already taken");
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(map);
+		}
+        return ResponseEntity.ok().body(map);
+    }
 }

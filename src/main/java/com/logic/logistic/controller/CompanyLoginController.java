@@ -1,6 +1,5 @@
 package com.logic.logistic.controller;
 
-import java.util.Collections;
 import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
@@ -13,10 +12,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.logic.logistic.dto.UserDto;
 import com.logic.logistic.model.LoginRequest;
 import com.logic.logistic.service.LoginService;
-
 
 
 @RestController
@@ -38,8 +35,8 @@ public class CompanyLoginController {
  			System.out.println(map);
  			logger.info("user login request"+ map);
  			if (map.containsValue("SUCCESS")) {
- 			
- 				logger.info("SUCCESS : "+map);
+ 				
+
  				return ResponseEntity.ok(map);
  			}
  			else if (map.containsValue("FAILURE")) {
