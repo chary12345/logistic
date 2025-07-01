@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>LR Paid Statement Detail</title>
+  <style>
+    label { margin-right: 1em; }
+    table { width:100%; border-collapse:collapse; margin-top:1em; }
+    th, td { border:1px solid #ccc; padding:0.5em; text-align:left; }
+  </style>
+</head>
+<body>
+  <h2>LR Paid Statement Detail</h2>
+
+  <div>
+    <label>From Date: <input type="date" id="fromDate"></label>
+    <label>To Date: <input type="date" id="toDate"></label>
+  </div>
+
+  <div style="margin-top:1em;">
+    <label>From Region:
+      <select id="region"><option value="">-- Select Region --</option></select>
+    </label>
+
+    <label>From Sub-Region:
+      <select id="subregion"><option value="">-- Select Sub-region --</option></select>
+    </label>
+
+    <label>From Branch:
+      <select id="branch"><option value="">-- Select Branch --</option></select>
+    </label>
+
+    <button onclick="find()" style="margin-left:1em;">Find</button>
+  </div>
+
+  <table id="results">
+    <thead>
+      <tr>
+        <th>Paid Date</th>
+        <th>LR Number</th>
+        <th>Amount</th>
+        <th>Region</th>
+        <th>Sub-Region</th>
+        <th>Branch</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    async function loadRegions() {
+      const res = await fetch('/api/regions');
+      const list = await res.json();
+      const sel = document.getElementById('region');
+      list.forEach(r => sel.add(new Option(r, r)));
+    }
+
+    document.getElementById('region').addEventListener('change', async (e) => {
+      const region = e.target.value;
+      document.getElementById('subregion').length = 1;
+      document.getElementById('branch').length = 1;
+      if(region) {
+        const res = await fetch(`/api/subregions?region=${region}`);
+        const list = await res.json();
+        list.forEach(r => document.getElementById('subregion').add(new Option(r, r)));
+      }
+    });
+
+    document.getElementById('subregion').addEventListener('change', async (e) => {
+      const region = document.getElementById('region').value;
+      const sub = e.target.value;
+      document.getElementById('branch').length = 1;
+      if(region && sub) {
+        const res = await fetch(`/api/branches?region=${region}&subRegion=${sub}`);
+        const list = await res.json();
+        list.forEach(r => document.getElementById('branch').add(new Option(r, r)));
+      }
+    });
+
+    async function find() {
+      const payload = {
+        from: document.getElementById('fromDate').value,
+        to: document.getElementById('toDate').value,
+        region: document.getElementById('region').value || null,
+        subRegion: document.getElementById('subregion').value || null,
+        branch: document.getElementById('branch').value || null
+      };
+
+      const res = await fetch('/api/lr-paid-statement/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+
+      const tbody = document.querySelector('#results tbody');
+      tbody.innerHTML = '';
+      data.forEach(r => {
+        const tr = tbody.insertRow();
+        tr.insertCell().innerText = r.paidDate;
+        tr.insertCell().innerText = r.lrNumber;
+        tr.insertCell().innerText = r.amount;
+        tr.insertCell().innerText = r.region;
+        tr.insertCell().innerText = r.subRegion;
+        tr.insertCell().innerText = r.branch;
+      });
+    }
+
+    window.onload = loadRegions;
+  </script>
+</body>
+</html>
