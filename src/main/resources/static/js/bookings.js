@@ -909,6 +909,7 @@ document.addEventListener('DOMContentLoaded', function() {
 function logout() {
 	sessionStorage.removeItem('user');  // Remove the stored user object from sessionStorage
 	window.location.href = '/'; // Redirect to logout route
+//window.location.href = '/login?logout=true'; // Redirect to logout route
 }
 
 document.addEventListener("DOMContentLoaded", function() {
@@ -1014,11 +1015,24 @@ function changePassword() {
 }
 let userData = {};
 function populateUserData() {
-	userData = JSON.parse(sessionStorage.getItem('user'));
+	
+	const user = sessionStorage.getItem('user');
+		if (!user) {
+			// Not logged in, redirect to login page
+			window.location.href = '/login?session=expired';
+			return;
+		}
 
-	document.getElementById('userFirstName').textContent = userData.firstName;
-	document.getElementById('userLastName').textContent = userData.lastName;
-	//document.getElementById('userPhone').textContent = userData.phone;
+		userData = JSON.parse(user);
+
+		document.getElementById('userFirstName').textContent = userData.firstName;
+		document.getElementById('userLastName').textContent = userData.lastName;
+	
+	//userData = JSON.parse(sessionStorage.getItem('user'));
+
+//	document.getElementById('userFirstName').textContent = userData.firstName;
+//	document.getElementById('userLastName').textContent = userData.lastName;
+//	//document.getElementById('userPhone').textContent = userData.phone;
 	//document.getElementById('userEmail').textContent = userData.email;
 	//document.getElementById('userRole').textContent = userData.role;
 }
@@ -1332,270 +1346,4 @@ document.addEventListener("DOMContentLoaded", function() {
 
 // Password and Confirm Password Match Check
 document
-	.getElementById("confirmPassword")
-	.addEventListener(
-		"input",
-		function() {
-			const password = document
-				.getElementById("employeepassword").value;
-			const confirmPassword = this.value;
-
-			if (confirmPassword !== password) {
-				document.getElementById("employeeconfirmPasswordError").textContent = "Passwords do not match!";
-			} else {
-				document.getElementById("confirmPasswordError").textContent = "";
-			}
-		});
-
-
-function loadBranchesByCompanyCode(companyCode) {
-	fetch(`BranchesByCompanyCode/${companyCode}`)
-		.then(response => response.json())
-		.then(data => {
-			const select = document.getElementById("branchSelect");
-			select.innerHTML = '<option selected>---- Select Branch ----</option>';
-
-			if (data.status === "SUCCESS" && Array.isArray(data.data)) {
-				data.data.forEach(branch => {
-					const option = document.createElement("option");
-					option.value = branch.branchCode;
-					option.textContent = `${branch.branchName} [${branch.branchType}]`;
-					select.appendChild(option);
-				});
-			} else {
-				console.error("No branches found.");
-			}
-		})
-		.catch(error => console.error("Error fetching branches:", error));
-}
-
-function setPaymentMode(mode) {
-	const hiddenInput = document.getElementById("paymentMode");
-	const displayBox = document.getElementById("selectedPaymentModeDisplay");
-	const label = document.getElementById("selectedModeLabel");
-
-	// Update hidden field
-	if (hiddenInput) hiddenInput.value = mode;
-
-	// Show selected mode visually
-	if (displayBox && label) {
-		displayBox.style.display = "block";
-		label.textContent = mode;
-	}
-
-	// Reset highlight
-	document.querySelectorAll(".key-box").forEach(btn => {
-		btn.classList.remove("selected-mode");
-	});
-
-	// Highlight the clicked one
-	const allKeys = {
-		"PAID": ".f7",
-		"TO PAY": ".f8",
-		"TBB": ".f9"
-	};
-	const selector = allKeys[mode];
-	if (selector) {
-		const btn = document.querySelector(selector);
-		if (btn) btn.classList.add("selected-mode");
-	}
-}
-
-function searchLRByNumber(lrNumber) {
-	const container = document.getElementById("lrSearchResultContainer");
-	container.innerHTML = ""; // Clear previous
-
-	fetch(`/api/bookings/searchBylr?lr=${encodeURIComponent(lrNumber)}`)
-		.then(res => {
-			if (!res.ok) throw new Error("No data found");
-			return res.json();
-		})
-		.then(data => {
-
-
-			const gst = (data.sgst || 0) + (data.cgst || 0) + (data.igst || 0);
-			const grandTotal = (data.freight || 0) + gst;
-
-			const html = `
-  <div class="lr-search-card">
-
-					<h5 class="text-primary mb-3">🔍 Loading Reciept: ${data.loadingReciept}</h5>
-					
-					<!-- ✅ Edit Button -->
-		<div class="text-end mt-3">
-			<button class="btn btn-warning btn-sm" onclick='editLRRecord(${JSON.stringify(data)})'>✏️ Edit</button>
-		</div>
-	</div>
-				
-					<div class="row mb-2">
-						<div class="col-md-6"><strong>Status:</strong> ${data.consignStatus || 'N/A'}</div>
-						<div class="col-md-6"><strong>Booked On:</strong> ${formatDate(data.bookingDate)}</div>
-					</div>
-
-					<div class="row mb-2">
-						<div class="col-md-6"><strong>From Branch:</strong> ${data.branchCode}</div>
-						<div class="col-md-6"><strong>To Branch:</strong> ${data.destinationBranchCode}</div>
-					</div>
-
-					<hr>
-
-					<div class="row mb-2">
-						<div class="col-md-6"><strong>Consignor:</strong> ${data.consignorName} (${data.consignorMobile})</div>
-						<div class="col-md-6"><strong>Consignee:</strong> ${data.consigneeName} (${data.consigneeMobile})</div>
-					</div>
-
-					<div class="row mb-2">
-						<div class="col-md-6"><strong>Invoice:</strong> ${data.invoiceNumber || '-'} (₹${data.invoiceValue || 0})</div>
-						<div class="col-md-6"><strong>E-WayBill:</strong> ${data.ewayBillNumber || '-'}</div>
-					</div>
-
-					<hr>
-
-					<div class="row mb-2">
-						<div class="col-md-6"><strong>Article Type:</strong> ${data.articleType || 'N/A'}</div>
-						<div class="col-md-6"><strong>Weight:</strong> ${data.articleWeight || 0} kg</div>
-					</div>
-
-					<div class="row mb-2">
-						<div class="col-md-4"><strong>Freight:</strong> ₹${data.freight || 0}</div>
-						<div class="col-md-4"><strong>GST:</strong> ₹${gst.toFixed(2)}</div>
-						<div class="col-md-4"><strong>Grand Total:</strong> ₹${grandTotal.toFixed(2)}</div>
-					</div>
-				</div>
-			`;
-
-
-			hideAllForms();
-
-
-			const container = document.getElementById("lrSearchResultContainer");
-			container.innerHTML = html;
-			container.style.display = "block";
-
-
-			document.getElementById("lrSearchInput").value = "";
-
-
-			container.scrollIntoView({ behavior: "smooth" });
-		})
-		.catch(err => {
-			console.error(err);
-			container.innerHTML = `<div class="alert alert-danger mt-3">No record found for LR: <strong>${lrNumber}</strong></div>`;
-			container.style.display = 'block';
-
-		});
-}
-
-function formatDate(dt) {
-	if (!dt) return '-';
-	const date = new Date(dt);
-	return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
-}
-
-function editLRRecord(data) {
-	// 1. Hide LR result
-	document.getElementById("lrSearchResultContainer").style.display = "none";
-
-	// 2. Show booking form
-	showBookingForm();
-
-	// 3. Fill the form fields using data
-	document.getElementById("deliveryDestination").value = data.destinationBranchCode || "";
-	document.getElementById("consignorName").value = data.consignorName || "";
-	document.getElementById("consignorMobile").value = data.consignorMobile || "";
-	document.getElementById("consignorGst").value = data.consignorGst || "";
-	document.getElementById("consignorAddress").value = data.consignorAddress || "";
-
-	document.getElementById("consigneeName").value = data.consigneeName || "";
-	document.getElementById("consigneeMobile").value = data.consigneeMobile || "";
-	document.getElementById("consigneeGst").value = data.consigneeGst || "";
-	document.getElementById("consigneeAddress").value = data.consigneeAddress || "";
-
-	document.getElementById("articleType").value = data.articleType || "";
-	document.getElementById("articleWeight").value = data.articleWeight || "";
-	document.getElementById("freight").value = data.freight || "";
-	document.getElementById("sgst").value = data.sgst || "";
-	document.getElementById("cgst").value = data.cgst || "";
-	document.getElementById("igst").value = data.igst || "";
-
-	document.getElementById("invoiceNumber").value = data.invoiceNumber || "";
-	document.getElementById("invoiceValue").value = data.invoiceValue || "";
-	document.getElementById("eWayBillNumber").value = data.ewayBillNumber || "";
-
-	// Optional: Store LR ID to be used while updating
-	sessionStorage.setItem("editLR", data.loadingReciept);
-}
-
-
-function setupLRSearch() {
-
-	const searchInput = document.getElementById("lrSearchInput");
-	const searchButton = document.getElementById("lrSearchBtn");
-
-	searchButton.addEventListener("click", () => {
-		const lrNumber = searchInput.value.trim();
-		if (!lrNumber) {
-			alert("Please enter LR number to search.");
-			return;
-		}
-		searchLRByNumber(lrNumber);
-	});
-
-	searchInput.addEventListener("keypress", function(e) {
-		if (e.key === "Enter") {
-			searchButton.click();
-		}
-	});
-}
-
-
-document.addEventListener("DOMContentLoaded", setupLRSearch);
-
-document.getElementById("lrSearchInput").addEventListener("input", (e) => {
-	const val = e.target.value.trim();
-	if (!val) {
-		document.getElementById("lrSearchResultContainer").style.display = "none";
-	}
-});
-
-
-document.addEventListener("keydown", function(e) {
-	if (e.key === "F7") {
-		e.preventDefault();
-		setPaymentMode('PAID');
-	} else if (e.key === "F8") {
-		e.preventDefault();
-		setPaymentMode('TO PAY');
-	} else if (e.key === "F9") {
-		e.preventDefault();
-		setPaymentMode('TBB');
-	}
-});
-// Set default to TO PAY when page loads (only if not set already)
-window.addEventListener("DOMContentLoaded", () => {
-	setPaymentMode("TO PAY");
-});
-document.getElementById("consignorMobile").addEventListener("input",
-	function(e) {
-		this.value = this.value.replace(/[^0-9]/g, '');
-	});
-
-document.getElementById("consigneeMobile").addEventListener("input",
-	function(e) {
-		this.value = this.value.replace(/[^0-9]/g, '');
-	});
-
-// Auto redirect after 2 minutes of inactivity
-let timer;
-function resetTimer() {
-	clearTimeout(timer);
-	timer = setTimeout(() => {
-		logout();
-	}, 2 * 60 * 1000); // 2 minutes
-}
-
-document.onload = resetTimer;
-document.onmousemove = resetTimer;
-document.onkeypress = resetTimer;
-
 
