@@ -34,11 +34,7 @@ public class Booking {
 	@Column(name = "consignee_address", length = 255)
 	private String consigneeAddress;
 
-	@Column(name = "article_type", length = 50)
-	private String articleType;
 
-	@Column(name = "article_weight")
-	private int articleWeight;
 
 	@Column(name = "freight")
 	private double freight;
@@ -95,6 +91,9 @@ public class Booking {
     @Transient
     private int lastNumber;
 
+    
+    @Column(name = "modified_date")
+    private LocalDateTime modifiedDate;
 	
 
 	public String getConsignorName() {
@@ -137,21 +136,7 @@ public class Booking {
 		this.consigneeMobile = consigneeMobile;
 	}
 
-	public String getArticleType() {
-		return articleType;
-	}
-
-	public void setArticleType(String articleType) {
-		this.articleType = articleType;
-	}
-
-	public int getArticleWeight() {
-		return articleWeight;
-	}
-
-	public void setArticleWeight(int articleWeight) {
-		this.articleWeight = articleWeight;
-	}
+	
 
 	public double getFreight() {
 		return freight;
@@ -315,6 +300,14 @@ public class Booking {
 
 	public void setBookingtype(String bookingtype) {
 		this.bookingtype = bookingtype;
+	}
+
+	public LocalDateTime getModifiedDate() {
+		return modifiedDate;
+	}
+
+	public void setModifiedDate(LocalDateTime modifiedDate) {
+		this.modifiedDate = modifiedDate;
 	}
 	
 

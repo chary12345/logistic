@@ -733,6 +733,7 @@ function deleteRow(btn) {
 	} else {
 		updateFreight();
 	}
+	
 }
 
 
@@ -746,6 +747,10 @@ function updateFreight() {
 		}
 	});
 	document.getElementById("freight").value = totalFreight;
+	// Clear article table rows
+	const tableBody = document.getElementById("articleTableBody");
+	if (tableBody) tableBody.innerHTML = "";
+	
 	calculateCharges();
 }
 function printBookingReceipt(booking) {
@@ -810,7 +815,7 @@ function printBookingReceipt(booking) {
 
 document.getElementById("bookingForm").addEventListener("submit", async function(event) {
 	event.preventDefault();
-
+const loadingReciept = sessionStorage.getItem("editLR");
 	const deliveryInput = document.getElementById("deliveryDestination").value;
 	const match = deliveryInput.match(/\(([^)]+)\)/); // Extract code from "(CODE)"
 	const selectedBranchCode = match ? match[1] : null;
@@ -835,6 +840,7 @@ document.getElementById("bookingForm").addEventListener("submit", async function
 			saidToContain: cells[3].textContent,
 			artAmt: cells[4].textContent,
 			total: cells[5].textContent,
+			companyCode:userData.companyAndBranchDeatils.companyCode,
 		});
 	});
 
@@ -862,26 +868,102 @@ document.getElementById("bookingForm").addEventListener("submit", async function
 		invoiceValue: document.getElementById("Invoicevalue").value,
 		eWayBillNumber: document.getElementById("ewayBill").value,
 	};
+let url = "/api/bookings/bookLoad";
+	let method = "POST";
+
+	if (loadingReciept) {
+		url += `/${loadingReciept}`;
+		method = "PUT";
+		data.loadingReciept = loadingReciept;
+	}
 
 	try {
-		let response = await fetch("api/bookings/bookLoad", {
-			method: "POST",
+		let response = await fetch(url, {
+			method: method,
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(data)
 		});
 		let result = await response.json();
 		alert("Booking saved successfully!");
+		sessionStorage.removeItem("editLR");
 		document.getElementById("bookingForm").reset();
 		// Optionally clear the article table as well
 		const articleTableRows = document.querySelectorAll("#bookingForm table tr:not(:first-child)");
 		articleTableRows.forEach(row => row.remove());
+		resetPaymentModeUI();
+		
 		updateFreight();
+		
 		printBookingReceipt(result);
 	} catch (error) {
 		console.error("Error saving booking:", error);
 		alert("Failed to save booking.");
 	}
 });
+function resetPaymentModeUI() {
+	const hiddenInput = document.getElementById("paymentMode");
+	const displayBox = document.getElementById("selectedPaymentModeDisplay");
+	const label = document.getElementById("selectedModeLabel");
+
+	// 1️⃣ Clear values
+	if (hiddenInput) hiddenInput.value = "";
+
+	// 2️⃣ Hide display box
+	if (displayBox) displayBox.style.display = "none";
+
+	// 3️⃣ Clear old highlights
+	document.querySelectorAll(".key-box").forEach(btn => btn.classList.remove("selected-mode"));
+
+	// 4️⃣ Reset default to "TO PAY"
+	setPaymentMode("TO PAY");
+}
+
+
+function resetBookingForm() {
+	// Reset form fields
+	const form = document.getElementById("bookingForm");
+	if (form) form.reset();
+
+	// Clear individual known fields if any were missed
+	const fieldsToClear = [
+		"consignorName", "consignorMobile", "consignorAddress",
+		"consigneeName", "consigneeMobile", "consigneeAddress",
+		"invoiceNo", "Invoicevalue", "ewayBill", "deliveryDestination",
+		"freight", "sgst", "cgst", "igst", "grandTotal"
+	];
+	fieldsToClear.forEach(id => {
+		const el = document.getElementById(id);
+		if (el) el.value = "";
+	});
+
+	// Clear select dropdowns
+	const selectIds = ["article", "artType", "saidToContain"];
+	selectIds.forEach(id => {
+		const el = document.getElementById(id);
+		if (el) el.selectedIndex = 0;
+	});
+
+	// Clear article input row values
+	safeAssign("artQuantity", 0);
+	safeAssign("artAmount", 0);
+	const totalSpan = document.getElementById("totalAmount");
+	if (totalSpan) totalSpan.textContent = "0";
+
+	// Clear article table rows
+	const tableBody = document.getElementById("articleTableBody");
+	if (tableBody) tableBody.innerHTML = "";
+
+	// Hide charges panel
+	const chargesPanel = document.getElementById("chargesPanel");
+	if (chargesPanel) chargesPanel.style.display = "none";
+
+	// Clear session info
+	sessionStorage.removeItem("editLR");
+
+	// Optional: scroll to top
+	window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
 
 window.onload = function() {
 	populateUserData();
@@ -1411,22 +1493,56 @@ function searchLRByNumber(lrNumber) {
 			return res.json();
 		})
 		.then(data => {
-
-
 			const gst = (data.sgst || 0) + (data.cgst || 0) + (data.igst || 0);
 			const grandTotal = (data.freight || 0) + gst;
 
-			const html = `
-  <div class="lr-search-card">
+			// 🔽 Start article table generation
+			let articlesHtml = "";
+			if (Array.isArray(data.articleDetails) && data.articleDetails.length > 0) {
+				articlesHtml = `
+					<hr>
+					<h6 class="text-center text-success mt-3">🧾 Article Details</h6>
+					<div class="table-responsive">
+						<table class="table table-sm table-bordered text-center">
+							<thead class="table-light">
+								<tr>
+									<th>Article</th>
+									<th>Qty</th>
+									<th>Type</th>
+									<th>Said To Contain</th>
+									<th>Amount</th>
+									<th>Total</th>
+								</tr>
+							</thead>
+							<tbody>`;
 
-					<h5 class="text-primary mb-3">🔍 Loading Reciept: ${data.loadingReciept}</h5>
-					
-					<!-- ✅ Edit Button -->
-		<div class="text-end mt-3">
-			<button class="btn btn-warning btn-sm" onclick='editLRRecord(${JSON.stringify(data)})'>✏️ Edit</button>
-		</div>
-	</div>
-				
+				data.articleDetails.forEach(a => {
+					articlesHtml += `
+						<tr>
+							<td>${a.article || '-'}</td>
+							<td>${a.artQty || '-'}</td>
+							<td>${a.artType || '-'}</td>
+							<td>${a.saidToContain || '-'}</td>
+							<td>${a.artAmt || '-'}</td>
+							<td>${a.total || '-'}</td>
+						</tr>`;
+				});
+
+				articlesHtml += `
+							</tbody>
+						</table>
+					</div>`;
+			}
+
+			// 🔽 Main HTML
+			const html = `
+				<div class="lr-search-card">
+					<h5 class="text-primary mb-3">🔍 Loading Receipt: ${data.loadingReciept}</h5>
+
+					<div class="text-end mt-3">
+						<button class="btn btn-warning btn-sm" onclick='editLRRecord(${JSON.stringify(data)})'>✏️ Edit</button>
+					</div>
+
 					<div class="row mb-2">
 						<div class="col-md-6"><strong>Status:</strong> ${data.consignStatus || 'N/A'}</div>
 						<div class="col-md-6"><strong>Booked On:</strong> ${formatDate(data.bookingDate)}</div>
@@ -1446,7 +1562,7 @@ function searchLRByNumber(lrNumber) {
 
 					<div class="row mb-2">
 						<div class="col-md-6"><strong>Invoice:</strong> ${data.invoiceNumber || '-'} (₹${data.invoiceValue || 0})</div>
-						<div class="col-md-6"><strong>E-WayBill:</strong> ${data.ewayBillNumber || '-'}</div>
+						<div class="col-md-6"><strong>E-WayBill:</strong> ${data.eWayBillNumber || '-'}</div>
 					</div>
 
 					<hr>
@@ -1461,30 +1577,24 @@ function searchLRByNumber(lrNumber) {
 						<div class="col-md-4"><strong>GST:</strong> ₹${gst.toFixed(2)}</div>
 						<div class="col-md-4"><strong>Grand Total:</strong> ₹${grandTotal.toFixed(2)}</div>
 					</div>
+
+					${articlesHtml}
 				</div>
 			`;
 
-
-			hideAllForms();
-
-
-			const container = document.getElementById("lrSearchResultContainer");
+			hideAllForms(); // custom function to hide other forms
 			container.innerHTML = html;
 			container.style.display = "block";
-
-
 			document.getElementById("lrSearchInput").value = "";
-
-
 			container.scrollIntoView({ behavior: "smooth" });
 		})
 		.catch(err => {
 			console.error(err);
 			container.innerHTML = `<div class="alert alert-danger mt-3">No record found for LR: <strong>${lrNumber}</strong></div>`;
 			container.style.display = 'block';
-
 		});
 }
+
 
 function formatDate(dt) {
 	if (!dt) return '-';
@@ -1492,39 +1602,85 @@ function formatDate(dt) {
 	return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
 }
 
-function editLRRecord(data) {
-	// 1. Hide LR result
-	document.getElementById("lrSearchResultContainer").style.display = "none";
-
-	// 2. Show booking form
-	showBookingForm();
-
-	// 3. Fill the form fields using data
-	document.getElementById("deliveryDestination").value = data.destinationBranchCode || "";
-	document.getElementById("consignorName").value = data.consignorName || "";
-	document.getElementById("consignorMobile").value = data.consignorMobile || "";
-	document.getElementById("consignorGst").value = data.consignorGst || "";
-	document.getElementById("consignorAddress").value = data.consignorAddress || "";
-
-	document.getElementById("consigneeName").value = data.consigneeName || "";
-	document.getElementById("consigneeMobile").value = data.consigneeMobile || "";
-	document.getElementById("consigneeGst").value = data.consigneeGst || "";
-	document.getElementById("consigneeAddress").value = data.consigneeAddress || "";
-
-	document.getElementById("articleType").value = data.articleType || "";
-	document.getElementById("articleWeight").value = data.articleWeight || "";
-	document.getElementById("freight").value = data.freight || "";
-	document.getElementById("sgst").value = data.sgst || "";
-	document.getElementById("cgst").value = data.cgst || "";
-	document.getElementById("igst").value = data.igst || "";
-
-	document.getElementById("invoiceNumber").value = data.invoiceNumber || "";
-	document.getElementById("invoiceValue").value = data.invoiceValue || "";
-	document.getElementById("eWayBillNumber").value = data.ewayBillNumber || "";
-
-	// Optional: Store LR ID to be used while updating
-	sessionStorage.setItem("editLR", data.loadingReciept);
+function safeAssign(id, value) {
+	const el = document.getElementById(id);
+	if (el) el.value = value != null ? value : "";
 }
+
+function setSelectValue(id, value) {
+	const select = document.getElementById(id);
+	if (!select) return;
+
+	const options = Array.from(select.options);
+	const match = options.find(opt => opt.value === value);
+
+	if (match) {
+		select.value = value;
+	} else {
+		// Optional: Add unknown value dynamically (for edit mode)
+		const newOption = new Option(value, value, true, true);
+		select.appendChild(newOption);
+		select.value = value;
+	}
+}
+
+function editLRRecord(data) {
+	showBookingForm(); // switch form
+
+	// 1️⃣ Save to session to identify this as an edit
+	sessionStorage.setItem("editLR", data.loadingReciept);
+
+	// 2️⃣ Basic fields
+	safeAssign("consignorName", data.consignorName);
+	safeAssign("consignorMobile", data.consignorMobile);
+	safeAssign("consignorAddress", data.consignorAddress);
+	safeAssign("consigneeName", data.consigneeName);
+	safeAssign("consigneeMobile", data.consigneeMobile);
+	safeAssign("consigneeAddress", data.consigneeAddress);
+	safeAssign("invoiceNo", data.invoiceNumber);
+	safeAssign("Invoicevalue", data.invoiceValue);
+	safeAssign("ewayBill", data.eWayBillNumber);
+
+	// 3️⃣ Destination & Payment Mode
+	setSelectValue("deliveryDestination", data.destinationBranchCode);
+	if (data.billType) setPaymentMode(data.billType.toUpperCase());
+
+	// 4️⃣ Charges
+	safeAssign("freight", data.freight);
+	safeAssign("sgst", data.sgst);
+	safeAssign("cgst", data.cgst);
+	safeAssign("igst", data.igst);
+
+	const gst = (parseFloat(data.sgst || 0) + parseFloat(data.cgst || 0) + parseFloat(data.igst || 0));
+	const grandTotal = (parseFloat(data.freight || 0) + gst).toFixed(2);
+	safeAssign("grandTotal", grandTotal);
+
+	// 5️⃣ Show Charges panel
+	const chargesPanel = document.getElementById("chargesPanel");
+	if (chargesPanel) chargesPanel.style.display = "block";
+
+	const tbody = document.getElementById("articleDataBody");
+tbody.innerHTML = ""; // ✅ Clears only added rows
+
+if (Array.isArray(data.articleDetails)) {
+  data.articleDetails.forEach(article => {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${article.article || ''}</td>
+      <td>${article.artQty || ''}</td>
+      <td>${article.artType || ''}</td>
+      <td>${article.saidToContain || ''}</td>
+      <td>${article.artAmt || ''}</td>
+      <td>${article.total || ''}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()">Delete</button></td>
+    `;
+    tbody.appendChild(row);
+  });
+
+}
+recalculateChargesFromArticles();
+}
+
 
 
 function setupLRSearch() {
@@ -1548,6 +1704,70 @@ function setupLRSearch() {
 	});
 }
 
+function addArticleRow(article = {}) {
+	const tbody = document.getElementById("articleTableBody");
+
+	const row = document.createElement("tr");
+
+	row.innerHTML = `
+		<td><input type="text" class="form-control" value="${article.article || ''}"></td>
+		<td><input type="text" class="form-control" value="${article.artQty || ''}"></td>
+		<td><input type="text" class="form-control" value="${article.artType || ''}"></td>
+		<td><input type="text" class="form-control" value="${article.saidToContain || ''}"></td>
+		<td><input type="text" class="form-control" value="${article.artAmt || ''}"></td>
+		<td><input type="text" class="form-control" value="${article.total || ''}"></td>
+		<td><button class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()">❌</button></td>
+	`;
+
+	tbody.appendChild(row);
+	recalculateChargesFromArticles();
+}
+	
+function recalculateChargesFromArticles() {
+	let freight = 0;
+
+	const tableBody = document.getElementById("articleTableBody");
+	if (!tableBody) return;
+
+	// Loop through only current rows (excluding header or empty rows)
+	const rows = tableBody.querySelectorAll("tr");
+
+	rows.forEach(row => {
+		const cells = row.querySelectorAll("td");
+
+		// Skip if invalid structure
+		if (cells.length < 5) return;
+
+		let amount = 0;
+
+		// Check if <td> contains <input> or plain text
+		const amountCell = cells[4];
+		if (amountCell.querySelector("input")) {
+			amount = parseFloat(amountCell.querySelector("input").value || 0);
+		} else {
+			amount = parseFloat(amountCell.textContent || 0);
+		}
+
+		if (!isNaN(amount)) freight += amount;
+	});
+
+	// Calculate GST
+	const sgst = +(freight * 0.025).toFixed(2);
+	const cgst = +(freight * 0.025).toFixed(2);
+	const igst = +(freight * 0.05).toFixed(2);
+	const grandTotal = +(freight + sgst + cgst + igst).toFixed(2);
+
+	// Update UI
+	safeAssign("freight", freight);
+	safeAssign("sgst", sgst);
+	safeAssign("cgst", cgst);
+	safeAssign("igst", igst);
+	safeAssign("grandTotal", grandTotal);
+
+	// Ensure charges panel is visible
+	const chargesPanel = document.getElementById("chargesPanel");
+	if (chargesPanel) chargesPanel.style.display = "block";
+}
 
 document.addEventListener("DOMContentLoaded", setupLRSearch);
 
@@ -1585,15 +1805,14 @@ document.getElementById("consigneeMobile").addEventListener("input",
 		this.value = this.value.replace(/[^0-9]/g, '');
 	});
 
-// Auto redirect after 2 minutes of inactivity
+// Set 5-minute idle timeout
 let timer;
 function resetTimer() {
 	clearTimeout(timer);
 	timer = setTimeout(() => {
 		logout();
-	}, 2 * 60 * 1000); // 2 minutes
+	}, 5 * 60 * 1000); // 5 minutes
 }
-
 document.onload = resetTimer;
 document.onmousemove = resetTimer;
 document.onkeypress = resetTimer;
