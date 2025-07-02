@@ -9,7 +9,9 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -38,6 +40,15 @@ public class BookingController {
 		return ResponseEntity.ok(saved);
 	}
 
+	 @PutMapping("/bookLoad/{lr}")
+	    public ResponseEntity<?> updateBooking(@PathVariable String lr, @RequestBody BookingDTO dto) {
+	        try {
+	            Booking bookingUpdated = bookingService.updateBooking(lr, dto);
+	            return ResponseEntity.ok(bookingUpdated);
+	        } catch (Exception e) {
+	            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Update failed: " + e.getMessage());
+	        }
+	    }
 	// @GetMapping("/report")
 	public ResponseEntity<?> getBookingReport(
 			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime fromDate,
@@ -50,8 +61,9 @@ public class BookingController {
 	public ResponseEntity<BookingPageResponse> getReport(
 			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fromDate,
 			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime toDate,
-			@RequestParam String status, @RequestParam(required = false) String lastId,@RequestParam(required = false) String branchCode) {
-		BookingPageResponse response = bookingService.getReports(fromDate, toDate, status, lastId,branchCode);
+			@RequestParam String status, @RequestParam(required = false) String lastId,
+			@RequestParam(required = false) String branchCode) {
+		BookingPageResponse response = bookingService.getReports(fromDate, toDate, status, lastId, branchCode);
 		return ResponseEntity.ok(response);
 	}
 
@@ -67,19 +79,21 @@ public class BookingController {
 		List<Booking> dispatchLoad = bookingService.dispatchLoad(loadingReceipts);
 		return ResponseEntity.ok(dispatchLoad);
 	}
-	// BookingController.java
+
 	@GetMapping("/searchBylr")
 	public ResponseEntity<?> searchByLR(@RequestParam String lr) {
-	    try {
-	    	Booking booking = bookingService.findByLoadingReciept(lr);
-	        if (booking != null) {
-	            return ResponseEntity.ok(booking);
-	        } else {
-	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No record found");
-	        }
-	    } catch (Exception e) {
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
-	    }
+		try {
+			BookingDTO dto = bookingService.findByLoadingReciept(lr);
+
+			if (dto != null) {
+
+				return ResponseEntity.ok(dto);
+			} else {
+				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No record found");
+			}
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
+		}
 	}
 
 }

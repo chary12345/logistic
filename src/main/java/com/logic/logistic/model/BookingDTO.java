@@ -1,9 +1,11 @@
 package com.logic.logistic.model;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class BookingDTO {
 
+	private String loadingReciept;
     private String consignorName;
     private String consignorMobile;
     private String consignorAddress;
@@ -12,8 +14,8 @@ public class BookingDTO {
     private String consigneeMobile;
     private String consigneeAddress;
 
-    private String articleType;
-    private int articleWeight;
+    private List<ArticleDetail> articleDetails;
+  
     private double freight;
     private double sgst;
     private double cgst;
@@ -69,18 +71,7 @@ public class BookingDTO {
 	public void setConsigneeAddress(String consigneeAddress) {
 		this.consigneeAddress = consigneeAddress;
 	}
-	public String getArticleType() {
-		return articleType;
-	}
-	public void setArticleType(String articleType) {
-		this.articleType = articleType;
-	}
-	public int getArticleWeight() {
-		return articleWeight;
-	}
-	public void setArticleWeight(int articleWeight) {
-		this.articleWeight = articleWeight;
-	}
+	
 	public double getFreight() {
 		return freight;
 	}
@@ -177,6 +168,18 @@ public class BookingDTO {
 	}
 	public void setDestinationBranchCode(String destinationBranchCode) {
 		this.destinationBranchCode = destinationBranchCode;
+	}
+	public List<ArticleDetail> getArticleDetails() {
+		return articleDetails;
+	}
+	public void setArticleDetails(List<ArticleDetail> articleDetails) {
+		this.articleDetails = articleDetails;
+	}
+	public String getLoadingReciept() {
+		return loadingReciept;
+	}
+	public void setLoadingReciept(String loadingReciept) {
+		this.loadingReciept = loadingReciept;
 	}
 
     

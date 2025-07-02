@@ -75,8 +75,8 @@
 
 			<div class="navbar-lr-search" style="margin-right: 10px;">
 				<input type="text" id="lrSearchInput"
-					class="form-control d-inline-block" placeholder="Search LR" autocomplete="off"
-					style="width: 180px; display: inline-block;" />
+					class="form-control d-inline-block" placeholder="Search LR"
+					autocomplete="off" style="width: 180px; display: inline-block;" />
 				<button id="lrSearchBtn" class="btn btn-primary"
 					style="margin-left: -5px;">
 					<i class="fas fa-search"></i>
@@ -107,9 +107,10 @@
 			</div>
 		</div>
 	</div>
-	<div id="lrSearchResultContainer" class="container" style="display: none;"></div>
+	<div id="lrSearchResultContainer" class="container"
+		style="display: none;"></div>
 
-	
+
 	<div id="changePasswordForm" class="change-password-form">
 		<h3>Change Password</h3>
 		<label for="currentPassword">Current Password:</label> <input
@@ -123,7 +124,7 @@
 		<div id="passwordMessage"
 			style="margin-top: 10px; display: none; color: red;"></div>
 	</div>
-	
+
 	<div id="bookingReportForm" class="report-form"
 		style="padding-bottom: 100px; overflow-y: auto; max-height: calc(100vh - 120px);">
 		<h3>Booking Report</h3>
@@ -223,7 +224,7 @@
 							</tr>
 						</thead>
 						<tbody>
-							<tr>
+							<tr id="articleInputRow">
 								<td><select id="article" class="form-select">
 										<option value="Article">Article</option>
 										<option value="Weight">Weight</option>
@@ -244,10 +245,17 @@
 								<td><input type="number" id="artAmount" value="0"
 									class="form-control"></td>
 								<td><span id="totalAmount">0</span></td>
-								<td><button type="button" class="btn btn-sm btn-success"
-										onclick="addArticle()">Add</button></td>
+								<td>
+									<button type="button" class="btn btn-sm btn-success"
+										onclick="addArticle()">Add</button>
+								</td>
 							</tr>
 						</tbody>
+
+						<!-- 🔹 This tbody is where article rows will go -->
+						<tbody id="articleDataBody"></tbody>
+
+
 					</table>
 					<!-- Invoice / E-Waybill Row (Tightly below article inputs) -->
 					<div class="row g-2 mb-3" style="margin-top: -10px;">
