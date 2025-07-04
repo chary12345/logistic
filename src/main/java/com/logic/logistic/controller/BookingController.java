@@ -96,4 +96,13 @@ public class BookingController {
 		}
 	}
 
+	@GetMapping("/get-Global-Search-Repoprts")
+	public ResponseEntity<BookingPageResponse> getGlobalSearchreports(
+			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fromDate,
+			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime toDate,
+			@RequestParam String status, @RequestParam(required = false) String lastId,
+			@RequestParam(required = false) String branchCode) {
+		BookingPageResponse response = bookingService.getGlobalSearchreports(fromDate, toDate, lastId, branchCode);
+		return ResponseEntity.ok(response);
+	}
 }

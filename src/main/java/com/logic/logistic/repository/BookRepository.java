@@ -32,4 +32,12 @@ public interface BookRepository extends JpaRepository<Booking, String> {
 
 	@Query("SELECT b FROM Booking b WHERE b.loadingReciept= :lr")
 	Booking findByLoadingReciept(String lr);
+
+	@Query("SELECT b FROM Booking b WHERE b.bookingDate BETWEEN :fromDate AND :toDate AND b.BranchCode= :branchCode ORDER BY b.bookingDate DESC")
+	List<Booking> findFirstPageForGlobalSearchreports(LocalDateTime fromDate, LocalDateTime toDate, Pageable pageable,
+			String branchCode);
+
+	@Query("SELECT b FROM Booking b WHERE b.bookingDate BETWEEN :fromDate AND :toDate AND b.BranchCode= :branchCode AND b.id < :lastId ORDER BY b.bookingDate DESC")
+	List<Booking> findNextPageForGlobalSearchreports(LocalDateTime fromDate, LocalDateTime toDate, String lastId,
+			Pageable pageable, String branchCode);
 }

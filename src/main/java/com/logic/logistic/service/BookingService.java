@@ -207,9 +207,9 @@ public class BookingService {
 	public BookingDTO findByLoadingReciept(String lr) {
 		// Fetch articleDetails from table
 		Booking bookingByLr = bookingRepo.findByLoadingReciept(lr);
-		BookingDTO dto = new BookingDTO();
+		BookingDTO dto = null;
 		if (bookingByLr != null) {
-
+			dto = new BookingDTO();
 			List<ArticleDetailDto> articleBylr = articleRepo.findByLoadingReciept(lr);
 			List<ArticleDetail> articleDetails = convertToArticleDetailList(articleBylr);
 
@@ -278,6 +278,29 @@ public class BookingService {
 				articleRepo.save(dto);
 			}
 		}
+	}
+
+	public BookingPageResponse getGlobalSearchreports(LocalDateTime fromDate, LocalDateTime toDate, String lastId,
+			String branchCode) {
+		int limit = 10;
+		Pageable pageable = PageRequest.of(0, limit, Sort.by("bookingDate").descending());
+		List<Booking> bookings;
+
+		if (lastId == null) {
+			bookings = bookingRepo.findFirstPageForGlobalSearchreports(fromDate, toDate, pageable, branchCode);
+		} else {
+			bookings = bookingRepo.findNextPageForGlobalSearchreports(fromDate, toDate, lastId, pageable, branchCode);
+		}
+
+		BookingPageResponse response = new BookingPageResponse();
+		response.setContent(bookings);
+		response.setPageSize(limit);
+		response.setPageNumber(0);
+		response.setTotalElements(bookings.size());
+		response.setTotalPages(1);
+		response.setLast(bookings.size() < limit);
+
+		return response;
 	}
 
 }
