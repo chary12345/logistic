@@ -38,15 +38,20 @@
 			<div class="dropdown">
 				<a href="#">Reports</a>
 				<div class="dropdown-content">
-					<a href="#" onclick="showReportForm('booking')">Booking Report</a>
-					<a href="#" onclick="showReportForm('dispatched')">Dispatch
-						Report</a> <a href="#" onclick="showReportForm('received')">Receive
-						Report</a> <a href="#" onclick="showReportForm('delivered')">Delivery
+					<a href="#booking" onclick="showReportForm('booking')">Booking
+						Report</a> <a href="#dispatch" onclick="showReportForm('dispatched')">Dispatch
+						Report</a> <a href="#receive" onclick="showReportForm('received')">Receive
+						Report</a> <a href="#delivered" onclick="showReportForm('delivered')">Delivery
 						Report</a>
-						<!--<a href="#" onclick="showReportForm('Searching')">Search Report</a>-->
-					<!--	<li><a class="dropdown-item" href="/search-report.html">Search Report</a></li>-->
-					<a href="/search-report.html">Search Report</a>
+
 				</div>
+			</div>
+
+			<div>
+				
+					<a href="#showGlobalSearch" onclick="showGlobalSearchForm()">Global
+						Search</a>
+				
 			</div>
 			<!-- Inside the Manage dropdown -->
 			<div class="dropdown">
@@ -78,8 +83,8 @@
 
 			<div class="navbar-lr-search" style="margin-right: 10px;">
 				<input type="text" id="lrSearchInput"
-					class="form-control d-inline-block" placeholder="Search LR" autocomplete="off"
-					style="width: 180px; display: inline-block;" />
+					class="form-control d-inline-block" placeholder="Search LR"
+					autocomplete="off" style="width: 180px; display: inline-block;" />
 				<button id="lrSearchBtn" class="btn btn-primary"
 					style="margin-left: -5px;">
 					<i class="fas fa-search"></i>
@@ -110,9 +115,10 @@
 			</div>
 		</div>
 	</div>
-	<div id="lrSearchResultContainer" class="container" style="display: none;"></div>
+	<div id="lrSearchResultContainer" class="container"
+		style="display: none;"></div>
 
-	
+
 	<div id="changePasswordForm" class="change-password-form">
 		<h3>Change Password</h3>
 		<label for="currentPassword">Current Password:</label> <input
@@ -126,7 +132,7 @@
 		<div id="passwordMessage"
 			style="margin-top: 10px; display: none; color: red;"></div>
 	</div>
-	
+
 	<div id="bookingReportForm" class="report-form"
 		style="padding-bottom: 100px; overflow-y: auto; max-height: calc(100vh - 120px);">
 		<h3>Booking Report</h3>
@@ -310,7 +316,47 @@
 		</form>
 	</div>
 
+<!-- ✅ Global Search Report Form -->
+	<div id="globalSearchFormContainer" class="report-form" style="display: none; padding-bottom: 100px; overflow-y: auto; max-height: calc(100vh - 120px);">
+  <h3>Global Search Report</h3>
+  <div class="row g-3 align-items-center">
+    <div class="col-md-3">
+      <label for="gFromDate" class="form-label">From Date</label>
+      <input type="date" id="gFromDate" class="form-control">
+    </div>
+    <div class="col-md-3">
+      <label for="gToDate" class="form-label">To Date</label>
+      <input type="date" id="gToDate" class="form-control">
+    </div>
+  </div>
 
+  <div class="row g-3 align-items-center mt-1">
+    <div class="col-md-3">
+      <label for="gRegion" class="form-label">Region</label>
+      <select id="gRegion" class="form-select">
+        <option value="">-- Select Region --</option>
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label for="gSubregion" class="form-label">Sub-Region</label>
+      <select id="gSubregion" class="form-select">
+        <option value="">-- Select Sub-region --</option>
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label for="gBranch" class="form-label">Branch</label>
+      <select id="gBranch" class="form-select">
+        <option value="">-- Select Branch --</option>
+      </select>
+    </div>
+    <div class="col-md-3 d-flex align-items-end gap-2">
+      <button class="btn btn-primary" onclick="findGlobalSearch()">Find</button>
+      <button class="btn btn-secondary" onclick="resetGlobalSearch()">Reset</button>
+    </div>
+  </div>
+
+  <div id="globalSearchTableContainer" class="mt-4" style="overflow-x: auto;"></div>
+</div>
 
 	<div id="CreateBranchContainer"
 		style="display: flex; justify-content: center; align-items: center; height: 50vh; padding: 10px; overflow: visible;">
@@ -488,6 +534,7 @@
 
 
 	<script src="/js/bookings.js"></script>
+	<script src="/js/GlobalSearch.js"></script>
 
 </body>
 </html>
