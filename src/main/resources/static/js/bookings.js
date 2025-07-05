@@ -13,6 +13,7 @@ function hideAllForms() {
 	safeHide('lrSearchResultContainer');
 	safeHide('changePasswordForm');
 	safeHide('overlay');
+	safeHide('globalSearchFormContainer');
 }
 
 function showBookingForm() {
@@ -733,7 +734,7 @@ function deleteRow(btn) {
 	} else {
 		updateFreight();
 	}
-	
+
 }
 
 
@@ -750,54 +751,165 @@ function updateFreight() {
 	// Clear article table rows
 	const tableBody = document.getElementById("articleTableBody");
 	if (tableBody) tableBody.innerHTML = "";
-	
+
 	calculateCharges();
 }
+
 function printBookingReceipt(booking) {
-	const printWindow = window.open('', '', 'width=800,height=600');
+	const printWindow = window.open('', '', 'width=900,height=700');
+
+	const gst = ((booking.sgst || 0) + (booking.cgst || 0) + (booking.igst || 0)).toFixed(2);
+	const freight = (booking.freight || 0).toFixed(2);
+	const total = (parseFloat(freight) + parseFloat(gst)).toFixed(2);
+	const invValue = booking.invoiceValue || 0;
+	const paymentMode = booking.billType || '-';
+	const printedBy = "System";
+	const printedOn = new Date().toLocaleString();
+
+	// Quantity & Description
+	let totalQty = 0;
+	let description = "-";
+	if (booking.articleList && booking.articleList.length > 0) {
+		booking.articleList.forEach(a => totalQty += (parseInt(a.noOfArticles) || 0));
+		description = `${booking.articleList[0].articleDesc || ''} - Said to contain`;
+	}
+
+	const contentBlock = () => `
+		<div class="receipt">
+			<div class="header">
+			
+				<div><strong>bookin.cookingompanyCode</strong></div>
+				<div>Hyderabad</div>
+			</div>
+
+			<table class="excel-table">
+				<tr>
+					<td><strong>Date:</strong> ${new Date(booking.bookingDate).toLocaleDateString()}</td>
+					<td><strong>LR No:</strong> ${booking.loadingReciept}</td>
+					<td class="charges-box" rowspan="6">
+						<div><strong>PaymentMode:</strong> ${paymentMode}</div>
+						<hr>
+						<div><strong>CHARGES</strong></div>
+						<div>Freight: ₹${freight}</div>
+						<div>GST: ₹${gst}</div>
+						<hr>
+						<div class="charges-total"><strong>Total: ₹${total}</strong></div>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<strong>FROM:</strong> ${booking.branchCode}<br>
+						<strong>Consignor:</strong> ${booking.consignorName}<br>
+						<strong>Address:</strong> ${booking.consignorAddress}<br>
+						<strong>Mobile:</strong> ${booking.consignorMobile}
+					</td>
+					<td>
+						<strong>TO:</strong> ${booking.destinationBranchCode}<br>
+						<strong>Consignee:</strong> ${booking.consigneeName}<br>
+						<strong>Address:</strong> ${booking.consigneeAddress}<br>
+						<strong>Mobile:</strong> ${booking.consigneeMobile}
+					</td>
+				</tr>
+				<tr>
+					<td><strong>Quantity:</strong> ${totalQty}</td>
+					<td><strong>Description:</strong> ${description}</td>
+				</tr>
+				<tr>
+					<td>
+						<strong>Invoice No:</strong> ${booking.invoiceNumber || '-'}<br>
+						<strong>Invoice Value:</strong> ₹${invValue}<br>
+						<strong>E-Way Bill:</strong> ${booking.eWayBillNumber || '-'}
+					</td>
+					<td>
+						<strong>Wt:</strong> ${booking.actualWeight || '-'} / ${booking.chargedWeight || '-'}<br>
+						<strong>Delivery At:</strong> ${booking.deliveryType || 'Godown'}
+					</td>
+				</tr>
+				<tr>
+					<td colspan="2"><strong>Remarks:</strong></td>
+				</tr>
+				<tr>
+					<td colspan="2" class="note">Goods booked at owner's risk and said to contain basis. Non-Negotiable.</td>
+				</tr>
+				<tr>
+					<td colspan="2" class="sign">Signature: ____________________________</td>
+					<td class="footer-info">Printed By: ${printedBy}<br>On: ${printedOn}</td>
+				</tr>
+			</table>
+		</div>
+	`;
+
 	const styles = `
 		<style>
-			body { font-family: Arial, sans-serif; padding: 20px; }
-			h2 { text-align: center; }
-			table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-			td { padding: 6px 10px; }
-			.total { font-weight: bold; }
-			hr { margin: 20px 0; }
+			body { font-family: 'Courier New', monospace; margin: 0; padding: 10px; font-size: 13px; }
+			.receipt { border: 1px solid #000; padding: 10px; margin-bottom: 20px; }
+			.header { text-align: center; margin-bottom: 10px; font-size: 15px; font-weight: bold; }
+			.excel-table {
+				width: 100%;
+				border-collapse: collapse;
+			}
+			.excel-table td {
+				border: 1px solid #000;
+				vertical-align: top;
+				padding: 5px;
+			}
+			.charges-box {
+				width: 30%;
+				text-align: left;
+				font-weight: bold;
+			}
+			.charges-box hr {
+				border: none;
+				border-top: 1px dashed #000;
+				margin: 6px 0;
+			}
+			.charges-total {
+				font-size: 14px;
+				font-weight: bold;
+				margin-top: 10px;
+			}
+			.note {
+				text-align: center;
+				font-size: 12px;
+				padding: 5px;
+			}
+			.sign {
+				padding-top: 20px;
+				height: 40px;
+			}
+			.footer-info {
+				text-align: right;
+				font-size: 11px;
+				line-height: 1.2;
+			}
+			@media print {
+				body { margin: 0; }
+			}.print-id {
+	position: absolute;
+	top: 10px;
+	left: 10px;
+	font-size: 14px;
+	font-weight: bold;
+}
+@media print {
+	@page {
+		margin-top: 40px;
+		margin-left: 10px;
+		margin-right: 10px;
+		margin-bottom: 10px;
+	}
+}
+				
 		</style>
 	`;
 
-	const html = `
+	const fullHTML = `
 		<html>
-		<head>
-			<title>Booking Receipt</title>
-			${styles}
-		</head>
+		<head><title>Print LR</title>${styles}</head>
 		<body>
-			<h2>Logistics Booking Receipt</h2>
-			<hr>
-			<table>
-				<tr><td><strong>Receipt No:</strong></td><td>${booking.loadingReciept}</td></tr>
-				<tr><td><strong>Date:</strong></td><td>${new Date(booking.bookingDate).toLocaleString()}</td></tr>
-				<tr><td><strong>Consignor:</strong></td><td>${booking.consignorName} (${booking.consignorMobile})</td></tr>
-				<tr><td><strong>Address:</strong></td><td>${booking.consignorAddress}</td></tr>
-				<tr><td><strong>Consignee:</strong></td><td>${booking.consigneeName} (${booking.consigneeMobile})</td></tr>
-				<tr><td><strong>Address:</strong></td><td>${booking.consigneeAddress}</td></tr>
-				<tr><td><strong>Freight:</strong></td><td>₹${booking.freight}</td></tr>
-				<tr><td><strong>Status:</strong></td><td>Booked</td></tr>
-				tr><td><strong>PaymentMode:</strong><td>${booking.billType}</td></tr>
-				
-				<tr><td><strong>SGST:</strong></td><td>₹${booking.sgst}</td></tr>
-				<tr><td><strong>CGST:</strong></td><td>₹${booking.cgst}</td></tr>
-				<tr><td><strong>IGST:</strong></td><td>₹${booking.igst}</td></tr>
-				<tr><td class="total">Total:</td><td class="total">₹${(
-			parseFloat(booking.freight) +
-			parseFloat(booking.sgst) +
-			parseFloat(booking.cgst) +
-			parseFloat(booking.igst)
-		).toFixed(2)}</td></tr>
-			</table>
-			<hr>
-			<p style="text-align:center;">Thank you for booking with us!</p>
+			${contentBlock()}
+			${contentBlock()}
+			${contentBlock()}
 			<script>
 				window.onload = function() {
 					window.print();
@@ -808,14 +920,15 @@ function printBookingReceipt(booking) {
 		</html>
 	`;
 
-	printWindow.document.write(html);
+	printWindow.document.write(fullHTML);
 	printWindow.document.close();
 }
 
 
+
 document.getElementById("bookingForm").addEventListener("submit", async function(event) {
 	event.preventDefault();
-const loadingReciept = sessionStorage.getItem("editLR");
+	const loadingReciept = sessionStorage.getItem("editLR");
 	const deliveryInput = document.getElementById("deliveryDestination").value;
 	const match = deliveryInput.match(/\(([^)]+)\)/); // Extract code from "(CODE)"
 	const selectedBranchCode = match ? match[1] : null;
@@ -840,7 +953,7 @@ const loadingReciept = sessionStorage.getItem("editLR");
 			saidToContain: cells[3].textContent,
 			artAmt: cells[4].textContent,
 			total: cells[5].textContent,
-			companyCode:userData.companyAndBranchDeatils.companyCode,
+			companyCode: userData.companyAndBranchDeatils.companyCode,
 		});
 	});
 
@@ -868,7 +981,7 @@ const loadingReciept = sessionStorage.getItem("editLR");
 		invoiceValue: document.getElementById("Invoicevalue").value,
 		eWayBillNumber: document.getElementById("ewayBill").value,
 	};
-let url = "/api/bookings/bookLoad";
+	let url = "/api/bookings/bookLoad";
 	let method = "POST";
 
 	if (loadingReciept) {
@@ -891,9 +1004,9 @@ let url = "/api/bookings/bookLoad";
 		const articleTableRows = document.querySelectorAll("#bookingForm table tr:not(:first-child)");
 		articleTableRows.forEach(row => row.remove());
 		resetPaymentModeUI();
-		
+
 		updateFreight();
-		
+
 		printBookingReceipt(result);
 	} catch (error) {
 		console.error("Error saving booking:", error);
@@ -1660,12 +1773,12 @@ function editLRRecord(data) {
 	if (chargesPanel) chargesPanel.style.display = "block";
 
 	const tbody = document.getElementById("articleDataBody");
-tbody.innerHTML = ""; // ✅ Clears only added rows
+	tbody.innerHTML = ""; // ✅ Clears only added rows
 
-if (Array.isArray(data.articleDetails)) {
-  data.articleDetails.forEach(article => {
-    const row = document.createElement("tr");
-    row.innerHTML = `
+	if (Array.isArray(data.articleDetails)) {
+		data.articleDetails.forEach(article => {
+			const row = document.createElement("tr");
+			row.innerHTML = `
       <td>${article.article || ''}</td>
       <td>${article.artQty || ''}</td>
       <td>${article.artType || ''}</td>
@@ -1674,11 +1787,11 @@ if (Array.isArray(data.articleDetails)) {
       <td>${article.total || ''}</td>
       <td><button class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()">Delete</button></td>
     `;
-    tbody.appendChild(row);
-  });
+			tbody.appendChild(row);
+		});
 
-}
-recalculateChargesFromArticles();
+	}
+	recalculateChargesFromArticles();
 }
 
 
@@ -1722,7 +1835,7 @@ function addArticleRow(article = {}) {
 	tbody.appendChild(row);
 	recalculateChargesFromArticles();
 }
-	
+
 function recalculateChargesFromArticles() {
 	let freight = 0;
 
@@ -1819,80 +1932,80 @@ document.onkeypress = resetTimer;
 
 //global search scripts here
 function showGlobalSearchForm() {
-  hideAllForms();
-  document.getElementById("globalSearchFormContainer").style.display = "block";
-  loadGlobalRegions();
-  resetGlobalSearch();
+	hideAllForms();
+	document.getElementById("globalSearchFormContainer").style.display = "block";
+	loadGlobalRegions();
+	resetGlobalSearch();
 }
 
 async function loadGlobalRegions() {
-  const res = await fetch('/api/regions');
-  const list = await res.json();
-  const regionSelect = document.getElementById('gRegion');
-  regionSelect.innerHTML = '<option value="">-- Select Region --</option>';
-  list.forEach(r => regionSelect.add(new Option(r, r)));
+	const res = await fetch('/api/regions');
+	const list = await res.json();
+	const regionSelect = document.getElementById('gRegion');
+	regionSelect.innerHTML = '<option value="">-- Select Region --</option>';
+	list.forEach(r => regionSelect.add(new Option(r, r)));
 }
 
 document.getElementById('gRegion').addEventListener('change', async (e) => {
-  const region = e.target.value;
-  document.getElementById('gSubregion').innerHTML = '<option value="">-- Select Sub-region --</option>';
-  document.getElementById('gBranch').innerHTML = '<option value="">-- Select Branch --</option>';
-  if (region) {
-    const res = await fetch(`/api/subregions?region=${region}`);
-    const list = await res.json();
-    list.forEach(r => document.getElementById('gSubregion').add(new Option(r, r)));
-  }
+	const region = e.target.value;
+	document.getElementById('gSubregion').innerHTML = '<option value="">-- Select Sub-region --</option>';
+	document.getElementById('gBranch').innerHTML = '<option value="">-- Select Branch --</option>';
+	if (region) {
+		const res = await fetch(`/api/subregions?region=${region}`);
+		const list = await res.json();
+		list.forEach(r => document.getElementById('gSubregion').add(new Option(r, r)));
+	}
 });
 
 document.getElementById('gSubregion').addEventListener('change', async (e) => {
-  const region = document.getElementById('gRegion').value;
-  const subregion = e.target.value;
-  document.getElementById('gBranch').innerHTML = '<option value="">-- Select Branch --</option>';
-  if (region && subregion) {
-    const res = await fetch(`/api/branches?region=${region}&subRegion=${subregion}`);
-    const list = await res.json();
-    list.forEach(r => document.getElementById('gBranch').add(new Option(r, r)));
-  }
+	const region = document.getElementById('gRegion').value;
+	const subregion = e.target.value;
+	document.getElementById('gBranch').innerHTML = '<option value="">-- Select Branch --</option>';
+	if (region && subregion) {
+		const res = await fetch(`/api/branches?region=${region}&subRegion=${subregion}`);
+		const list = await res.json();
+		list.forEach(r => document.getElementById('gBranch').add(new Option(r, r)));
+	}
 });
 
 async function findGlobalSearch() {
-  const payload = {
-    from: document.getElementById('gFromDate').value,
-    to: document.getElementById('gToDate').value,
-    region: document.getElementById('gRegion').value || null,
-    subRegion: document.getElementById('gSubregion').value || null,
-    branch: document.getElementById('gBranch').value || null
-  };
+	const payload = {
+		from: document.getElementById('gFromDate').value,
+		to: document.getElementById('gToDate').value,
+		region: document.getElementById('gRegion').value || null,
+		subRegion: document.getElementById('gSubregion').value || null,
+		branch: document.getElementById('gBranch').value || null
+	};
 
-  const res = await fetch('/api/lr-paid-statement/search', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
-  const data = await res.json();
+	const res = await fetch('/api/lr-paid-statement/search', {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(payload)
+	});
+	const data = await res.json();
 
-  const container = document.getElementById('globalSearchTableContainer');
-  container.innerHTML = '';
-  if (data.length === 0) {
-    container.innerHTML = '<p>No records found.</p>';
-    return;
-  }
+	const container = document.getElementById('globalSearchTableContainer');
+	container.innerHTML = '';
+	if (data.length === 0) {
+		container.innerHTML = '<p>No records found.</p>';
+		return;
+	}
 
-  let html = '<table class="table table-bordered"><thead><tr>' +
-    '<th>Paid Date</th><th>LR Number</th><th>Amount</th><th>Region</th><th>Sub-Region</th><th>Branch</th>' +
-    '</tr></thead><tbody>';
-  data.forEach(r => {
-    html += `<tr><td>${r.paidDate}</td><td>${r.lrNumber}</td><td>${r.amount}</td><td>${r.region}</td><td>${r.subRegion}</td><td>${r.branch}</td></tr>`;
-  });
-  html += '</tbody></table>';
-  container.innerHTML = html;
+	let html = '<table class="table table-bordered"><thead><tr>' +
+		'<th>Paid Date</th><th>LR Number</th><th>Amount</th><th>Region</th><th>Sub-Region</th><th>Branch</th>' +
+		'</tr></thead><tbody>';
+	data.forEach(r => {
+		html += `<tr><td>${r.paidDate}</td><td>${r.lrNumber}</td><td>${r.amount}</td><td>${r.region}</td><td>${r.subRegion}</td><td>${r.branch}</td></tr>`;
+	});
+	html += '</tbody></table>';
+	container.innerHTML = html;
 }
 
 function resetGlobalSearch() {
-  document.getElementById('gFromDate').value = '';
-  document.getElementById('gToDate').value = '';
-  document.getElementById('gRegion').value = '';
-  document.getElementById('gSubregion').innerHTML = '<option value="">-- Select Sub-region --</option>';
-  document.getElementById('gBranch').innerHTML = '<option value="">-- Select Branch --</option>';
-  document.getElementById('globalSearchTableContainer').innerHTML = '';
+	document.getElementById('gFromDate').value = '';
+	document.getElementById('gToDate').value = '';
+	document.getElementById('gRegion').value = '';
+	document.getElementById('gSubregion').innerHTML = '<option value="">-- Select Sub-region --</option>';
+	document.getElementById('gBranch').innerHTML = '<option value="">-- Select Branch --</option>';
+	document.getElementById('globalSearchTableContainer').innerHTML = '';
 }
