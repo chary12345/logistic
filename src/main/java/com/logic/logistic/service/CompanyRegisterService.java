@@ -2,6 +2,8 @@ package com.logic.logistic.service;
 
 import java.util.List;
 
+import org.springframework.http.ResponseEntity;
+
 import com.logic.logistic.model.Branch;
 import com.logic.logistic.model.BranchMap;
 import com.logic.logistic.model.CompanyAndUserDetailsPojo;
@@ -17,5 +19,7 @@ public interface CompanyRegisterService {
 	List<BranchMap> getBranchesByCompanyCode(String companyCode);
 
 	List<CompanyAndUserDetailsPojo> getCompanyWithSuperAdminsList();
+
+	ResponseEntity<byte[]> findByCompanyDetails_CompanyCode(String companyCode);
 
 }

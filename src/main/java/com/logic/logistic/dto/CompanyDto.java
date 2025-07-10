@@ -5,6 +5,7 @@ import java.sql.Date;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
 
 @Entity
@@ -15,7 +16,8 @@ public class CompanyDto {
 	private String companyFullName;
 	private String groupName;
 	private String plan;
-	private String logo;
+	@Lob
+	private byte[] logo;
 	private Date createdate;
 	private Date updateDate;
 	private Date expiryDate;
@@ -85,15 +87,14 @@ public class CompanyDto {
 		this.startDate = startDate;
 	}
 
-	public String getLogo() {
+	public byte[] getLogo() {
 		return logo;
 	}
 
-	public void setLogo(String logo) {
+	public void setLogo(byte[] logo) {
 		this.logo = logo;
 	}
 
-	
 	public String getPlan() {
 		return plan;
 	}
