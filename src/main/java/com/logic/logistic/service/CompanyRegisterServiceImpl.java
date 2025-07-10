@@ -1,10 +1,12 @@
 package com.logic.logistic.service;
 
-import java.lang.System.Logger;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.logic.logistic.dto.AddressDto;
@@ -122,6 +124,22 @@ public class CompanyRegisterServiceImpl implements CompanyRegisterService {
 		List<CompanyAndUserDetailsPojo> list = companyRegisterrepo.getCompanyiesAndSuperAdminList();
 		return list;
 	}
+
+	@Override
+	public ResponseEntity<byte[]> findByCompanyDetails_CompanyCode(String companyCode) {
+        CompanyDto companyData = companyRegisterrepo.findById(companyCode).orElseThrow();
+       
+        byte[] logo =companyData.getLogo();
+          
+
+        if (logo == null || logo.length == 0) {
+            // return 404 so frontend can fallback to text
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+            return ResponseEntity.ok()
+                    .contentType(MediaType.IMAGE_JPEG)
+                    .body(logo);
+    }
 
 	
 

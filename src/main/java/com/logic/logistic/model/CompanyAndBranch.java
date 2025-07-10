@@ -1,11 +1,14 @@
 package com.logic.logistic.model;
 
+import jakarta.persistence.Lob;
+
 public class CompanyAndBranch {
 	private String companyCode;
 	private String companyName;
 	private String groupName;
 	private String plan;
-	private String companyLogo;
+	@Lob
+	private byte[] companyLogo;
 	
 	
 	private String branchCode;
@@ -37,10 +40,11 @@ public class CompanyAndBranch {
 	public void setPlan(String plan) {
 		this.plan = plan;
 	}
-	public String getCompanyLogo() {
+	
+	public byte[] getCompanyLogo() {
 		return companyLogo;
 	}
-	public void setCompanyLogo(String companyLogo) {
+	public void setCompanyLogo(byte[] companyLogo) {
 		this.companyLogo = companyLogo;
 	}
 	public String getBranchCode() {
@@ -69,7 +73,7 @@ public class CompanyAndBranch {
 		this.isCompanyActive = isCompanyActive;
 	}
 	
-	public CompanyAndBranch(String companyCode, String companyName, String groupName, String plan, String companyLogo,
+	public CompanyAndBranch(String companyCode, String companyName, String groupName, String plan, byte[] companyLogo,
 			String branchCode, String branchName, String branchType, boolean isCompanyActive) {
 		super();
 		this.companyCode = companyCode;

@@ -136,4 +136,10 @@ public class CompanyBranchController {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(map);
 		}
 	}
+	
+	@GetMapping("/company/logo/{companyCode}")
+	public ResponseEntity<byte[]> getCompanyLogo(@PathVariable String companyCode) {
+		return companyRegisterService.findByCompanyDetails_CompanyCode(companyCode);
+
+	}
 }

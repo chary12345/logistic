@@ -23,6 +23,7 @@ function showBookingForm() {
 
 function showCreateBranchForm() {
 	hideAllForms();
+	sessionStorage.removeItem("editLR");
 	document.getElementById('CreateBranchContainer').style.display = 'block';
 }
 
@@ -250,7 +251,7 @@ document.getElementById('city').addEventListener('focus', function() {
 
 function showReportForm(reportType) {
 	hideAllForms();
-
+sessionStorage.removeItem("editLR");
 	// Reset state to make sure report reloads correctly
 	reportData = [];
 	reportPages = [];
@@ -1103,6 +1104,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Logout Function
 function logout() {
 	sessionStorage.removeItem('user');  // Remove the stored user object from sessionStorage
+	sessionStorage.removeItem("editLR");
 	window.location.href = '/'; // Redirect to logout route
 }
 
@@ -1127,6 +1129,7 @@ function showChangePasswordForm() {
 	setTimeout(() => {
 		document.addEventListener('click', handleOutsideClick);
 	}, 100);
+	sessionStorage.removeItem("editLR");
 }
 
 function hideChangePasswordForm() {
@@ -1213,6 +1216,37 @@ function populateUserData() {
 
 	document.getElementById('userFirstName').textContent = userData.firstName;
 	document.getElementById('userLastName').textContent = userData.lastName;
+			document.getElementById('branchresult').textContent = userData.companyAndBranchDeatils.branchName + "-[" + userData.companyAndBranchDeatils.branchType + "]";
+	
+	const logoImg = document.getElementById("companyLogo");
+		const companyCode = userData.companyAndBranchDeatils.companyCode; // get company code from session
+		const companyName = userData.companyAndBranchDeatils.companyName;
+ const logoContainer = document.getElementById("logoContainer");
+
+		 // Try fetching logo from backend
+      fetch(`/company/logo/${companyCode}`)
+        .then(response => {
+          if (!response.ok) throw new Error("Logo not found");
+          return response.blob();
+        })
+        .then(blob => {
+          const url = URL.createObjectURL(blob);
+          logoImg.src = url;
+        })
+        .catch(error => {
+          console.warn("Logo not available:", error);
+          // Replace image with red company name
+         logoContainer.innerHTML = `
+  <span style="
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 40px;
+    display: inline-block;
+  ">${companyName}</span>`;
+  
+
+        });
 	//document.getElementById('userPhone').textContent = userData.phone;
 	//document.getElementById('userEmail').textContent = userData.email;
 	//document.getElementById('userRole').textContent = userData.role;
@@ -1367,6 +1401,7 @@ function openPrintWindow(bookings) {
 
 function showCreateEmployeeForm() {
 	hideAllForms();
+	sessionStorage.removeItem("editLR");
 	document.getElementById('createEmployeeFormContainer').style.display = 'block';
 
 	if (!userData || !userData.companyAndBranchDeatils) {
@@ -1933,6 +1968,7 @@ document.onkeypress = resetTimer;
 //global search scripts here
 function showGlobalSearchForm() {
 	hideAllForms();
+	sessionStorage.removeItem("editLR");
 	document.getElementById("globalSearchFormContainer").style.display = "block";
 	loadGlobalRegions();
 	resetGlobalSearch();
