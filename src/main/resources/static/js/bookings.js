@@ -18,12 +18,13 @@ function hideAllForms() {
 
 function showBookingForm() {
 	hideAllForms();
+
 	document.getElementById('bookingFormContainer').style.display = 'block';
 }
 
 function showCreateBranchForm() {
 	hideAllForms();
-	sessionStorage.removeItem("editLR");
+
 	document.getElementById('CreateBranchContainer').style.display = 'block';
 }
 
@@ -251,7 +252,7 @@ document.getElementById('city').addEventListener('focus', function() {
 
 function showReportForm(reportType) {
 	hideAllForms();
-sessionStorage.removeItem("editLR");
+
 	// Reset state to make sure report reloads correctly
 	reportData = [];
 	reportPages = [];
@@ -929,7 +930,7 @@ function printBookingReceipt(booking) {
 
 document.getElementById("bookingForm").addEventListener("submit", async function(event) {
 	event.preventDefault();
-	const loadingReciept = sessionStorage.getItem("editLR");
+
 	const deliveryInput = document.getElementById("deliveryDestination").value;
 	const match = deliveryInput.match(/\(([^)]+)\)/); // Extract code from "(CODE)"
 	const selectedBranchCode = match ? match[1] : null;
@@ -999,7 +1000,7 @@ document.getElementById("bookingForm").addEventListener("submit", async function
 		});
 		let result = await response.json();
 		alert("Booking saved successfully!");
-		sessionStorage.removeItem("editLR");
+
 		document.getElementById("bookingForm").reset();
 		// Optionally clear the article table as well
 		const articleTableRows = document.querySelectorAll("#bookingForm table tr:not(:first-child)");
@@ -1072,7 +1073,7 @@ function resetBookingForm() {
 	if (chargesPanel) chargesPanel.style.display = "none";
 
 	// Clear session info
-	sessionStorage.removeItem("editLR");
+
 
 	// Optional: scroll to top
 	window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1104,7 +1105,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Logout Function
 function logout() {
 	sessionStorage.removeItem('user');  // Remove the stored user object from sessionStorage
-	sessionStorage.removeItem("editLR");
+
 	window.location.href = '/'; // Redirect to logout route
 }
 
@@ -1129,7 +1130,7 @@ function showChangePasswordForm() {
 	setTimeout(() => {
 		document.addEventListener('click', handleOutsideClick);
 	}, 100);
-	sessionStorage.removeItem("editLR");
+
 }
 
 function hideChangePasswordForm() {
@@ -1216,27 +1217,27 @@ function populateUserData() {
 
 	document.getElementById('userFirstName').textContent = userData.firstName;
 	document.getElementById('userLastName').textContent = userData.lastName;
-			document.getElementById('branchresult').textContent = userData.companyAndBranchDeatils.branchName + "-[" + userData.companyAndBranchDeatils.branchType + "]";
-	
-	const logoImg = document.getElementById("companyLogo");
-		const companyCode = userData.companyAndBranchDeatils.companyCode; // get company code from session
-		const companyName = userData.companyAndBranchDeatils.companyName;
- const logoContainer = document.getElementById("logoContainer");
+	document.getElementById('branchresult').textContent = userData.companyAndBranchDeatils.branchName + "-[" + userData.companyAndBranchDeatils.branchType + "]";
 
-		 // Try fetching logo from backend
-      fetch(`/company/logo/${companyCode}`)
-        .then(response => {
-          if (!response.ok) throw new Error("Logo not found");
-          return response.blob();
-        })
-        .then(blob => {
-          const url = URL.createObjectURL(blob);
-          logoImg.src = url;
-        })
-        .catch(error => {
-          console.warn("Logo not available:", error);
-          // Replace image with red company name
-         logoContainer.innerHTML = `
+	const logoImg = document.getElementById("companyLogo");
+	const companyCode = userData.companyAndBranchDeatils.companyCode; // get company code from session
+	const companyName = userData.companyAndBranchDeatils.companyName;
+	const logoContainer = document.getElementById("logoContainer");
+
+	// Try fetching logo from backend
+	fetch(`/company/logo/${companyCode}`)
+		.then(response => {
+			if (!response.ok) throw new Error("Logo not found");
+			return response.blob();
+		})
+		.then(blob => {
+			const url = URL.createObjectURL(blob);
+			logoImg.src = url;
+		})
+		.catch(error => {
+			console.warn("Logo not available:", error);
+			// Replace image with red company name
+			logoContainer.innerHTML = `
   <span style="
     color: white;
     font-weight: 600;
@@ -1244,9 +1245,9 @@ function populateUserData() {
     line-height: 40px;
     display: inline-block;
   ">${companyName}</span>`;
-  
 
-        });
+
+		});
 	//document.getElementById('userPhone').textContent = userData.phone;
 	//document.getElementById('userEmail').textContent = userData.email;
 	//document.getElementById('userRole').textContent = userData.role;
@@ -1401,7 +1402,7 @@ function openPrintWindow(bookings) {
 
 function showCreateEmployeeForm() {
 	hideAllForms();
-	sessionStorage.removeItem("editLR");
+
 	document.getElementById('createEmployeeFormContainer').style.display = 'block';
 
 	if (!userData || !userData.companyAndBranchDeatils) {
@@ -1641,6 +1642,8 @@ function searchLRByNumber(lrNumber) {
 			return res.json();
 		})
 		.then(data => {
+			window.lastSearchResult = data;
+
 			const gst = (data.sgst || 0) + (data.cgst || 0) + (data.igst || 0);
 			const grandTotal = (data.freight || 0) + gst;
 
@@ -1688,7 +1691,9 @@ function searchLRByNumber(lrNumber) {
 					<h5 class="text-primary mb-3">🔍 Loading Receipt: ${data.loadingReciept}</h5>
 
 					<div class="text-end mt-3">
-						<button class="btn btn-warning btn-sm" onclick='editLRRecord(${JSON.stringify(data)})'>✏️ Edit</button>
+<button class="btn btn-warning btn-sm" onclick="enableInlineEditMode(window.lastSearchResult)">✏️ Edit</button>
+						
+						
 					</div>
 
 					<div class="row mb-2">
@@ -1772,62 +1777,6 @@ function setSelectValue(id, value) {
 	}
 }
 
-function editLRRecord(data) {
-	showBookingForm(); // switch form
-
-	// 1️⃣ Save to session to identify this as an edit
-	sessionStorage.setItem("editLR", data.loadingReciept);
-
-	// 2️⃣ Basic fields
-	safeAssign("consignorName", data.consignorName);
-	safeAssign("consignorMobile", data.consignorMobile);
-	safeAssign("consignorAddress", data.consignorAddress);
-	safeAssign("consigneeName", data.consigneeName);
-	safeAssign("consigneeMobile", data.consigneeMobile);
-	safeAssign("consigneeAddress", data.consigneeAddress);
-	safeAssign("invoiceNo", data.invoiceNumber);
-	safeAssign("Invoicevalue", data.invoiceValue);
-	safeAssign("ewayBill", data.eWayBillNumber);
-
-	// 3️⃣ Destination & Payment Mode
-	setSelectValue("deliveryDestination", data.destinationBranchCode);
-	if (data.billType) setPaymentMode(data.billType.toUpperCase());
-
-	// 4️⃣ Charges
-	safeAssign("freight", data.freight);
-	safeAssign("sgst", data.sgst);
-	safeAssign("cgst", data.cgst);
-	safeAssign("igst", data.igst);
-
-	const gst = (parseFloat(data.sgst || 0) + parseFloat(data.cgst || 0) + parseFloat(data.igst || 0));
-	const grandTotal = (parseFloat(data.freight || 0) + gst).toFixed(2);
-	safeAssign("grandTotal", grandTotal);
-
-	// 5️⃣ Show Charges panel
-	const chargesPanel = document.getElementById("chargesPanel");
-	if (chargesPanel) chargesPanel.style.display = "block";
-
-	const tbody = document.getElementById("articleDataBody");
-	tbody.innerHTML = ""; // ✅ Clears only added rows
-
-	if (Array.isArray(data.articleDetails)) {
-		data.articleDetails.forEach(article => {
-			const row = document.createElement("tr");
-			row.innerHTML = `
-      <td>${article.article || ''}</td>
-      <td>${article.artQty || ''}</td>
-      <td>${article.artType || ''}</td>
-      <td>${article.saidToContain || ''}</td>
-      <td>${article.artAmt || ''}</td>
-      <td>${article.total || ''}</td>
-      <td><button class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()">Delete</button></td>
-    `;
-			tbody.appendChild(row);
-		});
-
-	}
-	recalculateChargesFromArticles();
-}
 
 
 
@@ -1871,51 +1820,7 @@ function addArticleRow(article = {}) {
 	recalculateChargesFromArticles();
 }
 
-function recalculateChargesFromArticles() {
-	let freight = 0;
 
-	const tableBody = document.getElementById("articleTableBody");
-	if (!tableBody) return;
-
-	// Loop through only current rows (excluding header or empty rows)
-	const rows = tableBody.querySelectorAll("tr");
-
-	rows.forEach(row => {
-		const cells = row.querySelectorAll("td");
-
-		// Skip if invalid structure
-		if (cells.length < 5) return;
-
-		let amount = 0;
-
-		// Check if <td> contains <input> or plain text
-		const amountCell = cells[4];
-		if (amountCell.querySelector("input")) {
-			amount = parseFloat(amountCell.querySelector("input").value || 0);
-		} else {
-			amount = parseFloat(amountCell.textContent || 0);
-		}
-
-		if (!isNaN(amount)) freight += amount;
-	});
-
-	// Calculate GST
-	const sgst = +(freight * 0.025).toFixed(2);
-	const cgst = +(freight * 0.025).toFixed(2);
-	const igst = +(freight * 0.05).toFixed(2);
-	const grandTotal = +(freight + sgst + cgst + igst).toFixed(2);
-
-	// Update UI
-	safeAssign("freight", freight);
-	safeAssign("sgst", sgst);
-	safeAssign("cgst", cgst);
-	safeAssign("igst", igst);
-	safeAssign("grandTotal", grandTotal);
-
-	// Ensure charges panel is visible
-	const chargesPanel = document.getElementById("chargesPanel");
-	if (chargesPanel) chargesPanel.style.display = "block";
-}
 
 document.addEventListener("DOMContentLoaded", setupLRSearch);
 
@@ -1968,7 +1873,7 @@ document.onkeypress = resetTimer;
 //global search scripts here
 function showGlobalSearchForm() {
 	hideAllForms();
-	sessionStorage.removeItem("editLR");
+
 	document.getElementById("globalSearchFormContainer").style.display = "block";
 	loadGlobalRegions();
 	resetGlobalSearch();
@@ -2045,3 +1950,220 @@ function resetGlobalSearch() {
 	document.getElementById('gBranch').innerHTML = '<option value="">-- Select Branch --</option>';
 	document.getElementById('globalSearchTableContainer').innerHTML = '';
 }
+
+
+
+// View-Only Mode Upgrade: In-place editing of LR
+
+
+function enableInlineEditMode(data) {
+  const container = document.getElementById("lrSearchResultContainer");
+  if (!container) return;
+
+  container.innerHTML = `
+    <h5 class="text-primary mb-3">✏️ Edit Booking: ${data.loadingReciept}</h5>
+
+    <div class="row">
+      <div class="col-md-6">
+        <label><strong>Consignor Name</strong></label>
+        <input class="form-control form-control-sm" id="consignorName" value="${data.consignorName || ''}">
+        <label><strong>Mobile</strong></label>
+        <input class="form-control form-control-sm" id="consignorMobile" value="${data.consignorMobile || ''}">
+        <label><strong>Address</strong></label>
+        <input class="form-control form-control-sm" id="consignorAddress" value="${data.consignorAddress || ''}">
+      </div>
+      <div class="col-md-6">
+        <label><strong>Consignee Name</strong></label>
+        <input class="form-control form-control-sm" id="consigneeName" value="${data.consigneeName || ''}">
+        <label><strong>Mobile</strong></label>
+        <input class="form-control form-control-sm" id="consigneeMobile" value="${data.consigneeMobile || ''}">
+        <label><strong>Address</strong></label>
+        <input class="form-control form-control-sm" id="consigneeAddress" value="${data.consigneeAddress || ''}">
+      </div>
+    </div>
+
+    <hr>
+    <h6 class="text-success mt-2">🧾 Article Details</h6>
+    <table class="table table-bordered table-sm">
+      <thead>
+        <tr>
+          <th>Article</th><th>Qty</th><th>Type</th><th>Said To Contain</th><th>Amount</th><th>Total</th><th>❌</th>
+        </tr>
+      </thead>
+      <tbody id="editArticleTableBody"></tbody>
+    </table>
+    <div class="mb-3">
+      <button class="btn btn-sm btn-success" onclick="addInlineArticleRow()">➕ Add Article</button>
+    </div>
+
+    <hr>
+    <h6 class="text-success">💰 Charges</h6>
+    <div class="row">
+      <div class="col-md-3">
+        <label>Freight</label>
+        <input class="form-control form-control-sm" id="freight" value="${data.freight || 0}" readonly>
+      </div>
+      <div class="col-md-3">
+        <label>SGST</label>
+        <input class="form-control form-control-sm" id="sgst" value="${data.sgst || 0}" readonly>
+      </div>
+      <div class="col-md-3">
+        <label>CGST</label>
+        <input class="form-control form-control-sm" id="cgst" value="${data.cgst || 0}" readonly>
+      </div>
+      <div class="col-md-3">
+        <label>IGST</label>
+        <input class="form-control form-control-sm" id="igst" value="${data.igst || 0}" readonly>
+      </div>
+    </div>
+    <div class="row mt-2">
+      <div class="col-md-4 offset-md-8">
+        <label>Grand Total</label>
+        <input class="form-control form-control-sm text-success fw-bold" id="grandTotal" value="${(data.freight + data.sgst + data.cgst + data.igst).toFixed(2)}" readonly>
+      </div>
+    </div>
+
+    <div class="text-end mt-3">
+      <button class="btn btn-primary" onclick="submitInlineEdit('${data.loadingReciept}')">🔄 Update Booking</button>
+    </div>
+  `;
+
+  (data.articleDetails || []).forEach(a => addInlineArticleRow(a));
+  recalculateInlineCharges();
+}
+
+function addInlineArticleRow(article = {}) {
+  const tbody = document.getElementById("editArticleTableBody");
+  if (!tbody) return;
+
+  const row = tbody.insertRow();
+
+  row.innerHTML = `
+    <td>
+      <select class="form-select form-select-sm articleDropdown" onchange="recalculateInlineRow(this)">
+        <option value="Article" ${article.article === "Article" ? "selected" : ""}>Article</option>
+        <option value="Weight" ${article.article === "Weight" ? "selected" : ""}>Weight</option>
+        <option value="Fix" ${article.article === "Fix" ? "selected" : ""}>Fix</option>
+      </select>
+    </td>
+    <td><input type="number" class="form-control form-control-sm qtyInput" value="${article.artQty || 0}" onchange="recalculateInlineRow(this)"></td>
+    <td>
+      <select class="form-select form-select-sm artTypeDropdown" onchange="recalculateInlineRow(this)">
+       <option value="Auto Parts" ${article.saidToContain === "Auto Parts" ? "selected" : ""}>Auto Parts</option>
+        <option value="Electronics" ${article.saidToContain === "Electronics" ? "selected" : ""}>Electronics</option>
+        <option value="Garments" ${article.saidToContain === "Garments" ? "selected" : ""}>Garments</option>
+      </select>
+    </td>
+    <td>
+      <select class="form-select form-select-sm containDropdown" onchange="recalculateInlineRow(this)">
+        
+        <option value="Spare Parts" ${article.artType === "Spare Parts" ? "selected" : ""}>Spare Parts</option>
+        <option value="Components" ${article.artType === "Fragile" ? "selected" : ""}>Components</option>
+              <option value="Accessories" ${article.artType === "Accessories" ? "selected" : ""}>Accessories</option>
+      
+      </select>
+    </td>
+    <td><input type="number" class="form-control form-control-sm amtInput" value="${article.artAmt || 0}" onchange="recalculateInlineRow(this)"></td>
+    <td><input type="number" class="form-control form-control-sm totalInput" value="${(article.artQty || 0) * (article.artAmt || 0)}" readonly></td>
+    <td><button class="btn btn-sm btn-danger" onclick="this.closest('tr').remove(); recalculateInlineCharges();">Delete</button></td>
+  `;
+}
+
+function recalculateInlineRow(input) {
+  const row = input.closest("tr");
+  if (!row) return;
+
+  const qty = parseFloat(row.querySelector(".qtyInput")?.value || 0);
+  const amt = parseFloat(row.querySelector(".amtInput")?.value || 0);
+  const total = qty * amt;
+  row.querySelector(".totalInput").value = total.toFixed(2);
+
+  recalculateInlineCharges();
+}
+
+function recalculateInlineCharges() {
+  const rows = document.querySelectorAll("#editArticleTableBody tr");
+  let totalFreight = 0;
+
+  rows.forEach(row => {
+    const total = parseFloat(row.querySelector(".totalInput")?.value || 0);
+    totalFreight += total;
+  });
+
+  document.getElementById("freight").value = totalFreight.toFixed(2);
+  const sgst = (totalFreight * 0.025).toFixed(2);
+  const cgst = (totalFreight * 0.025).toFixed(2);
+  const igst = (totalFreight * 0.05).toFixed(2);
+  const grandTotal = (parseFloat(totalFreight) + parseFloat(sgst) + parseFloat(cgst) + parseFloat(igst)).toFixed(2);
+
+  document.getElementById("sgst").value = sgst;
+  document.getElementById("cgst").value = cgst;
+  document.getElementById("igst").value = igst;
+  document.getElementById("grandTotal").value = grandTotal;
+}
+function submitInlineEdit(lrNumber) {
+	const bookingData = {
+		consignorName: document.getElementById("consignorName").value,
+		consignorMobile: document.getElementById("consignorMobile").value,
+		consignorAddress: document.getElementById("consignorAddress").value,
+		consigneeName: document.getElementById("consigneeName").value,
+		consigneeMobile: document.getElementById("consigneeMobile").value,
+		consigneeAddress: document.getElementById("consigneeAddress").value,
+		invoiceNumber: document.getElementById("invoiceNo")?.value || "", // if present
+		invoiceValue: parseFloat(document.getElementById("Invoicevalue")?.value || 0),
+		eWayBillNumber: document.getElementById("ewayBill")?.value || "",
+		destinationBranchCode: "", // Optional, fetch from another field if needed
+		articleDetails: extractInlineArticleData(), // ✅ NEW version below
+		freight: parseFloat(document.getElementById("freight").value || 0),
+		sgst: parseFloat(document.getElementById("sgst").value || 0),
+		cgst: parseFloat(document.getElementById("cgst").value || 0),
+		igst: parseFloat(document.getElementById("igst").value || 0),
+		grandTotal: parseFloat(document.getElementById("grandTotal").value || 0)
+	};
+
+	fetch(`/api/bookings/bookLoad/${encodeURIComponent(lrNumber)}`, {
+		method: 'PUT',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(bookingData)
+	})
+	.then(response => response.json())
+	.then(result => {
+		if (result && result.loadingReciept) {
+			alert("Booking updated successfully!");
+			searchLRByNumber(lrNumber);
+		} else {
+			alert("Update failed");
+		}
+	})
+	.catch(err => {
+		console.error("Error:", err);
+		alert("Update error occurred");
+	});
+}
+function extractInlineArticleData() {
+	const rows = document.querySelectorAll("#editArticleTableBody tr");
+	const articles = [];
+
+	rows.forEach(row => {
+		const article = row.querySelector(".articleDropdown")?.value;
+		const qty = parseFloat(row.querySelector(".qtyInput")?.value || 0);
+		const type = row.querySelector(".artTypeDropdown")?.value;
+		const contain = row.querySelector(".containDropdown")?.value;
+		const amt = parseFloat(row.querySelector(".amtInput")?.value || 0);
+		const total = parseFloat(row.querySelector(".totalInput")?.value || 0);
+
+		articles.push({
+			article: article,
+			artQty: qty,
+			artType: contain,
+			saidToContain: type,
+			artAmt: amt,
+			companyCode: userData.companyAndBranchDeatils.companyCode,
+			total: total
+		});
+	});
+
+	return articles;
+}
+
+

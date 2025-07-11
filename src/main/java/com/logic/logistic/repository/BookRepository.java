@@ -12,7 +12,10 @@ import org.springframework.stereotype.Repository;
 
 import com.logic.logistic.dto.Booking;
 
+import jakarta.transaction.Transactional;
+
 @Repository
+@Transactional
 public interface BookRepository extends JpaRepository<Booking, String> {
 	@Query("SELECT DISTINCT b FROM Booking b WHERE (b.bookingDate BETWEEN :fromDate AND :toDate) AND b.consignStatus = :status")
 	Page<Booking> findByBookingDateBetween(@Param("fromDate") LocalDateTime fromDate,

@@ -244,6 +244,7 @@ public class BookingService {
 		Booking existing = bookingRepo.findById(lr).orElseThrow(() -> new RuntimeException("LR not found"));
 
 		// Update fields
+		existing.setLoadingReciept(lr);
 		existing.setConsignorName(dto.getConsignorName());
 		existing.setConsignorMobile(dto.getConsignorMobile());
 		existing.setConsignorAddress(dto.getConsignorAddress());
@@ -261,11 +262,11 @@ public class BookingService {
 		existing.setBillType(dto.getBillType());
 		existing.setModifiedDate(LocalDateTime.now());
 
+		articleRepo.deleteByLoadingReciept(lr);
+		
+		saveArticles(lr, dto.getArticleDetails());
 		bookingRepo.save(existing);
 
-		articleRepo.deleteByLoadingReciept(lr);
-
-		saveArticles(lr, dto.getArticleDetails());
 		return existing;
 	}
 
@@ -273,8 +274,8 @@ public class BookingService {
 		if (details != null) {
 			for (ArticleDetail d : details) {
 				ArticleDetailDto dto = new ArticleDetailDto();
-
 				BeanUtils.copyProperties(d, dto);
+				dto.setLoadingReciept(lr);
 				articleRepo.save(dto);
 			}
 		}
