@@ -196,8 +196,9 @@ async function fetchCityState(postalCode) {
 		const data = await response.json();
 		const postalData = data[0];
 
-		if (postalData.Status === "Success") {
-			const cityList = postalData.PostOffice;
+		if (postalData.Status !== "Success") {
+		document.getElementById("postalCodeError").innerText = "Invalid Postal Code. Please try again.";
+			/*const cityList = postalData.PostOffice;
 			const state = postalData.PostOffice[0].State;
 			let citiesHtml = '';
 
@@ -211,13 +212,13 @@ async function fetchCityState(postalCode) {
 			if (citiesHtml) {
 				cityDropdown.innerHTML = citiesHtml;
 				cityDropdown.style.display = 'block';
-			}
-		} else {
-			document.getElementById("postalCodeError").innerText = "Invalid Postal Code. Please try again.";
+			}*/
+		} /*else {
+			document.getElementById("postalCodeError").innerText = "Invalid Postal Code.";
 			document.getElementById("state").value = '';
 			document.getElementById("city").value = '';
 			document.getElementById("cityDropdown").style.display = 'none';
-		}
+		}*/
 	} catch (error) {
 		document.getElementById("postalCodeError").innerText = "Error fetching postal code details.";
 		document.getElementById("cityDropdown").style.display = 'none';
@@ -780,7 +781,7 @@ function printBookingReceipt(booking) {
 		<div class="receipt">
 			<div class="header">
 			
-				<div><strong>bookin.cookingompanyCode</strong></div>
+				<div><strong>${booking.companyCode}</strong></div>
 				<div>Hyderabad</div>
 			</div>
 
@@ -986,11 +987,7 @@ document.getElementById("bookingForm").addEventListener("submit", async function
 	let url = "/api/bookings/bookLoad";
 	let method = "POST";
 
-	if (loadingReciept) {
-		url += `/${loadingReciept}`;
-		method = "PUT";
-		data.loadingReciept = loadingReciept;
-	}
+
 
 	try {
 		let response = await fetch(url, {
@@ -1880,7 +1877,8 @@ function showGlobalSearchForm() {
 }
 
 async function loadGlobalRegions() {
-	const res = await fetch('/api/regions');
+	const companyCode = userData.companyAndBranchDeatils.companyCode;
+	const res = await fetch(`/region/regions?companyCode=${encodeURIComponent(companyCode)}`);
 	const list = await res.json();
 	const regionSelect = document.getElementById('gRegion');
 	regionSelect.innerHTML = '<option value="">-- Select Region --</option>';
@@ -1892,7 +1890,7 @@ document.getElementById('gRegion').addEventListener('change', async (e) => {
 	document.getElementById('gSubregion').innerHTML = '<option value="">-- Select Sub-region --</option>';
 	document.getElementById('gBranch').innerHTML = '<option value="">-- Select Branch --</option>';
 	if (region) {
-		const res = await fetch(`/api/subregions?region=${region}`);
+		const res = await fetch(`/region/subregions?region=${encodeURIComponent(region)}`);
 		const list = await res.json();
 		list.forEach(r => document.getElementById('gSubregion').add(new Option(r, r)));
 	}
@@ -1903,7 +1901,7 @@ document.getElementById('gSubregion').addEventListener('change', async (e) => {
 	const subregion = e.target.value;
 	document.getElementById('gBranch').innerHTML = '<option value="">-- Select Branch --</option>';
 	if (region && subregion) {
-		const res = await fetch(`/api/branches?region=${region}&subRegion=${subregion}`);
+		const res = await fetch(`/region/branches?region=${encodeURIComponent(region)}&subRegion=${encodeURIComponent(subregion)}`);
 		const list = await res.json();
 		list.forEach(r => document.getElementById('gBranch').add(new Option(r, r)));
 	}

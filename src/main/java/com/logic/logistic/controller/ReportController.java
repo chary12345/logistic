@@ -4,44 +4,32 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.logic.logistic.dto.LRPS;
-import com.logic.logistic.model.SearchCriteria;
-import com.logic.logistic.repository.BranchMasterRepo;
-import com.logic.logistic.repository.LRPSRepo;
+import com.logic.logistic.service.RegionService;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/region")
 public class ReportController {
 
 	@Autowired
-	BranchMasterRepo branchRepo;
-	@Autowired
-	LRPSRepo lrpsRepo;
-
+	private RegionService regionService;
+	
 	@GetMapping("/regions")
-	public List<String> regions() {
-		return branchRepo.findDistinctRegion();
+	public List<String> regions(@RequestParam String companyCode) {
+		return regionService.getRegionListByCompanyCode(companyCode);
 	}
 
 	@GetMapping("/subregions")
 	public List<String> subregions(@RequestParam String region) {
-		return branchRepo.findDistinctSubRegionByRegion(region);
+		return regionService.getSubRegionListByRegion(region);
 	}
 
 	@GetMapping("/branches")
 	public List<String> branches(@RequestParam String region, @RequestParam String subRegion) {
-		return branchRepo.findDistinctBranchByRegionAndSubRegion(region, subRegion);
-	}
-
-	@PostMapping("/lr-paid-statement/search")
-	public List<LRPS> search(@RequestBody SearchCriteria c) {
-		return lrpsRepo.search(c.getFrom(), c.getTo(), c.getRegion(), c.getSubRegion(), c.getBranch());
+		return regionService.getBranchesListBySubregion(region, subRegion);
 	}
 
 }
