@@ -34,6 +34,7 @@ public class BookingDTO {
     private String invoiceNumber;
     private Double  invoiceValue;
     private String eWayBillNumber;
+    private String employeeName;
     
 	public String getConsignorName() {
 		return consignorName;
@@ -180,6 +181,12 @@ public class BookingDTO {
 	}
 	public void setLoadingReciept(String loadingReciept) {
 		this.loadingReciept = loadingReciept;
+	}
+	public String getEmployeeName() {
+		return employeeName;
+	}
+	public void setEmployeeName(String employeeName) {
+		this.employeeName = employeeName;
 	}
 
     

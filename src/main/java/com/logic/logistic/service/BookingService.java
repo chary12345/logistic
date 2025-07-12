@@ -108,9 +108,12 @@ public class BookingService {
 				booking.setBranchCode(dto.getBranchCode());
 			if (dto.getDestinationBranchCode() != null)
 				booking.setDestinationBranchCode(dto.getDestinationBranchCode());
+			if (dto.getEmployeeName() != null)
+				booking.setEmployeeName(dto.getEmployeeName());
 			save = bookingRepo.save(booking);
+			logger.info("booking saved:: " + save.getLoadingReciept());
 		} catch (Exception e) {
-			System.out.println(e.getMessage());
+			
 			logger.error("Exception in saveBooking: " + e);
 		}
 		return save;
@@ -263,7 +266,7 @@ public class BookingService {
 		existing.setModifiedDate(LocalDateTime.now());
 
 		articleRepo.deleteByLoadingReciept(lr);
-		
+
 		saveArticles(lr, dto.getArticleDetails());
 		bookingRepo.save(existing);
 

@@ -85,6 +85,9 @@ public class Booking {
     @Column(name = "booking_type")
     private String bookingtype;
     
+    @Column(name = "employee_name")
+    private String employeeName;
+    
     @Transient
     private String companyCode;
    
@@ -308,6 +311,14 @@ public class Booking {
 
 	public void setModifiedDate(LocalDateTime modifiedDate) {
 		this.modifiedDate = modifiedDate;
+	}
+
+	public String getEmployeeName() {
+		return employeeName;
+	}
+
+	public void setEmployeeName(String employeeName) {
+		this.employeeName = employeeName;
 	}
 	
 
