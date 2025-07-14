@@ -18,12 +18,16 @@ import org.springframework.stereotype.Service;
 import com.logic.logistic.dto.ArticleDetailDto;
 import com.logic.logistic.dto.Booking;
 import com.logic.logistic.dto.BookingReceiptSequence;
+import com.logic.logistic.dto.LoadingSheetDTO;
+import com.logic.logistic.mapper.LoadingSheetMapper;
 import com.logic.logistic.model.ArticleDetail;
 import com.logic.logistic.model.BookingDTO;
 import com.logic.logistic.model.BookingPageResponse;
+import com.logic.logistic.model.DispatchRequest;
 import com.logic.logistic.repository.ArticleDetailRepository;
 import com.logic.logistic.repository.BookRepository;
 import com.logic.logistic.repository.BookingReceiptSequenceRepository;
+import com.logic.logistic.repository.LoadingSheetRepository;
 
 import jakarta.transaction.Transactional;
 
@@ -43,6 +47,9 @@ public class BookingService {
 	@Autowired
 	private ArticleDetailRepository articleRepo;
 
+	@Autowired
+	private LoadingSheetRepository loadingSheetRepository;
+	
 	@Transactional
 	public Booking saveBooking(BookingDTO dto) {
 		String key = dto.getCompanyCode() + dto.getBranchCode();
@@ -142,10 +149,10 @@ public class BookingService {
 	}
 
 	@Transactional
-	public List<Booking> dispatchLoad(List<String> loadingReceipts) {
+	public List<Booking> dispatchLoad(DispatchRequest request) {
 		List<Booking> dispatchBookings = null;
 		try {
-			dispatchBookings = bookingRepo.findByLoadingRecieptIn(loadingReceipts);
+			dispatchBookings = bookingRepo.findByLoadingRecieptIn(request.getLrIds());
 			LocalDateTime now = LocalDateTime.now();
 			for (Booking booking : dispatchBookings) {
 				booking.setConsignStatus("DISPATCHED");
@@ -153,7 +160,13 @@ public class BookingService {
 			}
 
 			bookingRepo.saveAll(dispatchBookings);
-			logger.info("save all dispatchbookings : ");
+			
+
+			// Save to loading_sheet table
+	        LoadingSheetDTO sheet = LoadingSheetMapper.fromRequest(request);
+	        loadingSheetRepository.save(sheet);
+
+	        logger.info("Dispatch and loading sheet saved");
 
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
