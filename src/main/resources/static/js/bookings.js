@@ -17,6 +17,7 @@ function hideAllForms() {
 	safeHide('globalSearchFormContainer');
 	safeHide("operationSearchForm");
 	safeHide("bookingopsSummaryContainer");
+	safeHide('vehicleManageContainer');
 	const summary1 = document.getElementById("bookingSummaryContainer");
 	const summary2 = document.getElementById("bookingopsSummaryContainer");
 	if (summary1) summary1.innerHTML = "";
@@ -64,11 +65,16 @@ function showOperationSearchForm(status) {
 }
 
 function showAssociateVehicleModal() {
-	const modal = new bootstrap.Modal(document.getElementById('associateVehicleModal'));
+	loadVehicleDropdown();
+	loadBranchesDropdown();
+	const modal = new bootstrap.Modal(document.getElementById("associateVehicleModal"));
 	modal.show();
 }
 
-
+function showVehicleManageForm() {
+	hideAllForms();
+	document.getElementById("vehicleManageContainer").style.display = "block";
+}
 
 document.getElementById("branchForm").addEventListener("submit", async function(e) {
 	e.preventDefault();
@@ -1347,7 +1353,7 @@ document.getElementById("consignorGST").addEventListener("blur", function() {
 document.getElementById("consigneeGST").addEventListener("blur", function() {
 	validateGST("consigneeGST");
 });
-function dispatchSelected() {
+function dispatchSelected(vehicleDetails = {}) {
 	const selected = Array.from(document.querySelectorAll('.bookingCheckbox:checked'))
 		.map(cb => cb.value);
 
@@ -1356,10 +1362,15 @@ function dispatchSelected() {
 		return;
 	}
 
+	const payload = {
+		selectedLRs: selected,
+		vehicleDetails: vehicleDetails
+	};
+
 	fetch('/api/bookings/dispatchLoad', {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify(selected)
+		body: JSON.stringify(payload)
 	})
 		.then(res => res.json())
 		.then(data => {
@@ -1374,8 +1385,8 @@ function dispatchSelected() {
 			console.error("Dispatch error:", err);
 			alert("Error dispatching bookings.");
 		});
-
 }
+
 function openPrintWindow(bookings) {
 	const printWindow = window.open('', '', 'width=1000,height=700');
 
@@ -2348,11 +2359,11 @@ async function submitOperationReport() {
 	const payload = {
 		fromDate: from,
 		toDate: to,
-		region: region,
-		subregion: subregion,
+		region,
+		subregion,
 		branchCode: branch,
 		employeeName: employee,
-		status: status
+		status
 	};
 
 	try {
@@ -2361,30 +2372,31 @@ async function submitOperationReport() {
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(payload)
 		});
-
 		const data = await res.json();
 
-		isResetting = false; // ✅ Clear flag
-
-
+		isResetting = false;
 		renderOperationReportTable(data || []);
-		document.getElementById("dispatchActionBar").style.display = "block";
 
-		if (!isResetting && data?.length) {
+		// ✅ Dispatch button shown only if data exists
+		const dispatchBar = document.getElementById("dispatchActionBar");
+		dispatchBar.style.display = (data?.length) ? "block" : "none";
+
+		// ✅ Summary shown below
+		if (data?.length) {
 			displayopsBookingSummary(data);
 		}
 
 	} catch (err) {
 		console.error("Operation report error:", err);
-		const errDiv = document.getElementById("operationResultContainer");
-		if (errDiv) errDiv.innerHTML = "<div class='text-danger'>Error loading report</div>";
+		document.getElementById("operationResultContainer").innerHTML = "<div class='text-danger'>Error loading report</div>";
 	}
 }
 
 
+
 function renderOperationReportTable(bookings) {
 	const container = document.getElementById('operationResultContainer');
-	const dispatchBar = document.getElementById('dispatchActionBar');
+	//const dispatchBar = document.getElementById('dispatchActionBar');
 
 	// 🔁 Reset result container
 	container.innerHTML = '';
@@ -2396,8 +2408,8 @@ function renderOperationReportTable(bookings) {
 		return;
 	}
 
-	// ✅ Show Dispatch Button
-	if (dispatchBar) dispatchBar.style.display = "block";
+	/*// ✅ Show Dispatch Button
+	if (dispatchBar) dispatchBar.style.display = "block";*/
 
 	// 🧱 Build table
 	const table = document.createElement('table');
@@ -2446,6 +2458,22 @@ function renderOperationReportTable(bookings) {
 		`;
 		tbody.appendChild(row);
 	});
+	// Enable/Disable dispatch button based on selection
+	const dispatchBar = document.getElementById("dispatchActionBar");
+
+	function updateDispatchButtonState() {
+		const anySelected = document.querySelectorAll(".bookingCheckbox:checked").length > 0;
+		if (dispatchBar) dispatchBar.style.display = anySelected ? "block" : "none";
+	}
+
+	// Attach change listener to each checkbox
+	const checkboxes = document.querySelectorAll(".bookingCheckbox");
+	checkboxes.forEach(cb => {
+		cb.addEventListener("change", updateDispatchButtonState);
+	});
+
+	// Initially hide the button
+	if (dispatchBar) dispatchBar.style.display = "none";
 
 	container.appendChild(table);
 
@@ -2453,6 +2481,18 @@ function renderOperationReportTable(bookings) {
 	displayopsBookingSummary(bookings);
 }
 
+function toggleAllCheckboxes(source) {
+	const checkboxes = document.querySelectorAll('.bookingCheckbox');
+	checkboxes.forEach(cb => {
+		cb.checked = source.checked;
+	});
+
+	// Update dispatch button visibility
+	const dispatchBar = document.getElementById("dispatchActionBar");
+	if (dispatchBar) {
+		dispatchBar.style.display = source.checked ? "block" : "none";
+	}
+}
 
 
 function displayopsBookingSummary(bookings) {
@@ -2537,52 +2577,204 @@ function displayopsBookingSummary(bookings) {
 function clearUnifiedFilters() {
 	isResetting = true; // 🧠 Set flag
 
-	const ids = [
-		"opFromDate", "opToDate",
-		"opRegion", "opSubregion", "opBranch", "opEmployee"
-	];
+	// Reset form inputs
+	document.getElementById("opFromDate").value = '';
+	document.getElementById("opToDate").value = '';
+	document.getElementById("opRegion").value = '';
+	document.getElementById("opSubregion").value = '';
+	document.getElementById("opBranch").value = '';
+	document.getElementById("opEmployee").value = '';
 
-	// Clear filters
-	ids.forEach(id => {
-		const el = document.getElementById(id);
-		if (el && (el.tagName === "SELECT" || el.tagName === "INPUT")) {
-			el.value = "";
-		}
-	});
+	// Clear table
+	document.getElementById("operationResultContainer").innerHTML = "";
 
-
-	// Clear result container
-	const result = document.getElementById("operationResultContainer");
-	if (result) result.innerHTML = "";
-
-	// Clear summary
-	const summary = document.getElementById("bookingopsSummaryContainer");
-	if (summary) {
-		summary.innerHTML = "";
-		summary.style.display = "none";
-	}
+	// Hide dispatch button
 	const dispatchBar = document.getElementById("dispatchActionBar");
 	if (dispatchBar) dispatchBar.style.display = "none";
+
+	// Hide and clear booking summary
+	const summaryBox = document.getElementById("bookingopsSummaryContainer");
+	if (summaryBox) {
+		summaryBox.innerHTML = "";
+		summaryBox.style.display = "none";
+	}
 }
 
 //dispatch with vehicle
 
 function submitVehicleDetails() {
-	const details = {
-		truckNumber: document.getElementById("truckNumber").value.trim(),
-		vehicleName: document.getElementById("vehicleName").value.trim(),
-		driverName: document.getElementById("driverName").value.trim(),
-		driverPhone: document.getElementById("driverPhone").value.trim(),
-		destinationBranch: document.getElementById("destinationBranch").value.trim(),
+	const vehicleNumber = document.getElementById("truckNumber").value.trim();
+	const vehicleName = document.getElementById("vehicleName").value.trim();
+	const driverName = document.getElementById("driverName").value.trim();
+	const driverPhone = document.getElementById("driverPhone").value.trim();
+	const destinationBranch = document.getElementById("destinationBranch").value.trim();
+
+	const selectedLrIds = Array.from(document.querySelectorAll(".bookingCheckbox:checked"))
+		.map(cb => cb.value);
+
+	if (!vehicleNumber || !driverName || !driverPhone || !destinationBranch) {
+		alert("Please fill all vehicle & driver details.");
+		return;
+	}
+
+	if (selectedLrIds.length === 0) {
+		alert("Please select at least one booking.");
+		return;
+	}
+
+	const payload = {
+		vehicleNumber,
+		vehicleName,
+		destinationBranch,
+		driverName,
+		driverPhone,
+		lrIds: selectedLrIds
 	};
 
-	console.log("Vehicle Details Submitted:", details);
+	fetch("/api/bookings/dispatchLoad", {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(payload)
+	})
+		.then(async res => {
+			if (!res.ok) {
+				const errorMsg = await res.text();
+				throw new Error(errorMsg || "Dispatch failed");
+			}
 
-	// 🔒 TODO: You can post this to backend here
+			const data = await res.json();
 
-	// Close modal after submit
-	bootstrap.Modal.getInstance(document.getElementById('associateVehicleModal')).hide();
+			if (!data || !Array.isArray(data) || data.length === 0) {
+				alert("Dispatch failed: No bookings were dispatched.");
+				return;
+			}
+			// optionally open loading sheet
+			openPrintWindow(data);
+
+			// hide modal and reset form
+			bootstrap.Modal.getInstance(document.getElementById("associateVehicleModal")).hide();
+			document.getElementById("associateVehicleForm").reset();
+			submitOperationReport();
+		})
+		.catch(err => {
+			console.error("Dispatch error:", err);
+			alert("Error dispatching bookings.");
+		});
 }
+
+
+
+//manage vehicle section 
+function submitVehicleForm(event) {
+	event.preventDefault();
+
+	const user = userData || {};
+	const companyCode = user?.companyAndBranchDeatils?.companyCode || "DEFAULT";
+
+	const payload = {
+		companyCode: companyCode,
+		truckNumber: document.getElementById("vehicleTruckNumber").value.trim(),
+		vehicleName: document.getElementById("vehicleVehicleName").value.trim(),
+		capacity: parseFloat(document.getElementById("capacity").value),
+		ownerName: document.getElementById("ownerName").value.trim(),
+		vehicleType: document.getElementById("vehicleType").value,
+		branchCode: userData.companyAndBranchDeatils.branchCode,
+		rcNumber: document.getElementById("rcNumber").value.trim(),
+		isActive: document.getElementById("isActive").value === "true"
+	};
+
+	fetch("/vehicles/associate", {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(payload)
+	})
+		.then(async res => {
+			if (res.status === 200) {
+				alert("Vehicle saved successfully!");
+				document.getElementById("vehicleForm").reset();
+			} else {
+				const msg = await res.text();
+				alert("Error: " + msg);
+			}
+		})
+		.catch(err => {
+			console.error("Vehicle save failed:", err);
+			alert("Failed to save vehicle. Try again.");
+		});
+}
+
+
+
+async function loadVehicleDropdown() {
+	const branchCode = userData?.companyAndBranchDeatils?.branchCode;
+	const truckSelect = document.getElementById("truckNumber");
+	truckSelect.innerHTML = '<option value="">-- Select Truck --</option>';
+
+	try {
+		const res = await fetch(`/vehicles/active?branchCode=${branchCode}`);
+		const trucks = await res.json();
+		availableVehicles = trucks;
+
+		trucks.forEach(v => {
+			const opt = document.createElement("option");
+			opt.value = v.truckNumber;
+			opt.textContent = `${v.truckNumber} - ${v.vehicleName}`;
+			truckSelect.appendChild(opt);
+		});
+	} catch (err) {
+		console.error("Failed to load trucks", err);
+	}
+}
+
+async function loadBranchesDropdown() {
+	const companyCode = userData?.companyAndBranchDeatils?.companyCode;
+	/*const branchSelect = document.getElementById("destinationBranch");
+	branchSelect.innerHTML = '<option value="">-- Select Branch --</option>';
+*/
+
+	fetch(`BranchesByCompanyCode/${companyCode}`)
+		.then(response => response.json())
+		.then(data => {
+			const select = document.getElementById("destinationBranch");
+			select.innerHTML = '<option selected>---- Select Branch ----</option>';
+
+			if (data.status === "SUCCESS" && Array.isArray(data.data)) {
+				data.data.forEach(branch => {
+					const option = document.createElement("option");
+					option.value = branch.branchCode;
+					option.textContent = `${branch.branchName} [${branch.branchType}]`;
+					select.appendChild(option);
+				});
+			} else {
+				console.error("No branches found.");
+			}
+		})
+		.catch(error => console.error("Error fetching branches:", error));
+}
+
+
+
+document.addEventListener("DOMContentLoaded", () => {
+	const truckDropdown = document.getElementById("truckNumber");
+	if (truckDropdown) {
+		truckDropdown.addEventListener("change", () => {
+			const selectedTruck = truckDropdown.value;
+			const found = availableVehicles.find(v => v.truckNumber === selectedTruck);
+			if (found) {
+				document.getElementById("vehicleName").value = found.vehicleName || "";
+			} else {
+				document.getElementById("vehicleName").value = "";
+			}
+		});
+	}
+});
+document.addEventListener("DOMContentLoaded", () => {
+	const form = document.getElementById("vehicleForm");
+	if (form) {
+		form.addEventListener("submit", submitVehicleForm);
+	}
+});
+
 
 
 

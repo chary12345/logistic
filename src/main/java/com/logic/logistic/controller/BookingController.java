@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.logic.logistic.dto.Booking;
 import com.logic.logistic.model.BookingDTO;
 import com.logic.logistic.model.BookingPageResponse;
+import com.logic.logistic.model.DispatchRequest;
 import com.logic.logistic.service.BookingService;
 
 @RestController
@@ -74,10 +75,11 @@ public class BookingController {
 		return ResponseEntity.ok(bookingService.getBookingReportsBetweenDates(fromDate, toDate, status));
 	}
 
+	
 	@PostMapping("/dispatchLoad")
-	public ResponseEntity<List<Booking>> dispatchLoad(@RequestBody List<String> loadingReceipts) {
-		List<Booking> dispatchLoad = bookingService.dispatchLoad(loadingReceipts);
-		return ResponseEntity.ok(dispatchLoad);
+	public ResponseEntity<List<Booking>> dispatchLoad(@RequestBody DispatchRequest request) {
+	    List<Booking> dispatched = bookingService.dispatchLoad(request);
+	    return ResponseEntity.ok(dispatched);
 	}
 
 	@GetMapping("/searchBylr")
