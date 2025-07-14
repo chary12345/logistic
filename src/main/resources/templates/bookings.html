@@ -43,8 +43,12 @@
 			<div class="dropdown">
 				<a href="#">Operations</a>
 				<div class="dropdown-content">
-					<a href="#">Booking</a> <a href="#">Dispatch</a> <a href="#">Receive</a>
-					<a href="#">Delivery</a>
+					<a href="#" onclick="showBookingForm()">Booking</a> <a
+						href="#dispatchops"
+						onclick="showOperationSearchForm('DISPATCHED')">Dispatch</a> <a
+						href="#recieveops" onclick="showOperationSearchForm('RECEIVED')">Receive</a>
+					<a href="#deliveryops"
+						onclick="showOperationSearchForm('DELIVERED')">Delivery</a>
 				</div>
 			</div>
 			<div class="dropdown">
@@ -613,9 +617,115 @@
 			</div>
 		</form>
 	</div>
+	<div id="operationSearchForm" class="report-form"
+		style="display: none; padding: 20px;">
+		<h3 id="operationFormTitle">Operation Search</h3>
+
+		<div class="row g-3">
+			<div class="col-md-3">
+				<label for="opFromDate" class="form-label">From Date</label> <input
+					type="date" class="form-control" id="opFromDate">
+			</div>
+			<div class="col-md-3">
+				<label for="opToDate" class="form-label">To Date</label> <input
+					type="date" class="form-control" id="opToDate">
+			</div>
+			<div class="col-md-3">
+				<label for="opRegion" class="form-label">Region</label> <select
+					id="opRegion" class="form-select"></select>
+			</div>
+			<div class="col-md-3">
+				<label for="opSubregion" class="form-label">Sub-Region</label> <select
+					id="opSubregion" class="form-select"></select>
+			</div>
+			<div class="col-md-3">
+				<label for="opBranch" class="form-label">Branch</label> <select
+					id="opBranch" class="form-select"></select>
+			</div>
+			<div class="col-md-3">
+				<label for="opEmployee" class="form-label">Employee</label> <select
+					id="opEmployee" class="form-select"></select>
+			</div>
+			<div class="col-md-12 mt-2">
+				<button class="btn btn-primary" onclick="submitOperationReport()">Find
+					Bookings</button>
+				<button class="btn btn-secondary" onclick="resetOperationFilters()">Reset</button>
+			</div>
+		</div>
+
+		<hr>
+		<!-- Scrollable Booking Results Table -->
+		<!-- Scrollable Box -->
+		<div class="border mt-3" style="overflow-x: auto;"
+			id="operationResultContainer">
+			<!-- Booking table rendered here -->
+			<!-- Dispatch Action Button -->
+			<!-- Dispatch Action Bar -->
+			<div id="dispatchActionBar" class="text-end mt-3"
+				style="display: none;">
+				<button class="btn btn-outline-primary"
+					onclick="showAssociateVehicleModal()">🚚 Dispatch Selected
+				</button>
+			</div>
+		</div>
+
+	</div>
+
+	<!-- Booking Summary (Always pushes page height) -->
+	<div id="bookingopsSummaryContainer" class="mt-4"
+		style="display: none; background: #f8f9fa; padding: 1rem; border: 1px solid #ccc; border-radius: 6px;">
+	</div>
+	<!-- Associate Vehicle Modal -->
+	<div class="modal fade" id="associateVehicleModal" tabindex="-1"
+		aria-hidden="true">
+		<div class="modal-dialog modal-lg modal-dialog-centered">
+			<div class="modal-content border-0 shadow">
+				<div class="modal-header bg-light">
+					<h5 class="modal-title">Associate Vehicle Details</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+				</div>
+				<div class="modal-body bg-white">
+					<form id="vehicleForm">
+						<div class="row mb-3">
+							<div class="col-md-6">
+								<label>Truck Number</label> <input type="text"
+									class="form-control" id="truckNumber" />
+							</div>
+							<div class="col-md-6">
+								<label>Vehicle Name</label> <input type="text"
+									class="form-control" id="vehicleName" />
+							</div>
+						</div>
+						<div class="row mb-3">
+							<div class="col-md-6">
+								<label>Driver Name</label> <input type="text"
+									class="form-control" id="driverName" />
+							</div>
+							<div class="col-md-6">
+								<label>Driver Phone</label> <input type="text"
+									class="form-control" id="driverPhone" />
+							</div>
+						</div>
+						<div class="row mb-2">
+							<div class="col-md-6">
+								<label>Destination Branch</label> <input type="text"
+									class="form-control" id="destinationBranch" />
+							</div>
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer bg-light">
+					<button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+					<button class="btn btn-success" onclick="submitVehicleDetails()">Submit</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+
+
 	<script
 		src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 	<script src="/js/bookings.js"></script>
-
 </body>
 </html>

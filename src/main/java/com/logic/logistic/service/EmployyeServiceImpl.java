@@ -1,5 +1,6 @@
 package com.logic.logistic.service;
 
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,6 +9,7 @@ import org.springframework.stereotype.Service;
 import com.logic.logistic.dto.UserDto;
 import com.logic.logistic.mapper.EmployeeMapper;
 import com.logic.logistic.model.User;
+import com.logic.logistic.repository.BookRepository;
 import com.logic.logistic.repository.UserRepository;
 
 
@@ -17,6 +19,10 @@ public class EmployyeServiceImpl implements EmployeecreationService{
 
 	@Autowired
 	private UserRepository userRepository;
+	
+	@Autowired
+	private BookRepository bookrepo;
+	
 	@Override
 	public String addNewEmployee(User employee) {
 		String status = null;
@@ -61,6 +67,12 @@ public class EmployyeServiceImpl implements EmployeecreationService{
 		}
 		return status;
 	}
+	@Override
+	public List<String> getEmployeesByBranch(String branchCode, String companyCode) {
+		// TODO Auto-generated method stub
+		return bookrepo.findEmployeeNamesByCompanyAndBranch(companyCode, branchCode);
+	}
+	
 	
 
 }

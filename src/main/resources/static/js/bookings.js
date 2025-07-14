@@ -1,3 +1,4 @@
+let currentOperationStatus = ""; // holds DISPATCHED / RECEIVED / DELIVERED
 
 
 function safeHide(id) {
@@ -14,6 +15,16 @@ function hideAllForms() {
 	safeHide('changePasswordForm');
 	safeHide('overlay');
 	safeHide('globalSearchFormContainer');
+	safeHide("operationSearchForm");
+	safeHide("bookingopsSummaryContainer");
+	const summary1 = document.getElementById("bookingSummaryContainer");
+	const summary2 = document.getElementById("bookingopsSummaryContainer");
+	if (summary1) summary1.innerHTML = "";
+	if (summary2) {
+		summary2.innerHTML = "";
+		summary2.style.display = "none";
+	}
+
 }
 
 function showBookingForm() {
@@ -26,6 +37,35 @@ function showCreateBranchForm() {
 	hideAllForms();
 
 	document.getElementById('CreateBranchContainer').style.display = 'block';
+}
+
+function showOperationSearchForm(status) {
+	hideAllForms();
+	document.getElementById("operationSearchForm").style.display = "block";
+	currentOperationStatus = status;
+
+	const titleMap = {
+		DISPATCHED: "Dispatch Filter",
+		RECEIVED: "Receive Filter",
+		DELIVERED: "Delivery Filter"
+	};
+	document.getElementById("operationFormTitle").innerText = titleMap[status] || "Operation Search";
+
+	clearUnifiedFilters();
+	loadOperationDropdowns();
+
+	// ✅ Clear previous table and summary
+	document.getElementById("operationResultContainer").innerHTML = "";
+	const summaryBox = document.getElementById("bookingopsSummaryContainer");
+	if (summaryBox) {
+		summaryBox.innerHTML = "";
+		summaryBox.style.display = "none";
+	}
+}
+
+function showAssociateVehicleModal() {
+	const modal = new bootstrap.Modal(document.getElementById('associateVehicleModal'));
+	modal.show();
 }
 
 
@@ -197,7 +237,7 @@ async function fetchCityState(postalCode) {
 		const postalData = data[0];
 
 		if (postalData.Status !== "Success") {
-		document.getElementById("postalCodeError").innerText = "Invalid Postal Code. Please try again.";
+			document.getElementById("postalCodeError").innerText = "Invalid Postal Code. Please try again.";
 			/*const cityList = postalData.PostOffice;
 			const state = postalData.PostOffice[0].State;
 			let citiesHtml = '';
@@ -1955,10 +1995,10 @@ function resetGlobalSearch() {
 
 
 function enableInlineEditMode(data) {
-  const container = document.getElementById("lrSearchResultContainer");
-  if (!container) return;
+	const container = document.getElementById("lrSearchResultContainer");
+	if (!container) return;
 
-  container.innerHTML = `
+	container.innerHTML = `
     <h5 class="text-primary mb-3">✏️ Edit Booking: ${data.loadingReciept}</h5>
 
     <div class="row">
@@ -2026,17 +2066,17 @@ function enableInlineEditMode(data) {
     </div>
   `;
 
-  (data.articleDetails || []).forEach(a => addInlineArticleRow(a));
-  recalculateInlineCharges();
+	(data.articleDetails || []).forEach(a => addInlineArticleRow(a));
+	recalculateInlineCharges();
 }
 
 function addInlineArticleRow(article = {}) {
-  const tbody = document.getElementById("editArticleTableBody");
-  if (!tbody) return;
+	const tbody = document.getElementById("editArticleTableBody");
+	if (!tbody) return;
 
-  const row = tbody.insertRow();
+	const row = tbody.insertRow();
 
-  row.innerHTML = `
+	row.innerHTML = `
     <td>
       <select class="form-select form-select-sm articleDropdown" onchange="recalculateInlineRow(this)">
         <option value="Article" ${article.article === "Article" ? "selected" : ""}>Article</option>
@@ -2068,36 +2108,36 @@ function addInlineArticleRow(article = {}) {
 }
 
 function recalculateInlineRow(input) {
-  const row = input.closest("tr");
-  if (!row) return;
+	const row = input.closest("tr");
+	if (!row) return;
 
-  const qty = parseFloat(row.querySelector(".qtyInput")?.value || 0);
-  const amt = parseFloat(row.querySelector(".amtInput")?.value || 0);
-  const total = qty * amt;
-  row.querySelector(".totalInput").value = total.toFixed(2);
+	const qty = parseFloat(row.querySelector(".qtyInput")?.value || 0);
+	const amt = parseFloat(row.querySelector(".amtInput")?.value || 0);
+	const total = qty * amt;
+	row.querySelector(".totalInput").value = total.toFixed(2);
 
-  recalculateInlineCharges();
+	recalculateInlineCharges();
 }
 
 function recalculateInlineCharges() {
-  const rows = document.querySelectorAll("#editArticleTableBody tr");
-  let totalFreight = 0;
+	const rows = document.querySelectorAll("#editArticleTableBody tr");
+	let totalFreight = 0;
 
-  rows.forEach(row => {
-    const total = parseFloat(row.querySelector(".totalInput")?.value || 0);
-    totalFreight += total;
-  });
+	rows.forEach(row => {
+		const total = parseFloat(row.querySelector(".totalInput")?.value || 0);
+		totalFreight += total;
+	});
 
-  document.getElementById("freight").value = totalFreight.toFixed(2);
-  const sgst = (totalFreight * 0.025).toFixed(2);
-  const cgst = (totalFreight * 0.025).toFixed(2);
-  const igst = (totalFreight * 0.05).toFixed(2);
-  const grandTotal = (parseFloat(totalFreight) + parseFloat(sgst) + parseFloat(cgst) + parseFloat(igst)).toFixed(2);
+	document.getElementById("freight").value = totalFreight.toFixed(2);
+	const sgst = (totalFreight * 0.025).toFixed(2);
+	const cgst = (totalFreight * 0.025).toFixed(2);
+	const igst = (totalFreight * 0.05).toFixed(2);
+	const grandTotal = (parseFloat(totalFreight) + parseFloat(sgst) + parseFloat(cgst) + parseFloat(igst)).toFixed(2);
 
-  document.getElementById("sgst").value = sgst;
-  document.getElementById("cgst").value = cgst;
-  document.getElementById("igst").value = igst;
-  document.getElementById("grandTotal").value = grandTotal;
+	document.getElementById("sgst").value = sgst;
+	document.getElementById("cgst").value = cgst;
+	document.getElementById("igst").value = igst;
+	document.getElementById("grandTotal").value = grandTotal;
 }
 function submitInlineEdit(lrNumber) {
 	const bookingData = {
@@ -2124,19 +2164,19 @@ function submitInlineEdit(lrNumber) {
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify(bookingData)
 	})
-	.then(response => response.json())
-	.then(result => {
-		if (result && result.loadingReciept) {
-			alert("Booking updated successfully!");
-			searchLRByNumber(lrNumber);
-		} else {
-			alert("Update failed");
-		}
-	})
-	.catch(err => {
-		console.error("Error:", err);
-		alert("Update error occurred");
-	});
+		.then(response => response.json())
+		.then(result => {
+			if (result && result.loadingReciept) {
+				alert("Booking updated successfully!");
+				searchLRByNumber(lrNumber);
+			} else {
+				alert("Update failed");
+			}
+		})
+		.catch(err => {
+			console.error("Error:", err);
+			alert("Update error occurred");
+		});
 }
 function extractInlineArticleData() {
 	const rows = document.querySelectorAll("#editArticleTableBody tr");
@@ -2163,5 +2203,387 @@ function extractInlineArticleData() {
 
 	return articles;
 }
+
+
+//operation tab logic
+
+let isResetting = false;
+
+
+async function loadOperationDropdowns() {
+	const companyCode = userData?.companyAndBranchDeatils?.companyCode;
+	if (!companyCode) return;
+
+	try {
+		const regionsRes = await fetch(`/region/regions?companyCode=${companyCode}`);
+		const regions = await regionsRes.json();
+
+		fillSelect("opRegion", regions);
+		fillSelect("opSubregion", []);
+		fillSelect("opBranch", []);
+		fillSelect("opEmployee", []); // initially empty
+	} catch (e) {
+		console.error("Dropdowns load error:", e);
+	}
+}
+
+document.getElementById("opRegion").addEventListener("change", async (e) => {
+	const region = e.target.value;
+	fillSelect("opSubregion", []);
+	fillSelect("opBranch", []);
+	if (!region) return;
+	const res = await fetch(`/region/subregions?region=${region}`);
+	const data = await res.json();
+	fillSelect("opSubregion", data);
+});
+
+document.getElementById("opSubregion").addEventListener("change", async (e) => {
+	const region = document.getElementById("opRegion").value;
+	const sub = e.target.value;
+	if (!region || !sub) return;
+	const res = await fetch(`/region/branches?region=${region}&subRegion=${sub}`);
+	const data = await res.json();
+	fillSelect("opBranch", data);
+});
+function fillSelect(id, list) {
+	const el = document.getElementById(id);
+	el.innerHTML = `<option value="">-- Select --</option>`;
+	list.forEach(item => {
+		const val = item.code || item.value || item;
+		const text = item.name || item.text || item;
+		el.innerHTML += `<option value="${val}">${text}</option>`;
+	});
+}
+async function findOperationBookings() {
+	const from = document.getElementById("opFromDate").value;
+	const to = document.getElementById("opToDate").value;
+	const region = document.getElementById("opRegion").value;
+	const sub = document.getElementById("opSubregion").value;
+	const branch = document.getElementById("opBranch").value;
+	const emp = document.getElementById("opEmployee").value;
+
+	let url = `/api/bookings/report?fromDate=${from}T00:00:00&toDate=${to}T23:59:59&status=${currentOperationStatus}`;
+	if (region) url += `&region=${region}`;
+	if (sub) url += `&subregion=${sub}`;
+	if (branch) url += `&branch=${branch}`;
+	if (emp) url += `&employee=${emp}`;
+
+	const res = await fetch(url);
+	const data = await res.json();
+	renderOperationResults(data.content || []);
+}
+document.getElementById("opBranch").addEventListener("change", async function() {
+	const companyCode = userData?.companyAndBranchDeatils?.companyCode;
+	const branchCode = document.getElementById("opBranch").value;
+
+	if (!companyCode || !branchCode) {
+		fillSelect("opEmployee", []); // reset employee dropdown
+		return;
+	}
+
+	try {
+		const response = await fetch(`/employeeList?companyCode=${companyCode}&branchCode=${branchCode}`);
+		const employeeNames = await response.json();
+
+		fillSelect("opEmployee", employeeNames.map(name => ({
+			value: name,
+			text: name
+		})));
+	} catch (err) {
+		console.error("Failed to load employee list:", err);
+		fillSelect("opEmployee", []);
+	}
+});
+
+
+function renderOperationResults(list) {
+	const div = document.getElementById("operationResultsContainer");
+	if (!list.length) {
+		div.innerHTML = `<div class="text-danger">No bookings found.</div>`;
+		return;
+	}
+
+	let html = `<table class="table table-bordered table-sm"><thead>
+  <tr><th>LR No</th><th>Consignor</th><th>Consignee</th><th>Freight</th><th>Status</th><th>Date</th></tr>
+  </thead><tbody>`;
+
+	list.forEach(b => {
+		html += `<tr>
+      <td>${b.loadingReciept}</td>
+      <td>${b.consignorName}</td>
+      <td>${b.consigneeName}</td>
+      <td>${b.freight}</td>
+      <td>${b.consignStatus}</td>
+      <td>${new Date(b.bookingDate).toLocaleDateString()}</td>
+    </tr>`;
+	});
+
+	html += `</tbody></table>`;
+	div.innerHTML = html;
+}
+function resetOperationFilters() {
+	["opFromDate", "opToDate", "opRegion", "opSubregion", "opBranch", "opEmployee"].forEach(id => {
+		const el = document.getElementById(id);
+		if (el) el.value = "";
+	});
+	document.getElementById("operationResultContainer").innerHTML = "";
+}
+
+
+//search operation tabs
+async function submitOperationReport() {
+	const from = document.getElementById("opFromDate").value;
+	const to = document.getElementById("opToDate").value;
+	const region = document.getElementById("opRegion").value;
+	const subregion = document.getElementById("opSubregion").value;
+	const branch = document.getElementById("opBranch").value;
+	const employee = document.getElementById("opEmployee").value;
+	const status = currentOperationStatus;
+
+	if (!from || !to) {
+		alert("From Date and To Date are required.");
+		return;
+	}
+
+	const payload = {
+		fromDate: from,
+		toDate: to,
+		region: region,
+		subregion: subregion,
+		branchCode: branch,
+		employeeName: employee,
+		status: status
+	};
+
+	try {
+		const res = await fetch("/operation/bookingList", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(payload)
+		});
+
+		const data = await res.json();
+
+		isResetting = false; // ✅ Clear flag
+
+
+		renderOperationReportTable(data || []);
+		document.getElementById("dispatchActionBar").style.display = "block";
+
+		if (!isResetting && data?.length) {
+			displayopsBookingSummary(data);
+		}
+
+	} catch (err) {
+		console.error("Operation report error:", err);
+		const errDiv = document.getElementById("operationResultContainer");
+		if (errDiv) errDiv.innerHTML = "<div class='text-danger'>Error loading report</div>";
+	}
+}
+
+
+function renderOperationReportTable(bookings) {
+	const container = document.getElementById('operationResultContainer');
+	const dispatchBar = document.getElementById('dispatchActionBar');
+
+	// 🔁 Reset result container
+	container.innerHTML = '';
+
+	// 🔁 Hide dispatch button if no data
+	if (!bookings || bookings.length === 0) {
+		if (dispatchBar) dispatchBar.style.display = "none";
+		container.innerHTML = "<div class='text-muted'>No bookings found.</div>";
+		return;
+	}
+
+	// ✅ Show Dispatch Button
+	if (dispatchBar) dispatchBar.style.display = "block";
+
+	// 🧱 Build table
+	const table = document.createElement('table');
+	table.className = 'table table-bordered table-sm table-hover mb-0';
+	table.innerHTML = `
+		<thead class="table-light">
+			<tr>
+				<th><input type="checkbox" id="selectAll" onclick="toggleAllCheckboxes(this)"></th>
+				<th>LoadingReciept</th>
+				<th>Consignor Name</th>
+				<th>Consignor Mobile</th>
+				<th>Consignee Name</th>
+				<th>Consignee Mobile</th>
+				<th>Article Type</th>
+				<th>Article Weight</th>
+				<th>Freight</th>
+				<th>SGST</th>
+				<th>CGST</th>
+				<th>IGST</th>
+				<th>ConsignStatus</th>
+				<th>Booking Date</th>
+			</tr>
+		</thead>
+		<tbody></tbody>
+	`;
+
+	const tbody = table.querySelector("tbody");
+
+	bookings.forEach(booking => {
+		const row = document.createElement("tr");
+		row.innerHTML = `
+			<td><input type="checkbox" class="bookingCheckbox" value="${booking.loadingReciept}"></td>
+			<td>${booking.loadingReciept}</td>
+			<td>${booking.consignorName}</td>
+			<td>${booking.consignorMobile}</td>
+			<td>${booking.consigneeName}</td>
+			<td>${booking.consigneeMobile}</td>
+			<td>${booking.articleType}</td>
+			<td>${booking.articleWeight}</td>
+			<td>${booking.freight}</td>
+			<td>${booking.sgst}</td>
+			<td>${booking.cgst}</td>
+			<td>${booking.igst}</td>
+			<td>${booking.consignStatus}</td>
+			<td>${new Date(booking.bookingDate).toLocaleDateString()}</td>
+		`;
+		tbody.appendChild(row);
+	});
+
+	container.appendChild(table);
+
+	// ✅ Finally show summary
+	displayopsBookingSummary(bookings);
+}
+
+
+
+function displayopsBookingSummary(bookings) {
+	if (isResetting || !bookings || bookings.length === 0) return;
+
+	const container = document.getElementById("bookingopsSummaryContainer");
+	if (!container) return;
+
+	container.innerHTML = "";
+	container.style.display = "block";
+
+	const summary = {
+		auto: { freight: 0, gst: 0, grandTotal: 0 },
+		manual: { freight: 0, gst: 0, grandTotal: 0 },
+		total: { freight: 0, gst: 0, grandTotal: 0 }
+	};
+
+	bookings.forEach(row => {
+		const type = (row.type || "").toLowerCase() === "manual" ? "manual" : "auto";
+		const freight = Number(row.freight || 0);
+		const sgst = Number(row.sgst || 0);
+		const cgst = Number(row.cgst || 0);
+		const igst = Number(row.igst || 0);
+		const gst = sgst + cgst + igst;
+		const grandTotal = freight + gst;
+
+		summary[type].freight += freight;
+		summary[type].gst += gst;
+		summary[type].grandTotal += grandTotal;
+
+		summary.total.freight += freight;
+		summary.total.gst += gst;
+		summary.total.grandTotal += grandTotal;
+	});
+
+	const html = `
+		<div class="mt-4">
+			<h5 class="text-center text-success">BOOKING SUMMARY</h5>
+			<table class="table table-bordered text-center">
+				<thead class="table-light">
+					<tr>
+						<th>Type</th>
+						<th>Total Freight</th>
+						<th>GST (SGST+CGST+IGST)</th>
+						<th>Grand Total</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td>Auto</td>
+						<td>${summary.auto.freight.toFixed(2)}</td>
+						<td>${summary.auto.gst.toFixed(2)}</td>
+						<td>${summary.auto.grandTotal.toFixed(2)}</td>
+					</tr>
+					<tr>
+						<td>Manual</td>
+						<td>${summary.manual.freight.toFixed(2)}</td>
+						<td>${summary.manual.gst.toFixed(2)}</td>
+						<td>${summary.manual.grandTotal.toFixed(2)}</td>
+					</tr>
+					<tr class="table-danger fw-bold">
+						<td>Total</td>
+						<td>${summary.total.freight.toFixed(2)}</td>
+						<td>${summary.total.gst.toFixed(2)}</td>
+						<td>${summary.total.grandTotal.toFixed(2)}</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	`;
+
+	container.innerHTML = html;
+
+	// Optional: scroll into view
+	setTimeout(() => {
+		container.scrollIntoView({ behavior: "smooth", block: "start" });
+	}, 100);
+}
+
+
+
+function clearUnifiedFilters() {
+	isResetting = true; // 🧠 Set flag
+
+	const ids = [
+		"opFromDate", "opToDate",
+		"opRegion", "opSubregion", "opBranch", "opEmployee"
+	];
+
+	// Clear filters
+	ids.forEach(id => {
+		const el = document.getElementById(id);
+		if (el && (el.tagName === "SELECT" || el.tagName === "INPUT")) {
+			el.value = "";
+		}
+	});
+
+
+	// Clear result container
+	const result = document.getElementById("operationResultContainer");
+	if (result) result.innerHTML = "";
+
+	// Clear summary
+	const summary = document.getElementById("bookingopsSummaryContainer");
+	if (summary) {
+		summary.innerHTML = "";
+		summary.style.display = "none";
+	}
+	const dispatchBar = document.getElementById("dispatchActionBar");
+	if (dispatchBar) dispatchBar.style.display = "none";
+}
+
+//dispatch with vehicle
+
+function submitVehicleDetails() {
+	const details = {
+		truckNumber: document.getElementById("truckNumber").value.trim(),
+		vehicleName: document.getElementById("vehicleName").value.trim(),
+		driverName: document.getElementById("driverName").value.trim(),
+		driverPhone: document.getElementById("driverPhone").value.trim(),
+		destinationBranch: document.getElementById("destinationBranch").value.trim(),
+	};
+
+	console.log("Vehicle Details Submitted:", details);
+
+	// 🔒 TODO: You can post this to backend here
+
+	// Close modal after submit
+	bootstrap.Modal.getInstance(document.getElementById('associateVehicleModal')).hide();
+}
+
+
 
 

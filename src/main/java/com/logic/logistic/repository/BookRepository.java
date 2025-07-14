@@ -43,4 +43,14 @@ public interface BookRepository extends JpaRepository<Booking, String> {
 	@Query("SELECT b FROM Booking b WHERE b.bookingDate BETWEEN :fromDate AND :toDate AND b.BranchCode= :branchCode AND b.id < :lastId ORDER BY b.bookingDate DESC")
 	List<Booking> findNextPageForGlobalSearchreports(LocalDateTime fromDate, LocalDateTime toDate, String lastId,
 			Pageable pageable, String branchCode);
+
+	@Query(value = " SELECT DISTINCT b.employee_name FROM booking b JOIN branch_data bd ON b.branch_code = bd.branch_code WHERE bd.company_code = :companyCode AND b.branch_code = :branchCode AND b.employee_name IS NOT NULL", nativeQuery = true)
+	List<String> findEmployeeNamesByCompanyAndBranch(@Param("companyCode") String companyCode,
+			@Param("branchCode") String branchCode);
+
+	@Query(value = "SELECT b.* FROM booking b JOIN branch_data bd ON b.branch_code = bd.branch_code JOIN address_dto a ON b.branch_code = a.branch_code WHERE (b.booking_date BETWEEN :fromDate AND :toDate) AND (b.consign_status = 'BOOKED') AND (:region IS NULL OR a.state = :region) or (:subregion IS NULL OR a.city = :subregion) or (:branchCode IS NULL OR bd.branch_name = :branchCode) or (:employeeName IS NULL OR b.employee_name = :employeeName) ", nativeQuery = true)
+	List<Booking> findBookingsByFilter(@Param("fromDate") String fromDate, @Param("toDate") String toDate,
+			@Param("status") String status, @Param("region") String region, @Param("subregion") String subregion,
+			@Param("branchCode") String branchCode, @Param("employeeName") String employeeName);
+
 }
