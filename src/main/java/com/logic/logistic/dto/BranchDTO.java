@@ -18,6 +18,7 @@ public class BranchDTO {
 	private String branchType;
 	private String branchOpperations;
 	private String branchPhone;
+	private String branchPhoneAlt;
 	private String branchEmail;
 	private String branchPan;
 	private String gstIn;
@@ -110,6 +111,12 @@ public class BranchDTO {
 	}
 	public void setBranchActive(boolean isBranchActive) {
 		this.isBranchActive = isBranchActive;
+	}
+	public String getBranchPhoneAlt() {
+		return branchPhoneAlt;
+	}
+	public void setBranchPhoneAlt(String branchPhoneAlt) {
+		this.branchPhoneAlt = branchPhoneAlt;
 	}
 	
 }

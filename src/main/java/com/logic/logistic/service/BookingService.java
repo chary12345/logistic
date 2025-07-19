@@ -126,27 +126,18 @@ public class BookingService {
 		return save;
 	}
 
-	public BookingPageResponse getBookingReportsBetweenDates(LocalDateTime fromDate, LocalDateTime toDate,
-			String status) {
-		Pageable pageable = PageRequest.of(0, 10, Sort.by("bookingDate").descending());
-
-		try {
-			Page<Booking> page = bookingRepo.findByBookingDateBetween(fromDate, toDate, status, pageable);
-			BookingPageResponse response = new BookingPageResponse();
-			response.setContent(page.getContent());
-			response.setPageNumber(page.getNumber());
-			response.setPageSize(page.getSize());
-			response.setTotalElements(page.getTotalElements());
-			response.setTotalPages(page.getTotalPages());
-			response.setLast(page.isLast());
-
-			logger.info("BookingPageResponse: " + response);
-			return response;
-		} catch (Exception e) {
-			logger.info("error BookingPageResponse: " + e.getLocalizedMessage());
-			return null;
-		}
-	}
+	/*
+	 * public BookingPageResponse getBookingReportsBetweenDates(LocalDateTime
+	 * fromDate, LocalDateTime toDate, String status) {
+	 * 
+	 * try { List<Booking> page = bookingRepo.findByBookingDateBetween(fromDate,
+	 * toDate, "BOOKED"); BookingPageResponse response = new BookingPageResponse();
+	 * response.setContent(page);
+	 * 
+	 * logger.info("BookingPageResponse: " + response); return response; } catch
+	 * (Exception e) { logger.info("error BookingPageResponse: " +
+	 * e.getLocalizedMessage()); return null; } }
+	 */
 
 	@Transactional
 	public List<Booking> dispatchLoad(DispatchRequest request) {

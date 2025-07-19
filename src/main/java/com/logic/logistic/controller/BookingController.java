@@ -50,13 +50,19 @@ public class BookingController {
 	            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Update failed: " + e.getMessage());
 	        }
 	    }
-	// @GetMapping("/report")
-	public ResponseEntity<?> getBookingReport(
-			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime fromDate,
-			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime toDate,
-			@RequestParam(required = false) String status) {
-		return ResponseEntity.ok(bookingService.getBookingReportsBetweenDates(fromDate, toDate, status));
-	}
+		/*
+		 * // @GetMapping("/report") public ResponseEntity<?> getBookingReport(
+		 * 
+		 * @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime
+		 * fromDate,
+		 * 
+		 * @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime
+		 * toDate,
+		 * 
+		 * @RequestParam(required = false) String status) { return
+		 * ResponseEntity.ok(bookingService.getBookingReportsBetweenDates(fromDate,
+		 * toDate, status)); }
+		 */
 
 	@GetMapping("/report")
 	public ResponseEntity<BookingPageResponse> getReport(
@@ -68,13 +74,17 @@ public class BookingController {
 		return ResponseEntity.ok(response);
 	}
 
-	@GetMapping("/todayReports")
-	public ResponseEntity<?> toDayBookingRepoprts(
-			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime fromDate,
-			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime toDate, String status) {
-		return ResponseEntity.ok(bookingService.getBookingReportsBetweenDates(fromDate, toDate, status));
-	}
-
+	/*
+	 * @GetMapping("/todayReports") public ResponseEntity<?> toDayBookingRepoprts(
+	 * 
+	 * @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime
+	 * fromDate,
+	 * 
+	 * @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime
+	 * toDate, String status) { return
+	 * ResponseEntity.ok(bookingService.getBookingReportsBetweenDates(fromDate,
+	 * toDate, status)); }
+	 */
 	
 	@PostMapping("/dispatchLoad")
 	public ResponseEntity<List<Booking>> dispatchLoad(@RequestBody DispatchRequest request) {

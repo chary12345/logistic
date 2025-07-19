@@ -3,7 +3,6 @@ package com.logic.logistic.repository;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -17,9 +16,9 @@ import jakarta.transaction.Transactional;
 @Repository
 @Transactional
 public interface BookRepository extends JpaRepository<Booking, String> {
-	@Query("SELECT DISTINCT b FROM Booking b WHERE (b.bookingDate BETWEEN :fromDate AND :toDate) AND b.consignStatus = :status")
-	Page<Booking> findByBookingDateBetween(@Param("fromDate") LocalDateTime fromDate,
-			@Param("toDate") LocalDateTime toDate, @Param("status") String status, Pageable pageable);
+	@Query("SELECT b FROM Booking b WHERE b.bookingDate BETWEEN :fromDate AND :toDate or b.consignStatus = :status AND b.BranchCode= :branchCode ORDER BY b.bookingDate DESC")
+	List<Booking> findByBookingDateBetween(@Param("fromDate") LocalDateTime fromDate,
+			@Param("toDate") LocalDateTime toDate, @Param("status") String status, @Param("branchCode") String branchCode);
 
 	@Query("SELECT b FROM Booking b WHERE b.bookingDate BETWEEN :from AND :to AND b.consignStatus = :status AND b.BranchCode= :branchCode ORDER BY b.bookingDate DESC")
 	List<Booking> findFirstPage(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to,

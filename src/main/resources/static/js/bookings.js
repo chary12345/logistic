@@ -90,24 +90,18 @@ document.getElementById("branchForm").addEventListener("submit", async function(
 		branchCode: document.getElementById("branchcode").value,
 		branchName: document.getElementById("branchname").value,
 		branchType: document.getElementById("branchType").value,
-		branchOpperations: document.getElementById("opperations").value,
-		branchPan: document.getElementById("pan").value,
 		branchPhone: document.getElementById("phone").value,
-		gstIn: document.getElementById("gstin").value,
+		branchPhoneAlt: document.getElementById("phone2").value, // optional
 		branchEmail: document.getElementById("email").value,
+		gstIn: document.getElementById("gstin").value,
 		contactPersonName: document.getElementById("contactperson").value,
-		branchCreatedBy: userData.firstName,
 		companyCode: userData.companyAndBranchDeatils.companyCode,
 		branchAddress: {
-			flatOrApartmentNumber: document.getElementById("flatorapartmentNumber").value,
 			areaOrStreetline: document.getElementById("AddressStreet").value,
-			landMark: document.getElementById("landmark").value,
 			city: document.getElementById("city").value,
 			state: document.getElementById("state").value,
 			postalCode: document.getElementById("postalCode").value,
-
-
-		},
+		}
 
 	};
 	try {
@@ -375,7 +369,8 @@ function generateBookingReport() {
 	const toDateRaw = document.getElementById('toDate').value;
 
 	if (!fromDateRaw || !toDateRaw) {
-		alert("Please select both From and To dates.");
+		//alert("Please select both From and To dates.");
+		showCustomAlert("Please select both From and To dates.");
 		return;
 	}
 
@@ -394,7 +389,7 @@ function generateBookingReport() {
 	document.getElementById("reportActions").style.display = 'none';
 	document.getElementById("paginationControls").style.display = 'none';
 
-	updateDispatchButtonVisibility(currentReportStatus);
+	//updateDispatchButtonVisibility(currentReportStatus);
 
 	// 🚀 Always fetch first page fresh
 	loadPage(0);
@@ -1030,6 +1025,8 @@ document.getElementById("bookingForm").addEventListener("submit", async function
 		invoiceValue: document.getElementById("Invoicevalue").value,
 		eWayBillNumber: document.getElementById("ewayBill").value,
 	};
+	showCustomAlert("Your booking grand total is: " + grandTotal);
+
 	let url = "/api/bookings/bookLoad";
 	let method = "POST";
 
@@ -1042,7 +1039,8 @@ document.getElementById("bookingForm").addEventListener("submit", async function
 			body: JSON.stringify(data)
 		});
 		let result = await response.json();
-		alert("Booking saved successfully!");
+
+		showCustomAlert("Booking saved successfully!");
 
 		document.getElementById("bookingForm").reset();
 		// Optionally clear the article table as well
@@ -1124,8 +1122,11 @@ function resetBookingForm() {
 
 
 window.onload = function() {
-	populateUserData();
+
+	populateUserData()
 	loadBranchDestinations();
+	showBookingForm(); // 🔁 show only if logged in
+
 };
 
 function hideChargesSection() {
@@ -1294,6 +1295,7 @@ function populateUserData() {
 	//document.getElementById('userPhone').textContent = userData.phone;
 	//document.getElementById('userEmail').textContent = userData.email;
 	//document.getElementById('userRole').textContent = userData.role;
+	return true;
 }
 
 calculateCharges();
@@ -2254,7 +2256,12 @@ document.getElementById("opSubregion").addEventListener("change", async (e) => {
 	if (!region || !sub) return;
 	const res = await fetch(`/region/branches?region=${region}&subRegion=${sub}`);
 	const data = await res.json();
-	fillSelect("opBranch", data);
+	const formatted = data.map(item => {
+		const [name, code] = item.split("-");
+		return { text: name, value: code };
+	});
+
+	fillSelect("opBranch", formatted);
 });
 function fillSelect(id, list) {
 	const el = document.getElementById(id);
@@ -2283,28 +2290,7 @@ async function findOperationBookings() {
 	const data = await res.json();
 	renderOperationResults(data.content || []);
 }
-document.getElementById("opBranch").addEventListener("change", async function() {
-	const companyCode = userData?.companyAndBranchDeatils?.companyCode;
-	const branchCode = document.getElementById("opBranch").value;
 
-	if (!companyCode || !branchCode) {
-		fillSelect("opEmployee", []); // reset employee dropdown
-		return;
-	}
-
-	try {
-		const response = await fetch(`/employeeList?companyCode=${companyCode}&branchCode=${branchCode}`);
-		const employeeNames = await response.json();
-
-		fillSelect("opEmployee", employeeNames.map(name => ({
-			value: name,
-			text: name
-		})));
-	} catch (err) {
-		console.error("Failed to load employee list:", err);
-		fillSelect("opEmployee", []);
-	}
-});
 
 
 function renderOperationResults(list) {
@@ -2343,26 +2329,21 @@ function resetOperationFilters() {
 
 //search operation tabs
 async function submitOperationReport() {
-	const from = document.getElementById("opFromDate").value;
-	const to = document.getElementById("opToDate").value;
+
 	const region = document.getElementById("opRegion").value;
 	const subregion = document.getElementById("opSubregion").value;
 	const branch = document.getElementById("opBranch").value;
-	const employee = document.getElementById("opEmployee").value;
+	//const employee = document.getElementById("opEmployee").value;
 	const status = currentOperationStatus;
 
-	if (!from || !to) {
-		alert("From Date and To Date are required.");
-		return;
-	}
+
 
 	const payload = {
-		fromDate: from,
-		toDate: to,
+
 		region,
 		subregion,
 		branchCode: branch,
-		employeeName: employee,
+		//employeeName: employee,
 		status
 	};
 
@@ -2573,32 +2554,34 @@ function displayopsBookingSummary(bookings) {
 }
 
 
-
 function clearUnifiedFilters() {
-	isResetting = true; // 🧠 Set flag
+	isResetting = true;
 
-	// Reset form inputs
-	document.getElementById("opFromDate").value = '';
-	document.getElementById("opToDate").value = '';
-	document.getElementById("opRegion").value = '';
-	document.getElementById("opSubregion").value = '';
-	document.getElementById("opBranch").value = '';
-	document.getElementById("opEmployee").value = '';
+	const ids = ["opFromDate", "opToDate", "opRegion", "opSubregion", "opBranch"];
+	ids.forEach(id => {
+		const el = document.getElementById(id);
+		if (el) {
+			if (el.tagName === "SELECT") {
+				el.selectedIndex = 0;
+			} else {
+				el.value = "";
+			}
+		}
+	});
 
-	// Clear table
-	document.getElementById("operationResultContainer").innerHTML = "";
+	const resultContainer = document.getElementById("operationResultContainer");
+	if (resultContainer) resultContainer.innerHTML = "";
 
-	// Hide dispatch button
 	const dispatchBar = document.getElementById("dispatchActionBar");
 	if (dispatchBar) dispatchBar.style.display = "none";
 
-	// Hide and clear booking summary
 	const summaryBox = document.getElementById("bookingopsSummaryContainer");
 	if (summaryBox) {
 		summaryBox.innerHTML = "";
 		summaryBox.style.display = "none";
 	}
 }
+
 
 //dispatch with vehicle
 
@@ -2777,5 +2760,51 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
+
+//custom alert form
+function showCustomAlert(message, title = "Alert") {
+	document.getElementById("customAlertMessage").innerText = message;
+	document.getElementById("customAlertTitle").innerText = title;
+	document.getElementById("customAlert").style.display = "flex";
+}
+
+function closeCustomAlert() {
+	document.getElementById("customAlert").style.display = "none";
+}
+
+
+//get populatestates
+function populateStates() {
+	const states = [
+		"Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
+		"Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka",
+		"Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram",
+		"Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana",
+		"Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal",
+		"Andaman and Nicobar Islands", "Chandigarh", "Dadra and Nagar Haveli and Daman and Diu",
+		"Delhi", "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry"
+	];
+
+	const datalist = document.getElementById("stateList");
+	states.forEach(state => {
+		const option = document.createElement("option");
+		option.value = state;
+		datalist.appendChild(option);
+	});
+}
+
+// Call this on page load
+document.addEventListener("DOMContentLoaded", populateStates);
+
+
+//endpoints protection
+function protectPage() {
+	const userData = sessionStorage.getItem("userData");
+	if (!userData) {
+		// Clear any leftovers and redirect
+		sessionStorage.clear();
+		window.location.href = "/login.html"; // or your login route
+	}
+}
 
 
