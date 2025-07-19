@@ -21,6 +21,7 @@ public class OpperationController {
 	
 	@PostMapping("/bookingList")
 	public List<Booking> getFilteredReport(@RequestBody OperationFilter filter) {
-	    return operationService.getBookingsWithFilter(filter);
+		List<Booking> bookingsWithFilter = operationService.getBookingsWithFilter(filter);
+	    return bookingsWithFilter;
 	}
 }

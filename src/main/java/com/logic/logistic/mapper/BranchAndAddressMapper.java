@@ -44,6 +44,11 @@ public class BranchAndAddressMapper {
 			dto.setBranchPhone(branch.getBranchPhone());
 			isActive=true;
 		}
+		
+		if (branch.getBranchPhoneAlt() != null) {
+			dto.setBranchPhoneAlt(branch.getBranchPhoneAlt());
+			isActive=true;
+		}
 
 		if (branch.getBranchEmail() != null) {
 			dto.setBranchEmail(branch.getBranchEmail());

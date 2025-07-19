@@ -14,15 +14,16 @@ public class RegionMasterId implements Serializable {
     @Column(name = "city")
     private String subRegion;
 
-    @Column(name = "branch_area")
-    private String branch;
+    @Column(name = "branch_code")
+	private String branchCode;
+
 
     public RegionMasterId() {}
 
     public RegionMasterId(String region, String subRegion, String branch) {
         this.region = region;
         this.subRegion = subRegion;
-        this.branch = branch;
+        this.branchCode = branch;
     }
 
   
@@ -33,12 +34,12 @@ public class RegionMasterId implements Serializable {
         RegionMasterId that = (RegionMasterId) o;
         return Objects.equals(region, that.region) &&
                Objects.equals(subRegion, that.subRegion) &&
-               Objects.equals(branch, that.branch);
+               Objects.equals(branchCode, that.branchCode);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(region, subRegion, branch);
+        return Objects.hash(region, subRegion, branchCode);
     }
 
 	public String getRegion() {
@@ -57,13 +58,15 @@ public class RegionMasterId implements Serializable {
 		this.subRegion = subRegion;
 	}
 
-	public String getBranch() {
-		return branch;
+	public String getBranchCode() {
+		return branchCode;
 	}
 
-	public void setBranch(String branch) {
-		this.branch = branch;
+	public void setBranchCode(String branchCode) {
+		this.branchCode = branchCode;
 	}
+
+	
 
    
 }

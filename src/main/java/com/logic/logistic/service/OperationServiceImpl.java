@@ -1,5 +1,7 @@
 package com.logic.logistic.service;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,10 +19,19 @@ public class OperationServiceImpl implements OperationService {
 	
 	@Override
 	public List<Booking> getBookingsWithFilter(OperationFilter filter) {
-		List<Booking> findBookingsByFilter = bookingRepository.findBookingsByFilter(filter.getFromDate(), filter.getToDate(), filter.getRegion(),
-				filter.getSubregion(), filter.getBranchCode(), filter.getEmployeeName(), filter.getStatus());
+		LocalDateTime from = null;
+		LocalDateTime to = null ;
+		if(filter.getFromDate()!=null)
+		 from = toDateTime(filter.getFromDate());
+		if(filter.getToDate()!=null)
+		 to = toDateTime(filter.getToDate());
+	  List<Booking> findByBookingDateBetween = bookingRepository.findByBookingDateBetween(from, to, "BOOKED",filter.getBranchCode());
 	
-		return findBookingsByFilter;
+		return findByBookingDateBetween;
 	}
 
+	public static LocalDateTime toDateTime(String input) {
+	    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
+	    return LocalDateTime.parse(input, formatter);
+	}
 }

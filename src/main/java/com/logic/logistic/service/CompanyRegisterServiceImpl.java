@@ -124,9 +124,9 @@ public class CompanyRegisterServiceImpl implements CompanyRegisterService {
 			RegionMasterId idMaster = new RegionMasterId();
 			idMaster.setRegion(branchAddress.getState());
 			idMaster.setSubRegion(branchAddress.getCity());
-			idMaster.setBranch(branchData.getBranchName());
+			idMaster.setBranchCode(branchData.getBranchCode());
 			regions.setId(idMaster);
-			regions.setBranchCode(branchData.getBranchCode());
+			regions.setBranch(branchData.getBranchName());
 			regions.setCompanyCode(branchData.getCompanyCode());
 			regions.setCreateDate(LocalDateTime.now());
 			regionMasterRepo.save(regions);

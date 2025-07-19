@@ -22,25 +22,22 @@ public class RegionMasterDto {
 	public void setId(RegionMasterId id) {
 		this.id = id;
 	}
-
-	@Column(name = "branch_code")
-	private String branchCode;
-
+    @Column(name = "branch_area")
+    private String branch;
+	
 	@Column(name = "company_code")
 	private String companyCode;
 	
 	@Column(name = "create_date")
 	private LocalDateTime createDate;
 	
-	
 
-	
-	public String getBranchCode() {
-		return branchCode;
+	public String getBranch() {
+		return branch;
 	}
 
-	public void setBranchCode(String branchCode) {
-		this.branchCode = branchCode;
+	public void setBranch(String branch) {
+		this.branch = branch;
 	}
 
 	public String getCompanyCode() {
