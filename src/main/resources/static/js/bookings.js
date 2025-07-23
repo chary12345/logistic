@@ -706,13 +706,22 @@ function downloadBookingReportExcel() {
 	// Save the workbook as an Excel file
 	XLSX.writeFile(wb, `booking_report_${new Date().toISOString().slice(0, 10)}.xlsx`);
 }
-
 function calculateCharges() {
-	let freight = parseFloat(document.getElementById("freight").value) || 0;
-	let sgst = (freight * 0.025).toFixed(2);
-	let cgst = (freight * 0.025).toFixed(2);
-	let igst = (freight * 0.05).toFixed(2);
-	let grandTotal = (freight + parseFloat(sgst) + parseFloat(cgst) + parseFloat(igst)).toFixed(2);
+	const freight = parseFloat(document.getElementById("freight").value) || 0;
+
+	const consignorGST = document.getElementById("consignorGST").value.trim();
+	const consigneeGST = document.getElementById("consigneeGST").value.trim();
+
+	let sgst = 0, cgst = 0, igst = 0;
+
+	// ✅ If GST is entered, calculate taxes
+	if (consignorGST || consigneeGST) {
+		sgst = parseFloat((freight * 0.025).toFixed(2));
+		cgst = parseFloat((freight * 0.025).toFixed(2));
+		igst = parseFloat((freight * 0.05).toFixed(2));
+	}
+
+	const grandTotal = (freight + sgst + cgst + igst).toFixed(2);
 
 	document.getElementById("sgst").value = sgst;
 	document.getElementById("cgst").value = cgst;
@@ -822,7 +831,7 @@ function printBookingReceipt(booking) {
 		<div class="receipt">
 			<div class="header">
 			
-				<div><strong>${booking.companyCode}</strong></div>
+				<div><strong>${userData.companyAndBranchDeatils.companyName}</strong></div>
 				<div>Hyderabad</div>
 			</div>
 
@@ -1303,6 +1312,7 @@ showBookingForm();
 
 async function loadBranchDestinations() {
 	const companyCode = userData?.companyAndBranchDeatils?.companyCode;
+	const myBranch = userData.companyAndBranchDeatils.branchCode;
 	if (!companyCode) return;
 
 	try {
@@ -1317,10 +1327,12 @@ async function loadBranchDestinations() {
 
 		if (result.status === "SUCCESS" && Array.isArray(result.data)) {
 			result.data.forEach(branch => {
-				const option = document.createElement("option");
-				option.value = `${branch.branchName} (${branch.branchCode})`;
-				option.textContent = `${branch.branchName} (${branch.branchCode})`;
-				dropdown.appendChild(option);
+				if (branch.branchCode !== myBranch) {
+					const option = document.createElement("option");
+					option.value = `${branch.branchName} (${branch.branchCode})`;
+					option.textContent = `${branch.branchName} (${branch.branchCode})`;
+					dropdown.appendChild(option);
+				}
 			});
 		}
 	} catch (error) {
@@ -2439,22 +2451,25 @@ function renderOperationReportTable(bookings) {
 		`;
 		tbody.appendChild(row);
 	});
-	// Enable/Disable dispatch button based on selection
 	const dispatchBar = document.getElementById("dispatchActionBar");
 
-	function updateDispatchButtonState() {
-		const anySelected = document.querySelectorAll(".bookingCheckbox:checked").length > 0;
-		if (dispatchBar) dispatchBar.style.display = anySelected ? "block" : "none";
-	}
+// Reset button initially
+if (dispatchBar) {
+	dispatchBar.style.display = "none";
+	dispatchBar.disabled = true;
+}
 
-	// Attach change listener to each checkbox
-	const checkboxes = document.querySelectorAll(".bookingCheckbox");
-	checkboxes.forEach(cb => {
-		cb.addEventListener("change", updateDispatchButtonState);
+const checkboxes = document.querySelectorAll(".bookingCheckbox");
+checkboxes.forEach(cb => {
+	cb.addEventListener("change", () => {
+		const anyChecked = document.querySelectorAll(".bookingCheckbox:checked").length > 0;
+		if (dispatchBar) {
+			dispatchBar.style.display = anyChecked ? "inline-block" : "none";
+			dispatchBar.disabled = !anyChecked;
+		}
 	});
+});
 
-	// Initially hide the button
-	if (dispatchBar) dispatchBar.style.display = "none";
 
 	container.appendChild(table);
 
@@ -2464,14 +2479,12 @@ function renderOperationReportTable(bookings) {
 
 function toggleAllCheckboxes(source) {
 	const checkboxes = document.querySelectorAll('.bookingCheckbox');
-	checkboxes.forEach(cb => {
-		cb.checked = source.checked;
-	});
+	checkboxes.forEach(cb => cb.checked = source.checked);
 
-	// Update dispatch button visibility
 	const dispatchBar = document.getElementById("dispatchActionBar");
 	if (dispatchBar) {
-		dispatchBar.style.display = source.checked ? "block" : "none";
+		dispatchBar.style.display = source.checked ? "inline-block" : "none";
+		dispatchBar.disabled = !source.checked;
 	}
 }
 
@@ -2711,29 +2724,35 @@ async function loadVehicleDropdown() {
 
 async function loadBranchesDropdown() {
 	const companyCode = userData?.companyAndBranchDeatils?.companyCode;
-	/*const branchSelect = document.getElementById("destinationBranch");
-	branchSelect.innerHTML = '<option value="">-- Select Branch --</option>';
-*/
+	const myBranch = userData?.companyAndBranchDeatils?.branchCode;
+	const datalist = document.getElementById("destinationBranchList");
+	datalist.innerHTML = '';
 
-	fetch(`BranchesByCompanyCode/${companyCode}`)
-		.then(response => response.json())
-		.then(data => {
-			const select = document.getElementById("destinationBranch");
-			select.innerHTML = '<option selected>---- Select Branch ----</option>';
+	try {
+		const response = await fetch(`BranchesByCompanyCode/${companyCode}`);
+		const data = await response.json();
 
-			if (data.status === "SUCCESS" && Array.isArray(data.data)) {
-				data.data.forEach(branch => {
+		if (data.status === "SUCCESS" && Array.isArray(data.data)) {
+			data.data.forEach(branch => {
+				if (branch.branchCode !== myBranch) {
 					const option = document.createElement("option");
-					option.value = branch.branchCode;
-					option.textContent = `${branch.branchName} [${branch.branchType}]`;
-					select.appendChild(option);
-				});
-			} else {
-				console.error("No branches found.");
-			}
-		})
-		.catch(error => console.error("Error fetching branches:", error));
+					option.value = `${branch.branchName} [${branch.branchType}] (${branch.branchCode})`;
+					datalist.appendChild(option);
+				}
+			});
+		}
+	} catch (err) {
+		console.error("Error loading branches:", err);
+	}
 }
+
+
+function getSelectedBranchCode() {
+	const inputVal = document.getElementById("destinationBranchInput").value;
+	const match = inputVal.match(/\((.*?)\)$/); // extract branch code in (CODE)
+	return match ? match[1] : null;
+}
+
 
 
 
