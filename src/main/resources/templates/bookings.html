@@ -627,12 +627,10 @@
 		</div>
 
 		<!-- Dispatch Button (outside scroll) -->
-		<div id="dispatchActionBar" class="text-end mt-3"
-			style="display: none;">
-			<button class="btn btn-outline-primary"
-				onclick="showAssociateVehicleModal()">🚚 Dispatch Selected</button>
-		</div>
 
+		<button id="dispatchActionBar" class="btn btn-success mt-2"
+			onclick="showVehicleInfoModal()" style="display: none;">
+			🚚 Dispatch Selected</button>
 		<!-- Booking Summary (outside scroll) -->
 		<div id="bookingopsSummaryContainer"
 			style="display: none; margin-top: 20px; background-color: #f9f9f9; padding: 10px; border-radius: 5px;">
@@ -683,11 +681,13 @@
 							</div>
 
 							<div class="col-md-12">
-								<label for="destinationBranch" class="form-label">Destination
-									Branch</label> <select id="destinationBranch" class="form-select">
-									<option value="">-- Select Branch --</option>
-								</select>
+								<label for="destinationBranchInput" class="form-label">Destination
+									Branch</label> <input list="destinationBranchList"
+									id="destinationBranchInput" class="form-control"
+									placeholder="Search Branch Name..." autocomplete="off" />
+								<datalist id="destinationBranchList"></datalist>
 							</div>
+
 						</div>
 					</form>
 				</div>
