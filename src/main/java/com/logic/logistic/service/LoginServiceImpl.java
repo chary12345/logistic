@@ -33,7 +33,7 @@ public class LoginServiceImpl implements LoginService {
 		String status = null;
 		LoginResponse loginResponse = new LoginResponse();
 		try {
-			UserDto userData = userRepository.findByUsername(request.getUsername());
+			UserDto userData = userRepository.findByUsername(request.getUsername()+request.getGroup());
 
 			if (userData != null) {
 				if (!userData.getPassword().equalsIgnoreCase(request.getPassword())) {
