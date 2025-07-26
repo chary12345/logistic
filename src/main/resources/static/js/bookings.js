@@ -1485,7 +1485,7 @@ document.addEventListener("DOMContentLoaded", function() {
 		submitBtn.addEventListener("click", submitEmployeeForm);
 	}
 
-	const userInput = document.getElementById("userName");
+	const userInput = document.getElementById("employeeuserName");
 	if (userInput) {
 		userInput.addEventListener("input", function() {
 			const username = this.value.trim();
@@ -1538,7 +1538,11 @@ async function validateUsername(username) {
 function submitEmployeeForm() {
 	const password = document.getElementById("employeepassword").value;
 	const confirmPassword = document.getElementById("employeeconfirmPassword").value;
-
+	const usernameError = document.getElementById("usernameError").textContent.trim();
+	// ✅ BLOCK if username already exists
+	if (usernameError && usernameError.toLowerCase().includes("already")) {
+		return;
+	}
 	// Password and Confirm Password Validation
 	if (password !== confirmPassword) {
 		document.getElementById("employeeconfirmPasswordError").textContent = "Passwords do not match!";
@@ -2453,22 +2457,22 @@ function renderOperationReportTable(bookings) {
 	});
 	const dispatchBar = document.getElementById("dispatchActionBar");
 
-// Reset button initially
-if (dispatchBar) {
-	dispatchBar.style.display = "none";
-	dispatchBar.disabled = true;
-}
+	// Reset button initially
+	if (dispatchBar) {
+		dispatchBar.style.display = "none";
+		dispatchBar.disabled = true;
+	}
 
-const checkboxes = document.querySelectorAll(".bookingCheckbox");
-checkboxes.forEach(cb => {
-	cb.addEventListener("change", () => {
-		const anyChecked = document.querySelectorAll(".bookingCheckbox:checked").length > 0;
-		if (dispatchBar) {
-			dispatchBar.style.display = anyChecked ? "inline-block" : "none";
-			dispatchBar.disabled = !anyChecked;
-		}
+	const checkboxes = document.querySelectorAll(".bookingCheckbox");
+	checkboxes.forEach(cb => {
+		cb.addEventListener("change", () => {
+			const anyChecked = document.querySelectorAll(".bookingCheckbox:checked").length > 0;
+			if (dispatchBar) {
+				dispatchBar.style.display = anyChecked ? "inline-block" : "none";
+				dispatchBar.disabled = !anyChecked;
+			}
+		});
 	});
-});
 
 
 	container.appendChild(table);
