@@ -11,8 +11,8 @@ import com.logic.logistic.dto.UserDto;
 
 @Repository
 public interface UserRepository extends JpaRepository<UserDto, String> {
-    
-    @Query(value = "SELECT * FROM logistics_logic.user_data WHERE user_name = :username", nativeQuery = true)
+	
+    @Query(value = "SELECT * FROM logistics_logic.user_data WHERE user_id = :username", nativeQuery = true)
     UserDto findByUsername(String username);
 
     // ✅ Added update query for changing password (without removing anything)
