@@ -1132,6 +1132,7 @@ function resetBookingForm() {
 
 window.onload = function() {
 
+	findGlobalSearch();
 	populateUserData()
 	loadBranchDestinations();
 	showBookingForm(); // 🔁 show only if logged in
@@ -1516,6 +1517,12 @@ document.addEventListener("DOMContentLoaded", function() {
 async function validateUsername(username) {
 	try {
 		const CompanyCode = userData.companyAndBranchDeatils.companyCode;
+		
+		const username = document.getElementById("username").value;
+		if (!username) {
+		  alert("Please enter a username");
+		  return;
+		}
 
 		const response = await fetch('/validate-username', {
 			method: 'POST',
@@ -1976,7 +1983,7 @@ document.getElementById('gSubregion').addEventListener('change', async (e) => {
 	}
 });
 
-async function findGlobalSearch() {
+/*async function findGlobalSearch() {
 	const payload = {
 		from: document.getElementById('gFromDate').value,
 		to: document.getElementById('gToDate').value,
@@ -2007,7 +2014,82 @@ async function findGlobalSearch() {
 	});
 	html += '</tbody></table>';
 	container.innerHTML = html;
+}*/
+
+
+async function findGlobalSearch() {
+  // 👀 Ensure the container is visible
+  document.getElementById("globalSearchFormContainer").style.display = "block";
+
+  // 📅 Get filter values
+  const fromDate = document.getElementById("gFromDate").value;
+  const toDate = document.getElementById("gToDate").value;
+  const region = document.getElementById("gRegion").value;
+  const subRegion = document.getElementById("gSubregion").value;
+  const branch = document.getElementById("gBranch").value;
+
+  // 🧰 Construct query params
+  let query = `?fromDate=${fromDate}&toDate=${toDate}`;
+  if (region) query += `&region=${region}`;
+  if (subRegion) query += `&subRegion=${subRegion}`;
+  if (branch) query += `&branchCode=${branch}`;
+
+  try {
+    const response = await fetch(`/api/bookings/region-search${query}`);
+    const data = await response.json();
+
+    // ✅ Ensure resultBody exists or inject new table
+    let resultBody = document.getElementById("resultBody");
+    if (!resultBody) {
+      console.warn("resultBody not found, injecting table now...");
+      document.getElementById("globalSearchTableContainer").innerHTML = `
+        <div class="table-responsive">
+          <table class="table table-bordered">
+            <thead>
+              <tr>
+                <th>Region</th>
+                <th>Sub-Region</th>
+                <th>Branch Code</th>
+                <th>Branch Area</th>
+                <th>Company Code</th>
+                <th>Create Date</th>
+              </tr>
+            </thead>
+            <tbody id="resultBody"></tbody>
+          </table>
+        </div>`;
+      resultBody = document.getElementById("resultBody");
+    }
+
+    // 🧹 Clear previous rows
+    resultBody.innerHTML = "";
+
+    // 🧾 Render new rows
+    if (data.length === 0) {
+      resultBody.innerHTML = `<tr><td colspan="6" class="text-center">No Records Found</td></tr>`;
+    } else {
+      data.forEach(item => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${item.region || ''}</td>
+          <td>${item.subRegion || ''}</td>
+          <td>${item.branchCode || ''}</td>
+          <td>${item.branchArea || ''}</td>
+          <td>${item.companyCode || ''}</td>
+          <td>${item.createDate ? new Date(item.createDate).toLocaleString() : ''}</td>
+        `;
+        resultBody.appendChild(row);
+      });
+    }
+
+  } catch (error) {
+    console.error("Error fetching global search data:", error);
+    /*showCustomAlert("Error", "Something went wrong while fetching data.");*/
+  }
 }
+
+
+
 
 function resetGlobalSearch() {
 	document.getElementById('gFromDate').value = '';

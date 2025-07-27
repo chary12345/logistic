@@ -1,5 +1,6 @@
 package com.logic.logistic.controller;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -16,12 +17,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.MediaType;
 
 import com.logic.logistic.dto.Booking;
+import com.logic.logistic.dto.RegionSearchDTO;
 import com.logic.logistic.model.BookingDTO;
 import com.logic.logistic.model.BookingPageResponse;
 import com.logic.logistic.model.DispatchRequest;
 import com.logic.logistic.service.BookingService;
+import com.logic.logistic.service.RegionServiceImpl;
 
 @RestController
 @RequestMapping("/api/bookings")
@@ -30,6 +34,9 @@ public class BookingController {
 
 	@Autowired
 	private BookingService bookingService;
+	
+	@Autowired
+	private RegionServiceImpl<?> regserviceImpl;
 
 	private static final long serialVersionUID = 1L;
 
@@ -116,5 +123,39 @@ public class BookingController {
 			@RequestParam(required = false) String branchCode) {
 		BookingPageResponse response = bookingService.getGlobalSearchreports(fromDate, toDate, lastId, branchCode);
 		return ResponseEntity.ok(response);
+	}
+	
+	@GetMapping(value = "/region-search", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<List<RegionSearchDTO>> getsearchResults(
+			@RequestParam String fromDate,
+		    @RequestParam String toDate,
+		    @RequestParam(required = false) String region,
+		    @RequestParam(required = false) String subRegion,
+		    @RequestParam(required = false) String branch){
+		logger.info("Searching region report: from={}, to={}, region={}, subRegion={}, branch={}",
+                fromDate, toDate, region, subRegion, branch);
+		
+		 try {
+		        LocalDateTime from = LocalDate.parse(fromDate).atStartOfDay();
+		        LocalDateTime to = LocalDate.parse(toDate).atTime(23, 59, 59);
+
+		        List<RegionSearchDTO> result = regserviceImpl.getGlobalSearchResults(from, to, region, subRegion, branch);
+
+		        logger.info("Region Search Results Found: {}", result.size());
+		        return ResponseEntity.ok(result);
+
+		    } catch (Exception e) {
+		        logger.error("Error during region search", e);
+		        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+		    }
+		
+//		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+//	    LocalDateTime fromDateTime = LocalDate.parse(fromDate, formatter).atStartOfDay();
+//	    LocalDateTime toDateTime = LocalDate.parse(toDate, formatter).atTime(LocalTime.MAX);
+
+//	    List<RegionSearchDTO> result = regserviceImpl.getGlobalSearchResults(from, to, region, subRegion, branch);
+//	    logger.info("Search result count: {}", result.size());
+//    return ResponseEntity.ok(result);
+		
 	}
 }
