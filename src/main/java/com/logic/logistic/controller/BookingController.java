@@ -158,4 +158,27 @@ public class BookingController {
 //    return ResponseEntity.ok(result);
 		
 	}
+	
+//	@GetMapping("/search-bookings")
+//    public ResponseEntity<List<Booking>> getBookings(
+//            @RequestParam("from") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+//            @RequestParam("to") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to,
+//            @RequestParam(required = false) String region,
+//            @RequestParam(required = false) String subRegion,
+//            @RequestParam(required = false) String branch) {
+//
+//        List<Booking> bookings = regserviceImpl.getBookingDataByRegion(from, to, region, subRegion, branch);
+//        return ResponseEntity.ok(bookings);
+//    }
+	
+	@GetMapping("/api/global-booking-report")
+	public ResponseEntity<List<BookingDTO>> globalBookingReport(
+	        @RequestParam String branch,
+	        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+	        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+
+	    List<BookingDTO> result = regserviceImpl.getBookingDataByBranchAndDate(branch, from, to);
+	    return ResponseEntity.ok(result);
+	}
+
 }

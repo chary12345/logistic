@@ -8,9 +8,11 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.logic.logistic.dto.Booking;
 import com.logic.logistic.dto.RegionMasterDto;
 import com.logic.logistic.dto.RegionMasterId;
 import com.logic.logistic.dto.RegionSearchDTO;
+import com.logic.logistic.model.BookingDTO;
 import com.logic.logistic.model.BranchNameList;
 
 @Repository
@@ -59,8 +61,10 @@ public interface RegionMasterRepository extends JpaRepository<RegionMasterDto, R
 	            @Param("branch") String branch
 	    );
 
+//	@Query("SELECT b FROM Booking b WHERE b.bookingDate BETWEEN :from AND :to AND b.branchCode = :branchCode ORDER BY b.loadingReciept ASC")
 
-
-
+//	List<Booking> findByBranchCode(String branchCode);
+    // Multiple branchCodes ki (if needed)
+//    List<Booking> findByBranchCodeIn(List<String> branchCodes);
 
 }

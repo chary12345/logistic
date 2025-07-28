@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.logic.logistic.dto.Booking;
+import com.logic.logistic.model.BookingDTO;
 
 import jakarta.transaction.Transactional;
 
@@ -51,5 +52,17 @@ public interface BookRepository extends JpaRepository<Booking, String> {
 	List<Booking> findBookingsByFilter(@Param("fromDate") String fromDate, @Param("toDate") String toDate,
 			@Param("status") String status, @Param("region") String region, @Param("subregion") String subregion,
 			@Param("branchCode") String branchCode, @Param("employeeName") String employeeName);
+	
+	@Query("SELECT new com.logic.logistic.dto.BookingSearchDTO(" +
+		       "b.loadingReciept, b.consignorName, b.consigneeName, " +
+		       "b.freight, b.sgst, b.cgst, b.igst, b.consignStatus, b.bookingDate) " +
+		       "FROM Booking b " +
+		       "WHERE LOWER(TRIM(b.branchCode)) = LOWER(TRIM(:branchCode)) " +
+		       "AND b.bookingDate BETWEEN :fromDate AND :toDate")
+		List<BookingDTO> findBookingsByBranchAndDateRange(
+		        @Param("branchCode") String branchCode,
+		        @Param("fromDate") LocalDateTime fromDate,
+		        @Param("toDate") LocalDateTime toDate);
+
 
 }
