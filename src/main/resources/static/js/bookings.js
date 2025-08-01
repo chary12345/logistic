@@ -1551,11 +1551,22 @@ function submitEmployeeForm() {
 		document.getElementById("employeeconfirmPasswordError").textContent = "";
 	}
 
+	// AES encryption key and IV (must match backend)
+		const key = CryptoJS.enc.Utf8.parse("1234567890123456");
+		const iv = CryptoJS.enc.Utf8.parse("abcdefghijklmnop");
+
+		// Encrypt the password
+		const encryptedPassword = CryptoJS.AES.encrypt(password, key, {
+			iv: iv,
+			mode: CryptoJS.mode.CBC,
+			padding: CryptoJS.pad.Pkcs7
+		}).toString();
+
 	let masterData = {
 		firstName: document.getElementById("employeefirstName").value,
 		lastName: document.getElementById("employeelastName").value,
 		userName: document.getElementById("employeeuserName").value,
-		password: password,
+		password: encryptedPassword,
 		phone: document.getElementById("employeephone").value,
 		email: document.getElementById("employeeemail").value,
 		role: document.getElementById("employeerole").value,

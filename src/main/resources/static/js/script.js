@@ -47,11 +47,20 @@ async function validateLogin() {
 	if (!isValid) {
 		return; // Stop if client-side validation fails
 	}
+	// AES encryption key and IV (must match backend)
+		const key = CryptoJS.enc.Utf8.parse("1234567890123456");
+		const iv = CryptoJS.enc.Utf8.parse("abcdefghijklmnop");
 
+		// Encrypt the password
+		const encryptedPassword = CryptoJS.AES.encrypt(password, key, {
+			iv: iv,
+			mode: CryptoJS.mode.CBC,
+			padding: CryptoJS.pad.Pkcs7
+		}).toString();
 	// Create the login data object
 	let loginData = {
 		username: username,
-		password: password,
+		password: encryptedPassword,
 		group: group,
 		captcha: captchaInput
 	};
