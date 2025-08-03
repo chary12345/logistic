@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.logic.logistic.dto.Booking;
+import com.logic.logistic.dto.BookingSearchRequest;
 import com.logic.logistic.model.BookingDTO;
 import com.logic.logistic.model.BookingPageResponse;
 import com.logic.logistic.model.DispatchRequest;
@@ -108,13 +109,20 @@ public class BookingController {
 		}
 	}
 
-	@GetMapping("/get-Global-Search-Repoprts")
-	public ResponseEntity<BookingPageResponse> getGlobalSearchreports(
-			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fromDate,
-			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime toDate,
-			@RequestParam String status, @RequestParam(required = false) String lastId,
-			@RequestParam(required = false) String branchCode) {
-		BookingPageResponse response = bookingService.getGlobalSearchreports(fromDate, toDate, lastId, branchCode);
-		return ResponseEntity.ok(response);
+//	@GetMapping("/get-Global-Search-Repoprts")
+//	public ResponseEntity<BookingPageResponse> getGlobalSearchreports(
+//			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fromDate,
+//			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime toDate,
+//			@RequestParam String status, @RequestParam(required = false) String lastId,
+//			@RequestParam(required = false) String branchCode) {
+//		BookingPageResponse response = bookingService.getGlobalSearchreports(fromDate, toDate, lastId, branchCode);
+//		return ResponseEntity.ok(response);
+//	}
+	
+	@PostMapping("/get-Global-Search-Reports")
+	public ResponseEntity<BookingPageResponse> getGlobalSearchReports(@RequestBody BookingSearchRequest request) {
+	    BookingPageResponse response = bookingService.getGlobalSearchReports(request);
+	    return ResponseEntity.ok(response);
 	}
+
 }

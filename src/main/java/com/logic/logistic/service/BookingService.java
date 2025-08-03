@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import com.logic.logistic.dto.ArticleDetailDto;
 import com.logic.logistic.dto.Booking;
 import com.logic.logistic.dto.BookingReceiptSequence;
+import com.logic.logistic.dto.BookingSearchRequest;
 import com.logic.logistic.dto.LoadingSheetDTO;
 import com.logic.logistic.mapper.LoadingSheetMapper;
 import com.logic.logistic.model.ArticleDetail;
@@ -288,27 +289,62 @@ public class BookingService {
 		}
 	}
 
-	public BookingPageResponse getGlobalSearchreports(LocalDateTime fromDate, LocalDateTime toDate, String lastId,
-			String branchCode) {
-		int limit = 10;
-		Pageable pageable = PageRequest.of(0, limit, Sort.by("bookingDate").descending());
-		List<Booking> bookings;
+//	public BookingPageResponse getGlobalSearchreports(LocalDateTime fromDate, LocalDateTime toDate, String lastId,
+//			String branchCode) {
+//		int limit = 10;
+//		Pageable pageable = PageRequest.of(0, limit, Sort.by("bookingDate").descending());
+//		List<Booking> bookings;
+//
+//		if (lastId == null) {
+//			bookings = bookingRepo.findFirstPageForGlobalSearchreports(fromDate, toDate, pageable, branchCode);
+//		} else {
+//			bookings = bookingRepo.findNextPageForGlobalSearchreports(fromDate, toDate, lastId, pageable, branchCode);
+//		}
+//
+//		BookingPageResponse response = new BookingPageResponse();
+//		response.setContent(bookings);
+//		response.setPageSize(limit);
+//		response.setPageNumber(0);
+//		response.setTotalElements(bookings.size());
+//		response.setTotalPages(1);
+//		response.setLast(bookings.size() < limit);
+//
+//		return response;
+//	}
 
-		if (lastId == null) {
-			bookings = bookingRepo.findFirstPageForGlobalSearchreports(fromDate, toDate, pageable, branchCode);
-		} else {
-			bookings = bookingRepo.findNextPageForGlobalSearchreports(fromDate, toDate, lastId, pageable, branchCode);
-		}
+	public BookingPageResponse getGlobalSearchReports(BookingSearchRequest request) {
+	    int limit = 10;
+//	    Pageable pageable = PageRequest.of(0, limit, Sort.by("bookingDate").descending());
 
-		BookingPageResponse response = new BookingPageResponse();
-		response.setContent(bookings);
-		response.setPageSize(limit);
-		response.setPageNumber(0);
-		response.setTotalElements(bookings.size());
-		response.setTotalPages(1);
-		response.setLast(bookings.size() < limit);
+	    List<String> getlistofBranchcodes = bookingRepo.getlistofBranchcodes(
+	    		request.getCity(),
+		        request.getState(),
+		        request.getBranchCode()
+		        
+	    		);
+	    getlistofBranchcodes.stream().forEach(s->System.out.println(s+"\n"));
+	    List<Booking> bookings = bookingRepo.searchBookings(
+	        request.getFromDate(),
+	        request.getToDate(),
+	        request.getStatus(),
+//	        request.getLastId(),
+//	        getlistofBranchcodes,
+	        "PISENA"
+//	        pageable
+	    );
+	    
+	    bookings.stream().forEach(s->System.out.println(s.getLoadingReciept()+"\n"));
 
-		return response;
+	    BookingPageResponse response = new BookingPageResponse();
+	    response.setContent(bookings);
+	    response.setPageSize(limit);
+	    response.setPageNumber(0);
+	    response.setTotalElements(bookings.size());
+	    response.setTotalPages(1);
+	    response.setLast(bookings.size() < limit);
+
+	    return response;
 	}
+
 
 }
