@@ -549,4 +549,52 @@ report-form {
 span.badge {
   cursor: pointer;
 }
-  
+
+/* Apply 85% scaling to all form containers for layout compactness */
+#bookingFormContainer,
+#CreateBranchContainer,
+#vehicleManageContainer,
+#createEmployeeFormContainer,
+#operationSearchForm,
+#reportFormContainer,
+#userAndCompanyFormContainer {
+  transform: scale(0.85);
+  transform-origin: top left;
+}
+
+/* Consistent font size for all form elements */
+#bookingFormContainer input,
+#bookingFormContainer select,
+#bookingFormContainer label,
+#bookingFormContainer button,
+#CreateBranchContainer input,
+#CreateBranchContainer select,
+#CreateBranchContainer label,
+#CreateBranchContainer button,
+#vehicleManageContainer input,
+#vehicleManageContainer select,
+#vehicleManageContainer label,
+#vehicleManageContainer button,
+#createEmployeeFormContainer input,
+#createEmployeeFormContainer select,
+#createEmployeeFormContainer label,
+#createEmployeeFormContainer button,
+#operationSearchForm input,
+#operationSearchForm select,
+#operationSearchForm label,
+#operationSearchForm button {
+  font-size: 13px;
+}
+
+/* Adjust form group spacing globally */
+.form-group,
+.row.mb-4 {
+  margin-bottom: 10px !important;
+}
+
+/* Adjust padding for better layout compression */
+.form-control,
+.form-select {
+  padding: 4px 8px;
+  height: auto;
+}

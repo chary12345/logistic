@@ -25,7 +25,8 @@
 	href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
 	rel="stylesheet">
 <link rel="icon" href="data:,">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+<script
+	src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 
 <script
 	src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -217,12 +218,14 @@
 
 		<form id="bookingForm">
 			<input type="hidden" id="paymentMode" name="paymentMode">
-			<!-- Delivery Destination -->
+
+			<!-- Delivery Destination with Select2 -->
 			<div class="row mb-4">
 				<div class="col-md-6">
-					<label for="deliveryDestination" class="form-label">Delivery
-						Destination:</label> <select id="deliveryDestination" class="form-select">
-						<option value="">-- Select Destination --</option>
+					<label for="deliveryDestination" class="form-label" >Delivery 
+						Destination:</label> <select id="deliveryDestination"
+						class="form-select select2" >
+						<option value=""></option>
 					</select>
 				</div>
 			</div>
@@ -322,6 +325,14 @@
 						<div class="mb-2">
 							<label for="freight">Freight:</label> <input type="number"
 								id="freight" class="form-control" readonly>
+						</div>
+						<div class="mb-2">
+							<label for="igst">loading:</label> <input type="number" id="igst"
+								class="form-control" readonly>
+						</div>
+						<div class="mb-2">
+							<label for="igst">lr charge:</label> <input type="number"
+								id="igst" class="form-control" readonly>
 						</div>
 						<div class="mb-2">
 							<label for="sgst">SGST (2.5%):</label> <input type="number"
@@ -628,10 +639,11 @@
 		</div>
 
 		<!-- Dispatch Button (outside scroll) -->
-
 		<button id="dispatchActionBar" class="btn btn-success mt-2"
-			onclick="showVehicleInfoModal()" style="display: none;">
+			onclick="showAssociateVehicleModal()" style="display: none;">
 			🚚 Dispatch Selected</button>
+		`
+
 		<!-- Booking Summary (outside scroll) -->
 		<div id="bookingopsSummaryContainer"
 			style="display: none; margin-top: 20px; background-color: #f9f9f9; padding: 10px; border-radius: 5px;">
@@ -656,34 +668,33 @@
 					<form id="associateVehicleForm">
 						<div class="row g-3">
 							<div class="col-md-6">
-								<label for="truckNumber" class="form-label">Truck Number</label>
-								<select id="truckNumber" class="form-select">
-									<option value="">-- Select Truck --</option>
-								</select>
-								<datalist id="truckNumberOptions"></datalist>
+								<label for="truckNumber" class="form-label">Truck
+									Number*/label> <select id="truckNumber" class="form-select">
+										<option value="">-- Select Truck --</option>
+								</select> <datalist id="truckNumberOptions"></datalist>
 							</div>
 
 							<div class="col-md-6">
-								<label for="vehicleName" class="form-label">Vehicle Name</label>
-								<input type="text" id="vehicleName" class="form-control"
+								<label for="vehicleName" class="form-label">Vehicle
+									Name*</label> <input type="text" id="vehicleName" class="form-control"
 									placeholder="Vehicle Name">
 							</div>
 
 							<div class="col-md-6">
-								<label for="driverName" class="form-label">Driver Name</label> <input
-									type="text" id="driverName" class="form-control"
+								<label for="driverName" class="form-label">Driver Name*</label>
+								<input type="text" id="driverName" class="form-control"
 									placeholder="Driver Name">
 							</div>
 
 							<div class="col-md-6">
-								<label for="driverPhone" class="form-label">Driver Phone</label>
-								<input type="text" id="driverPhone" class="form-control"
+								<label for="driverPhone" class="form-label">Driver
+									Phone*</label> <input type="text" id="driverPhone" class="form-control"
 									placeholder="Driver Phone">
 							</div>
 
 							<div class="col-md-12">
 								<label for="destinationBranchInput" class="form-label">Destination
-									Branch</label> <input list="destinationBranchList"
+									Branch*</label> <input list="destinationBranchList"
 									id="destinationBranchInput" class="form-control"
 									placeholder="Search Branch Name..." autocomplete="off" />
 								<datalist id="destinationBranchList"></datalist>
@@ -697,7 +708,7 @@
 					<button type="button" class="btn btn-secondary"
 						data-bs-dismiss="modal">Cancel</button>
 					<button type="button" class="btn btn-primary"
-						onclick="submitVehicleDetails()">Submit</button>
+						onclick="submitDispatchAlongWithVehicleDetails()">Submit</button>
 				</div>
 			</div>
 		</div>
