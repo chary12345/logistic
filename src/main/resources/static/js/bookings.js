@@ -1987,38 +1987,184 @@ document.getElementById('gSubregion').addEventListener('change', async (e) => {
 	}
 });
 
-async function findGlobalSearch() {
-	const payload = {
-		from: document.getElementById('gFromDate').value,
-		to: document.getElementById('gToDate').value,
-		region: document.getElementById('gRegion').value || null,
-		subRegion: document.getElementById('gSubregion').value || null,
-		branch: document.getElementById('gBranch').value || null
-	};
+// ✅ GLOBAL SEARCH PAGINATED REPORT MODULE — FULL REPLICA
 
-	const res = await fetch('/api/lr-paid-statement/search', {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify(payload)
-	});
-	const data = await res.json();
+let globalReportData = [];             // All loaded data (optional if only paging)
+let globalReportPages = [];            // Page-wise storage
+let currentGlobalPage = 0;
+let globalLastSeenBookingId = null;
 
-	const container = document.getElementById('globalSearchTableContainer');
-	container.innerHTML = '';
-	if (data.length === 0) {
-		container.innerHTML = '<p>No records found.</p>';
-		return;
-	}
+let globalFromDate = null;
+let globalToDate = null;
+let globalReportStatus = null;
 
-	let html = '<table class="table table-bordered"><thead><tr>' +
-		'<th>Paid Date</th><th>LR Number</th><th>Amount</th><th>Region</th><th>Sub-Region</th><th>Branch</th>' +
-		'</tr></thead><tbody>';
-	data.forEach(r => {
-		html += `<tr><td>${r.paidDate}</td><td>${r.lrNumber}</td><td>${r.amount}</td><td>${r.region}</td><td>${r.subRegion}</td><td>${r.branch}</td></tr>`;
-	});
-	html += '</tbody></table>';
-	container.innerHTML = html;
+function generateGlobalBookingReport() {
+  const fromDateRaw = document.getElementById('gFromDate').value;
+  const toDateRaw = document.getElementById('gToDate').value;
+  const status = document.getElementById('reportStatusHidden').value;
+
+  if (!fromDateRaw || !toDateRaw) {
+    showCustomAlert("Please select both From and To dates.");
+    return;
+  }
+
+  // Reset State
+  globalReportData = [];
+  globalReportPages = [];
+  currentGlobalPage = 0;
+  globalLastSeenBookingId = null;
+
+  globalFromDate = `${fromDateRaw}T00:00:00`;
+  globalToDate = `${toDateRaw}T23:59:59`;
+  globalReportStatus = status;
+
+  document.getElementById("globalSearchTableContainer").innerHTML = '';
+  document.getElementById("paginationGlobalControls").style.display = 'none';
+
+  loadGlobalReportPage(0);
 }
+
+function loadGlobalReportPage(pageIndex) {
+  const state = document.getElementById("gRegion")?.value || null;
+  const city = document.getElementById("gSubregion")?.value || null;
+  const branch = document.getElementById("gBranch")?.value || null;
+
+  const payload = {
+    fromDate: globalFromDate,
+    toDate: globalToDate,
+   // status: globalReportStatus,
+    lastId: globalLastSeenBookingId,
+    state: state,
+    city: city,
+    branchCode: branch,
+    page: pageIndex
+  };
+
+  fetch("/api/bookings/get-Global-Search-Reports", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.content && data.content.length > 0) {
+        globalLastSeenBookingId = data.lastId;
+        globalReportPages.push(data.content);
+        currentGlobalPage = globalReportPages.length - 1;
+
+        renderGlobalReportTable(data.content);
+        renderGlobalBookingSummary(data.content);
+        updateGlobalPageDisplay();
+        document.getElementById("paginationControls").style.display = "block";
+      } else if (globalReportPages.length === 0) {
+        document.getElementById("globalSearchTableContainer").innerHTML = '<p>No Records Found</p>';
+      }
+    })
+    .catch(err => {
+      console.error("Global report load error:", err);
+      document.getElementById("globalSearchTableContainer").innerHTML = '<p>Error loading report.</p>';
+    });
+}
+
+function renderGlobalReportTable(bookings) {
+  const container = document.getElementById("globalSearchTableContainer");
+  if (!container) return;
+
+  let html = `<table class="table table-bordered">
+      <thead class="table-dark">
+        <tr>
+          <th>LoadingReciept</th>
+          <th>Consignor Name</th>
+          <th>Consignor Mobile</th>
+          <th>Consignee Name</th>
+          <th>Consignee Mobile</th>
+          <th>Freight</th>
+          <th>SGST</th>
+          <th>CGST</th>
+          <th>IGST</th>
+          <th>Status</th>
+          <th>Booking Date</th>
+        </tr>
+      </thead>
+      <tbody>`;
+
+  bookings.forEach(b => {
+    html += `<tr>
+      <td>${b.loadingReciept}</td>
+      <td>${b.consignorName}</td>
+      <td>${b.consignorMobile}</td>
+      <td>${b.consigneeName}</td>
+      <td>${b.consigneeMobile}</td>
+      <td>${b.freight || 0}</td>
+      <td>${b.sgst || 0}</td>
+      <td>${b.cgst || 0}</td>
+      <td>${b.igst || 0}</td>
+      <td>${b.consignStatus}</td>
+      <td>${b.bookingDate ? new Date(b.bookingDate).toLocaleDateString() : ''}</td>
+    </tr>`;
+  });
+
+  html += `</tbody></table>`;
+  container.innerHTML = html;
+}
+
+function renderGlobalBookingSummary(bookings) {
+  const container = document.getElementById("globalSearchTableContainer");
+  if (!container) return;
+
+  let totalFreight = 0, totalSGST = 0, totalCGST = 0, totalIGST = 0;
+
+  bookings.forEach(b => {
+    totalFreight += b.freight || 0;
+    totalSGST += b.sgst || 0;
+    totalCGST += b.cgst || 0;
+    totalIGST += b.igst || 0;
+  });
+
+  const grandTotal = totalFreight + totalSGST + totalCGST + totalIGST;
+
+  const html = `
+    <div class="mt-4 text-success text-center fw-bold">BOOKING SUMMARY</div>
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>Total Freight</th>
+          <th>SGST</th>
+          <th>CGST</th>
+          <th>IGST</th>
+          <th>Grand Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>${totalFreight.toFixed(2)}</td>
+          <td>${totalSGST.toFixed(2)}</td>
+          <td>${totalCGST.toFixed(2)}</td>
+          <td>${totalIGST.toFixed(2)}</td>
+          <td>${grandTotal.toFixed(2)}</td>
+        </tr>
+      </tbody>
+    </table>`;
+
+  container.innerHTML += html;
+}
+
+function updateGlobalPageDisplay() {
+  document.getElementById("pageCountDisplay").textContent = `Page ${currentGlobalPage + 1}`;
+}
+
+function nextGlobalPage() {
+  loadGlobalReportPage(currentGlobalPage + 1);
+}
+function prevGlobalPage() {
+  if (currentGlobalPage > 0) {
+    currentGlobalPage--;
+    renderGlobalReportTable(globalReportPages[currentGlobalPage]);
+    renderGlobalBookingSummary(globalReportPages[currentGlobalPage]);
+    updateGlobalPageDisplay();
+  }
+}
+
 
 function resetGlobalSearch() {
 	document.getElementById('gFromDate').value = '';

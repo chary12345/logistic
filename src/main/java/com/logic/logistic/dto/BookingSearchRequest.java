@@ -3,14 +3,17 @@ package com.logic.logistic.dto;
 import java.time.LocalDateTime;
 
 public class BookingSearchRequest {
-	
-	private LocalDateTime fromDate;
-    private LocalDateTime toDate;
-    private String status;
-    private String lastId;
-    private String branchCode;
-    private String city;
     private String state;
+    private String city;
+    private String branchCode;
+
+    private String status=null;
+    private String lastId;
+    private int page;
+
+    private LocalDateTime fromDate;
+    private LocalDateTime toDate;
+
     
 	public LocalDateTime getFromDate() {
 		return fromDate;
@@ -55,6 +58,12 @@ public class BookingSearchRequest {
 		this.state = state;
 	}
 	
+	public int getPage() {
+		return page;
+	}
+	public void setPage(int page) {
+		this.page = page;
+	}
 	public BookingSearchRequest(LocalDateTime fromDate, LocalDateTime toDate, String status, String lastId,
 			String branchCode, String city, String state) {
 		super();
