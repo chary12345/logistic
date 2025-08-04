@@ -314,37 +314,40 @@ public class BookingService {
 
 	public BookingPageResponse getGlobalSearchReports(BookingSearchRequest request) {
 	    int limit = 10;
-//	    Pageable pageable = PageRequest.of(0, limit, Sort.by("bookingDate").descending());
+	    Pageable pageable = PageRequest.of(0, limit, Sort.by("bookingDate").descending());
 
-	    List<String> getlistofBranchcodes = bookingRepo.getlistofBranchcodes(
-	    		request.getCity(),
-		        request.getState(),
-		        request.getBranchCode()
-		        
-	    		);
-	    getlistofBranchcodes.stream().forEach(s->System.out.println(s+"\n"));
+	    List<String> branchCodes = bookingRepo.getlistofBranchcodes(
+	        request.getCity(),
+	        request.getState(),
+	        request.getBranchCode()
+	    );
+
+	    if (branchCodes.isEmpty()) {
+	        return new BookingPageResponse(); // empty if no branches
+	    }
+
 	    List<Booking> bookings = bookingRepo.searchBookings(
 	        request.getFromDate(),
 	        request.getToDate(),
 	        request.getStatus(),
-//	        request.getLastId(),
-//	        getlistofBranchcodes,
-	        "PISENA"
-//	        pageable
+	        request.getLastId(),
+	        branchCodes,
+	        pageable
 	    );
-	    
-	    bookings.stream().forEach(s->System.out.println(s.getLoadingReciept()+"\n"));
 
 	    BookingPageResponse response = new BookingPageResponse();
 	    response.setContent(bookings);
 	    response.setPageSize(limit);
-	    response.setPageNumber(0);
+	    response.setPageNumber(request.getPage());
 	    response.setTotalElements(bookings.size());
 	    response.setTotalPages(1);
 	    response.setLast(bookings.size() < limit);
+	    response.setLastId(bookings.isEmpty() ? null : bookings.get(bookings.size() - 1).getLoadingReciept());
 
 	    return response;
 	}
+
+
 
 
 }

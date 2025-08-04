@@ -25,7 +25,8 @@
 	href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
 	rel="stylesheet">
 <link rel="icon" href="data:,">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+<script
+	src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 
 <script
 	src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -385,7 +386,8 @@
 				</select>
 			</div>
 			<div class="col-md-3 d-flex align-items-end gap-2">
-				<button class="btn btn-primary" onclick="findGlobalSearch()">Find</button>
+				<button class="btn btn-primary"
+					onclick="generateGlobalBookingReport()">Find</button>
 				<button class="btn btn-secondary" onclick="resetGlobalSearch()">Reset</button>
 			</div>
 		</div>
@@ -393,7 +395,12 @@
 		<div id="globalSearchTableContainer" class="mt-4"
 			style="overflow-x: auto;"></div>
 	</div>
-
+	<div id="paginationGlobalControls"
+		style="display: none; text-align: center; margin-top: 15px;">
+		<button onclick="prevGlobalPage()">Prev</button>
+		<span id="pageCountDisplay">Page 1</span>
+		<button onclick="nextGlobalPage()">Next</button>
+	</div>
 	<div id="CreateBranchContainer"
 		style="display: flex; justify-content: center; align-items: center; height: 50vh; padding: 10px; overflow: visible;">
 		<!-- Toast Container -->
@@ -630,8 +637,8 @@
 		<!-- Dispatch Button (outside scroll) -->
 
 		<button id="dispatchActionBar" class="btn btn-success mt-2"
-			onclick="showVehicleInfoModal()" style="display: none;">
-			🚚 Dispatch Selected</button>
+			onclick="showVehicleInfoModal()" style="display: none;">🚚
+			Dispatch Selected</button>
 		<!-- Booking Summary (outside scroll) -->
 		<div id="bookingopsSummaryContainer"
 			style="display: none; margin-top: 20px; background-color: #f9f9f9; padding: 10px; border-radius: 5px;">
