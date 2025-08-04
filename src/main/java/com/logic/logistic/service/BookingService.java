@@ -7,8 +7,6 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-//For paged result
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 //For pagination
 import org.springframework.data.domain.Pageable;
@@ -24,6 +22,7 @@ import com.logic.logistic.model.ArticleDetail;
 import com.logic.logistic.model.BookingDTO;
 import com.logic.logistic.model.BookingPageResponse;
 import com.logic.logistic.model.DispatchRequest;
+import com.logic.logistic.model.DispatchResponse;
 import com.logic.logistic.repository.ArticleDetailRepository;
 import com.logic.logistic.repository.BookRepository;
 import com.logic.logistic.repository.BookingReceiptSequenceRepository;
@@ -140,31 +139,38 @@ public class BookingService {
 	 */
 
 	@Transactional
-	public List<Booking> dispatchLoad(DispatchRequest request) {
-		List<Booking> dispatchBookings = null;
-		try {
-			dispatchBookings = bookingRepo.findByLoadingRecieptIn(request.getLrIds());
-			LocalDateTime now = LocalDateTime.now();
-			for (Booking booking : dispatchBookings) {
-				booking.setConsignStatus("DISPATCHED");
-				booking.setDispatchDate(now);
-			}
+	public DispatchResponse dispatchLoad(DispatchRequest request) {
+	    DispatchResponse response = new DispatchResponse();
 
-			bookingRepo.saveAll(dispatchBookings);
-			
+	    try {
+	        List<Booking> dispatchBookings = bookingRepo.findByLoadingRecieptIn(request.getLrIds());
+	        LocalDateTime now = LocalDateTime.now();
 
-			// Save to loading_sheet table
+	        for (Booking booking : dispatchBookings) {
+	            booking.setConsignStatus("DISPATCHED");
+	            booking.setDispatchDate(now);
+	        }
+
+	        bookingRepo.saveAll(dispatchBookings);
+
+	        // Save loading sheet
 	        LoadingSheetDTO sheet = LoadingSheetMapper.fromRequest(request);
-	        loadingSheetRepository.save(sheet);
+	        sheet.setCreatedAt(now); // ensure created timestamp
+	        LoadingSheetDTO savedSheet = loadingSheetRepository.save(sheet);
+
+	        response.setBookings(dispatchBookings);
+	        response.setLoadingSheet(savedSheet);
 
 	        logger.info("Dispatch and loading sheet saved");
 
-		} catch (Exception e) {
-			System.out.println(e.getMessage());
-			logger.error("Exception in dispatchLoad : " + e);
-		}
-		return dispatchBookings;
+	    } catch (Exception e) {
+	        logger.error("Exception in dispatchLoad : " + e.getMessage());
+	        
+	    }
+
+	    return response;
 	}
+
 
 	public BookingPageResponse getReports(LocalDateTime from, LocalDateTime to, String status, String lastId,
 			String branchCode) {
