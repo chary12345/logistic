@@ -1552,15 +1552,15 @@ function submitEmployeeForm() {
 	}
 
 	// AES encryption key and IV (must match backend)
-		const key = CryptoJS.enc.Utf8.parse("1234567890123456");
-		const iv = CryptoJS.enc.Utf8.parse("abcdefghijklmnop");
+	const key = CryptoJS.enc.Utf8.parse("1234567890123456");
+	const iv = CryptoJS.enc.Utf8.parse("abcdefghijklmnop");
 
-		// Encrypt the password
-		const encryptedPassword = CryptoJS.AES.encrypt(password, key, {
-			iv: iv,
-			mode: CryptoJS.mode.CBC,
-			padding: CryptoJS.pad.Pkcs7
-		}).toString();
+	// Encrypt the password
+	const encryptedPassword = CryptoJS.AES.encrypt(password, key, {
+		iv: iv,
+		mode: CryptoJS.mode.CBC,
+		padding: CryptoJS.pad.Pkcs7
+	}).toString();
 
 	let masterData = {
 		firstName: document.getElementById("employeefirstName").value,
@@ -1976,193 +1976,278 @@ document.getElementById('gRegion').addEventListener('change', async (e) => {
 	}
 });
 
-document.getElementById('gSubregion').addEventListener('change', async (e) => {
-	const region = document.getElementById('gRegion').value;
-	const subregion = e.target.value;
-	document.getElementById('gBranch').innerHTML = '<option value="">-- Select Branch --</option>';
-	if (region && subregion) {
+document.getElementById("gSubregion").addEventListener("change", async (e) => {
+	const region = document.getElementById("gRegion")?.value?.trim();
+	const subregion = e.target.value?.trim();
+
+	// ✅ Check if both selected
+	if (!region || !subregion) return;
+
+	try {
 		const res = await fetch(`/region/branches?region=${encodeURIComponent(region)}&subRegion=${encodeURIComponent(subregion)}`);
-		const list = await res.json();
-		list.forEach(r => document.getElementById('gBranch').add(new Option(r, r)));
+		const data = await res.json();
+
+		// 🔄 Format: "BranchName-CODE" → { text: BranchName, value: CODE }
+		const formatted = data.map(item => {
+			const [name, code] = item.split("-");
+			return {
+				text: name.trim(),
+				value: code.trim()
+			};
+		});
+
+		fillBranchSelect("gBranch", formatted);
+	} catch (err) {
+		console.error("Failed to load branches:", err);
 	}
 });
 
-// ✅ GLOBAL SEARCH PAGINATED REPORT MODULE — FULL REPLICA
+function fillBranchSelect(selectId, options) {
+	const select = document.getElementById(selectId);
+	select.innerHTML = '<option value="">-- Select Branch --</option>';
 
-let globalReportData = [];             // All loaded data (optional if only paging)
-let globalReportPages = [];            // Page-wise storage
-let currentGlobalPage = 0;
+	options.forEach(opt => {
+		const option = document.createElement("option");
+		option.textContent = opt.text;
+		option.value = opt.value;
+		select.appendChild(option);
+	});
+}
+
+
+// ✅ GLOBAL SEARCH PAGINATED REPORT MODULE — SYNCED WITH BOOKING REPORT UI
+
+let globalReportData = [];
+let globalReportPages = [];
+let globalCurrentPage = 0;
 let globalLastSeenBookingId = null;
-
 let globalFromDate = null;
 let globalToDate = null;
 let globalReportStatus = null;
 
 function generateGlobalBookingReport() {
-  const fromDateRaw = document.getElementById('gFromDate').value;
-  const toDateRaw = document.getElementById('gToDate').value;
-  const status = document.getElementById('reportStatusHidden').value;
+	const from = document.getElementById("gFromDate").value;
+	const to = document.getElementById("gToDate").value;
+	const state = document.getElementById("gRegion").value;
+	const city = document.getElementById("gSubregion")?.value || null;
+	const branchCode = document.getElementById("gBranch")?.value || null;
 
-  if (!fromDateRaw || !toDateRaw) {
-    showCustomAlert("Please select both From and To dates.");
-    return;
-  }
+	if (!from || !to) {
+		showCustomAlert("Please select From and To dates");
+		return;
+	}
 
-  // Reset State
-  globalReportData = [];
-  globalReportPages = [];
-  currentGlobalPage = 0;
-  globalLastSeenBookingId = null;
+	globalReportData = [];
+	globalReportPages = [];
+	globalCurrentPage = 0;
+	globalLastSeenBookingId = null;
+	globalFromDate = `${from}T00:00:00`;
+	globalToDate = `${to}T23:59:59`;
+	globalReportStatus = document.getElementById("gStatus")?.value || null;
 
-  globalFromDate = `${fromDateRaw}T00:00:00`;
-  globalToDate = `${toDateRaw}T23:59:59`;
-  globalReportStatus = status;
+	document.getElementById("globalSearchTableContainer").innerHTML = '';
+	document.getElementById("globalPaginationControls").style.display = "none";
+	document.getElementById("bookingSummaryContainer").innerHTML = "";
 
-  document.getElementById("globalSearchTableContainer").innerHTML = '';
-  document.getElementById("paginationGlobalControls").style.display = 'none';
-
-  loadGlobalReportPage(0);
+	loadGlobalReportPage(0, state, city, branchCode);
 }
 
-function loadGlobalReportPage(pageIndex) {
-  const state = document.getElementById("gRegion")?.value || null;
-  const city = document.getElementById("gSubregion")?.value || null;
-  const branch = document.getElementById("gBranch")?.value || null;
+function loadGlobalReportPage(pageIndex, state, city, branchCode) {
+	if (globalReportPages[pageIndex]) {
+		globalCurrentPage = pageIndex;
+		displayGlobalReportData(globalReportPages[globalCurrentPage]);
+		updateGlobalPageDisplay();
+		document.getElementById("nextGlobalPageButton").disabled = globalReportPages.length <= globalCurrentPage + 1;
+		document.getElementById("prevGlobalPageButton").disabled = globalCurrentPage === 0;
+		return;
+	}
+	city = city && city.trim() !== "" ? city : null;
+	branchCode = branchCode && branchCode.trim() !== "" ? branchCode : null;
 
-  const payload = {
-    fromDate: globalFromDate,
-    toDate: globalToDate,
-   // status: globalReportStatus,
-    lastId: globalLastSeenBookingId,
-    state: state,
-    city: city,
-    branchCode: branch,
-    page: pageIndex
-  };
+	const requestPayload = {
+		fromDate: globalFromDate,
+		toDate: globalToDate,
+		state: state,
+		city: city,
+		branchCode: branchCode,
+		status: globalReportStatus,
+		lastId: globalLastSeenBookingId
+	};
 
-  fetch("/api/bookings/get-Global-Search-Reports", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  })
-    .then(res => res.json())
-    .then(data => {
-      if (data.content && data.content.length > 0) {
-        globalLastSeenBookingId = data.lastId;
-        globalReportPages.push(data.content);
-        currentGlobalPage = globalReportPages.length - 1;
+	fetch("/api/bookings/get-Global-Search-Reports", {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(requestPayload)
+	})
+		.then(res => res.json())
+		.then(data => {
+			if (data.content && data.content.length > 0) {
+				globalLastSeenBookingId = data.content[data.content.length - 1].loadingReciept;
+				globalReportPages.push(data.content);
+				globalCurrentPage = globalReportPages.length - 1;
+				displayGlobalReportData(data.content);
+				updateGlobalPageDisplay();
 
-        renderGlobalReportTable(data.content);
-        renderGlobalBookingSummary(data.content);
-        updateGlobalPageDisplay();
-        document.getElementById("paginationControls").style.display = "block";
-      } else if (globalReportPages.length === 0) {
-        document.getElementById("globalSearchTableContainer").innerHTML = '<p>No Records Found</p>';
-      }
-    })
-    .catch(err => {
-      console.error("Global report load error:", err);
-      document.getElementById("globalSearchTableContainer").innerHTML = '<p>Error loading report.</p>';
-    });
+				document.getElementById("globalPaginationControls").style.display = "block";
+				document.getElementById("nextGlobalPageButton").disabled = false;
+				document.getElementById("prevGlobalPageButton").disabled = globalCurrentPage === 0;
+				
+			} else {
+				document.getElementById("nextGlobalPageButton").disabled = true;
+				if (globalReportData.length === 0) {
+					document.getElementById("globalReportMessage").textContent = "No Records Found";
+					document.getElementById("globalReportMessage").style.display = "block";
+				}
+			}
+		})
+		.catch(error => {
+			console.error("Error fetching global report:", error);
+			document.getElementById("globalReportMessage").textContent = "Error fetching data.";
+			document.getElementById("globalReportMessage").style.display = "block";
+		});
 }
 
-function renderGlobalReportTable(bookings) {
-  const container = document.getElementById("globalSearchTableContainer");
-  if (!container) return;
+function displayGlobalReportData(data) {
+	const container = document.getElementById("globalSearchTableContainer");
+	let table = container.querySelector("table");
+	let tbody;
 
-  let html = `<table class="table table-bordered">
-      <thead class="table-dark">
-        <tr>
-          <th>LoadingReciept</th>
-          <th>Consignor Name</th>
-          <th>Consignor Mobile</th>
-          <th>Consignee Name</th>
-          <th>Consignee Mobile</th>
-          <th>Freight</th>
-          <th>SGST</th>
-          <th>CGST</th>
-          <th>IGST</th>
-          <th>Status</th>
-          <th>Booking Date</th>
-        </tr>
-      </thead>
-      <tbody>`;
-
-  bookings.forEach(b => {
-    html += `<tr>
-      <td>${b.loadingReciept}</td>
-      <td>${b.consignorName}</td>
-      <td>${b.consignorMobile}</td>
-      <td>${b.consigneeName}</td>
-      <td>${b.consigneeMobile}</td>
-      <td>${b.freight || 0}</td>
-      <td>${b.sgst || 0}</td>
-      <td>${b.cgst || 0}</td>
-      <td>${b.igst || 0}</td>
-      <td>${b.consignStatus}</td>
-      <td>${b.bookingDate ? new Date(b.bookingDate).toLocaleDateString() : ''}</td>
-    </tr>`;
-  });
-
-  html += `</tbody></table>`;
-  container.innerHTML = html;
-}
-
-function renderGlobalBookingSummary(bookings) {
-  const container = document.getElementById("globalSearchTableContainer");
-  if (!container) return;
-
-  let totalFreight = 0, totalSGST = 0, totalCGST = 0, totalIGST = 0;
-
-  bookings.forEach(b => {
-    totalFreight += b.freight || 0;
-    totalSGST += b.sgst || 0;
-    totalCGST += b.cgst || 0;
-    totalIGST += b.igst || 0;
-  });
-
-  const grandTotal = totalFreight + totalSGST + totalCGST + totalIGST;
-
-  const html = `
-    <div class="mt-4 text-success text-center fw-bold">BOOKING SUMMARY</div>
-    <table class="table table-bordered">
+	if (table) {
+		tbody = table.querySelector("tbody");
+		tbody.innerHTML = '';
+	} else {
+		table = document.createElement('table');
+		table.className = 'table table-bordered';
+		table.innerHTML = `
       <thead>
         <tr>
-          <th>Total Freight</th>
-          <th>SGST</th>
-          <th>CGST</th>
-          <th>IGST</th>
+          <th>LR No</th>
+          <th>Consignor</th>
+          <th>Consignee</th>
+          <th>Status</th>
+          <th>Booking Date</th>
+          <th>Freight</th>
+          <th>GST</th>
           <th>Grand Total</th>
         </tr>
       </thead>
-      <tbody>
-        <tr>
-          <td>${totalFreight.toFixed(2)}</td>
-          <td>${totalSGST.toFixed(2)}</td>
-          <td>${totalCGST.toFixed(2)}</td>
-          <td>${totalIGST.toFixed(2)}</td>
-          <td>${grandTotal.toFixed(2)}</td>
-        </tr>
-      </tbody>
-    </table>`;
+      <tbody></tbody>`;
+		container.appendChild(table);
+		tbody = table.querySelector("tbody");
+	}
 
-  container.innerHTML += html;
-}
+	data.forEach(b => {
+		const gst = (b.sgst || 0) + (b.cgst || 0) + (b.igst || 0);
+		const total = (b.freight || 0) + gst;
+		const row = document.createElement("tr");
+		row.innerHTML = `
+      <td>${b.loadingReciept}</td>
+      <td>${b.consignorName}</td>
+      <td>${b.consigneeName}</td>
+      <td>${b.consignStatus}</td>
+      <td>${new Date(b.bookingDate).toLocaleDateString()}</td>
+      <td>${b.freight.toFixed(2)}</td>
+      <td>${gst.toFixed(2)}</td>
+      <td>${total.toFixed(2)}</td>`;
+		tbody.appendChild(row);
+	});
 
-function updateGlobalPageDisplay() {
-  document.getElementById("pageCountDisplay").textContent = `Page ${currentGlobalPage + 1}`;
+	globalReportData = [...globalReportData, ...data];
+
+	if (globalCurrentPage === globalReportPages.length - 1 || globalReportPages.length === 1) {
+		displayGlobalSearchBookingSummary(data, "globalBookingSummaryContainer");
+	}
 }
 
 function nextGlobalPage() {
-  loadGlobalReportPage(currentGlobalPage + 1);
+	const state = document.getElementById("gRegion").value;
+	const city = document.getElementById("gSubregion").value;
+	const branchCode = document.getElementById("gBranch").value;
+	loadGlobalReportPage(globalCurrentPage + 1, state, city, branchCode);
 }
+
 function prevGlobalPage() {
-  if (currentGlobalPage > 0) {
-    currentGlobalPage--;
-    renderGlobalReportTable(globalReportPages[currentGlobalPage]);
-    renderGlobalBookingSummary(globalReportPages[currentGlobalPage]);
-    updateGlobalPageDisplay();
-  }
+	if (globalCurrentPage > 0) {
+		globalCurrentPage--;
+		displayGlobalReportData(globalReportPages[globalCurrentPage]);
+		updateGlobalPageDisplay();
+	}
+}
+
+function updateGlobalPageDisplay() {
+	const totalPages = globalReportPages.length;
+	const display = `Page ${globalCurrentPage + 1} of ${totalPages}`;
+	const displayElem = document.getElementById("globalPageNumberDisplay");
+	if (displayElem) displayElem.textContent = display;
+}
+
+
+function displayGlobalSearchBookingSummary(dataArray, containerId = "bookingSummaryContainer") {
+	const container = document.getElementById(containerId);
+	if (!container) return;
+	container.innerHTML = "";
+
+	const summary = {
+		auto: { freight: 0, gst: 0, grandTotal: 0 },
+		manual: { freight: 0, gst: 0, grandTotal: 0 },
+		total: { freight: 0, gst: 0, grandTotal: 0 }
+	};
+
+	dataArray.forEach(row => {
+		const type = row.bookingtype?.toLowerCase() === "manual" ? "manual" : "auto";  // <- updated
+		const freight = Number(row.freight || 0);
+		const sgst = Number(row.sgst || 0);
+		const cgst = Number(row.cgst || 0);
+		const igst = Number(row.igst || 0);
+		const gst = sgst + cgst + igst;
+		const grandTotal = freight + gst;
+
+		summary[type].freight += freight;
+		summary[type].gst += gst;
+		summary[type].grandTotal += grandTotal;
+
+		summary.total.freight += freight;
+		summary.total.gst += gst;
+		summary.total.grandTotal += grandTotal;
+	});
+
+	const html = `
+		<div class="mt-4">
+			<h5 class="text-center text-success">BOOKING SUMMARY</h5>
+			<table class="table table-bordered text-center">
+				<thead class="table-light">
+					<tr>
+						<th>Type</th>
+						<th>Total Freight</th>
+						<th>GST (SGST+CGST+IGST)</th>
+						<th>Grand Total</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td>Auto</td>
+						<td>${summary.auto.freight.toFixed(2)}</td>
+						<td>${summary.auto.gst.toFixed(2)}</td>
+						<td>${summary.auto.grandTotal.toFixed(2)}</td>
+					</tr>
+					<tr>
+						<td>Manual</td>
+						<td>${summary.manual.freight.toFixed(2)}</td>
+						<td>${summary.manual.gst.toFixed(2)}</td>
+						<td>${summary.manual.grandTotal.toFixed(2)}</td>
+					</tr>
+					<tr class="table-danger fw-bold">
+						<td>Total</td>
+						<td>${summary.total.freight.toFixed(2)}</td>
+						<td>${summary.total.gst.toFixed(2)}</td>
+						<td>${summary.total.grandTotal.toFixed(2)}</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	`;
+
+	container.innerHTML = html;
 }
 
 

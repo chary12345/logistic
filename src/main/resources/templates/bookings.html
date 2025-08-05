@@ -394,13 +394,24 @@
 
 		<div id="globalSearchTableContainer" class="mt-4"
 			style="overflow-x: auto;"></div>
+		<div id="globalPaginationControls" class="text-center mt-3"
+			style="display: none;">
+			<button class="btn btn-secondary me-2" onclick="prevGlobalPage()"
+				id="prevGlobalPageButton">Prev</button>
+			<span id="globalPageNumberDisplay" style="font-weight: bold;">Page
+				1 of 1</span>
+			<button class="btn btn-primary ms-2" onclick="nextGlobalPage()"
+				id="nextGlobalPageButton">Next</button>
+		</div>
+		
+		
+	<!-- Booking summary (optional) -->
+	<div id="globalBookingSummaryContainer" class="mt-4"></div>
+		
 	</div>
-	<div id="paginationGlobalControls"
-		style="display: none; text-align: center; margin-top: 15px;">
-		<button onclick="prevGlobalPage()">Prev</button>
-		<span id="pageCountDisplay">Page 1</span>
-		<button onclick="nextGlobalPage()">Next</button>
-	</div>
+
+
+
 	<div id="CreateBranchContainer"
 		style="display: flex; justify-content: center; align-items: center; height: 50vh; padding: 10px; overflow: visible;">
 		<!-- Toast Container -->
