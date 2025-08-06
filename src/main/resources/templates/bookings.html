@@ -797,5 +797,16 @@
 		src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 	<script src="/js/bookings.js"></script>
+	
+	<!-- All HTML here -->
+
+	<script>
+	  window.addEventListener('DOMContentLoaded', () => {
+	    const today = new Date().toISOString().split('T')[0];
+	    document.getElementById('gFromDate').setAttribute('max', today);
+	    document.getElementById('gToDate').setAttribute('max', today);
+	  });
+	</script>
+	
 </body>
 </html>
