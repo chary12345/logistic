@@ -549,4 +549,9 @@ report-form {
 span.badge {
   cursor: pointer;
 }
-  
+
+#globalSearchFormContainer {
+	max-height: calc(100vh - 120px);
+	overflow-y: auto;
+	padding-bottom: 80px;
+}
