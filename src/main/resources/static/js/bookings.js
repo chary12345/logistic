@@ -2064,60 +2064,202 @@ document.getElementById('gRegion').addEventListener('change', async (e) => {
 	}
 });
 
-document.getElementById('gSubregion').addEventListener('change', async (e) => {
-	const region = document.getElementById('gRegion').value;
-	const subregion = e.target.value;
-	document.getElementById('gBranch').innerHTML = '<option value="">-- Select Branch --</option>';
-	if (region && subregion) {
+document.getElementById("gSubregion").addEventListener("change", async (e) => {
+	const region = document.getElementById("gRegion")?.value?.trim();
+	const subregion = e.target.value?.trim();
+
+	// ✅ Check if both selected
+	if (!region || !subregion) return;
+
+	try {
 		const res = await fetch(`/region/branches?region=${encodeURIComponent(region)}&subRegion=${encodeURIComponent(subregion)}`);
-		const list = await res.json();
-		list.forEach(r => document.getElementById('gBranch').add(new Option(r, r)));
+		const data = await res.json();
+
+		// 🔄 Format: "BranchName-CODE" → { text: BranchName, value: CODE }
+		const formatted = data.map(item => {
+			const [name, code] = item.split("-");
+			return {
+				text: name.trim(),
+				value: code.trim()
+			};
+		});
+
+		fillBranchSelect("gBranch", formatted);
+	} catch (err) {
+		console.error("Failed to load branches:", err);
 	}
 });
 
-async function findGlobalSearch() {
-	const payload = {
-		from: document.getElementById('gFromDate').value,
-		to: document.getElementById('gToDate').value,
-		region: document.getElementById('gRegion').value || null,
-		subRegion: document.getElementById('gSubregion').value || null,
-		branch: document.getElementById('gBranch').value || null
-	};
+function fillBranchSelect(selectId, options) {
+	const select = document.getElementById(selectId);
+	select.innerHTML = '<option value="">-- Select Branch --</option>';
 
-	const res = await fetch('/api/lr-paid-statement/search', {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify(payload)
+	options.forEach(opt => {
+		const option = document.createElement("option");
+		option.textContent = opt.text;
+		option.value = opt.value;
+		select.appendChild(option);
 	});
-	const data = await res.json();
-
-	const container = document.getElementById('globalSearchTableContainer');
-	container.innerHTML = '';
-	if (data.length === 0) {
-		container.innerHTML = '<p>No records found.</p>';
-		return;
-	}
-
-	let html = '<table class="table table-bordered"><thead><tr>' +
-		'<th>Paid Date</th><th>LR Number</th><th>Amount</th><th>Region</th><th>Sub-Region</th><th>Branch</th>' +
-		'</tr></thead><tbody>';
-	data.forEach(r => {
-		html += `<tr><td>${r.paidDate}</td><td>${r.lrNumber}</td><td>${r.amount}</td><td>${r.region}</td><td>${r.subRegion}</td><td>${r.branch}</td></tr>`;
-	});
-	html += '</tbody></table>';
-	container.innerHTML = html;
 }
+
+let globalLastSeenBookingId = null;
+let globalAllData = [];
+let globalHasMore = true;
+let globalIsLoading = false;
+
+function generateGlobalBookingReport() {
+  const from = document.getElementById("gFromDate").value;
+  const to = document.getElementById("gToDate").value;
+  const state = document.getElementById("gRegion").value;
+  const city = document.getElementById("gSubregion")?.value || null;
+  const branchCode = document.getElementById("gBranch")?.value || null;
+
+  if (!from || !to) {
+    alert("Please select From and To dates");
+    return;
+  }
+
+  globalLastSeenBookingId = null;
+  globalAllData = [];
+  globalHasMore = true;
+  globalIsLoading = false;
+
+  document.getElementById("globalSearchTableContainer").innerHTML = "";
+  document.getElementById("globalBookingSummaryContainer").innerHTML = "";
+
+  loadMoreGlobalData({ from, to, state, city, branchCode });
+}
+
+function loadMoreGlobalData(filters) {
+  if (!globalHasMore || globalIsLoading) return;
+  globalIsLoading = true;
+  document.getElementById("globalLoadingIndicator").style.display = "block";
+
+  const payload = {
+    fromDate: filters.from + "T00:00:00",
+    toDate: filters.to + "T23:59:59",
+    state: filters.state,
+    city: filters.city,
+    branchCode: filters.branchCode,
+    lastId: globalLastSeenBookingId
+  };
+
+  fetch("/api/bookings/get-Global-Search-Reports", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  })
+    .then((res) => res.json())
+    .then((response) => {
+      const data = response.content || [];
+      if (!Array.isArray(data) || data.length === 0) {
+        globalHasMore = false;
+        if (globalAllData.length > 0) showGlobalSummary(globalAllData);
+        return;
+      }
+
+      globalLastSeenBookingId = response.lastId || null;
+      globalAllData.push(...data);
+      appendGlobalUI(data);
+    })
+    .catch((err) => console.error("Error fetching global data:", err))
+    .finally(() => {
+      globalIsLoading = false;
+      document.getElementById("globalLoadingIndicator").style.display = "none";
+    });
+}
+
+function appendGlobalUI(data) {
+  const container = document.getElementById("globalSearchTableContainer");
+  let table = container.querySelector("table");
+
+  if (!table) {
+    table = document.createElement("table");
+    table.className = "table table-bordered table-striped";
+    table.innerHTML = `
+      <thead class="table-light">
+        <tr>
+          <th>LR No</th>
+          <th>Consignor</th>
+          <th>Consignee</th>
+          <th>Branch</th>
+          <th>Freight</th>
+          <th>Booking Date</th>
+        </tr>
+      </thead>
+      <tbody></tbody>`;
+    container.appendChild(table);
+  }
+
+  const tbody = table.querySelector("tbody");
+  data.forEach((item) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${item.loadingReciept}</td>
+      <td>${item.consignorName}</td>
+      <td>${item.consigneeName}</td>
+      <td>${item.branchCode}</td>
+      <td>${item.freight}</td>
+      <td>${new Date(item.bookingDate).toLocaleDateString()}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function showGlobalSummary(data) {
+  let totalFreight = 0, totalGST = 0, grandTotal = 0;
+  data.forEach((row) => {
+    const freight = Number(row.freight || 0);
+    const gst = Number(row.sgst || 0) + Number(row.cgst || 0) + Number(row.igst || 0);
+    totalFreight += freight;
+    totalGST += gst;
+    grandTotal += freight + gst;
+  });
+
+  document.getElementById("globalBookingSummaryContainer").innerHTML = `
+    <h5 class="text-center text-success">Booking Summary</h5>
+    <table class="table table-bordered text-center">
+      <thead class="table-light">
+        <tr>
+          <th>Total Freight</th>
+          <th>Total GST</th>
+          <th>Grand Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>${totalFreight.toFixed(2)}</td>
+          <td>${totalGST.toFixed(2)}</td>
+          <td>${grandTotal.toFixed(2)}</td>
+        </tr>
+      </tbody>
+    </table>`;
+}
+
+document.getElementById("globalSearchTableWrapper").addEventListener("scroll", () => {
+  const el = document.getElementById("globalSearchTableWrapper");
+  if (el.scrollTop + el.clientHeight >= el.scrollHeight - 10 && globalHasMore && !globalIsLoading) {
+    const from = document.getElementById("gFromDate").value;
+    const to = document.getElementById("gToDate").value;
+    const state = document.getElementById("gRegion").value;
+    const city = document.getElementById("gSubregion")?.value || null;
+    const branchCode = document.getElementById("gBranch")?.value || null;
+    loadMoreGlobalData({ from, to, state, city, branchCode });
+  }
+});
 
 function resetGlobalSearch() {
-	document.getElementById('gFromDate').value = '';
-	document.getElementById('gToDate').value = '';
-	document.getElementById('gRegion').value = '';
-	document.getElementById('gSubregion').innerHTML = '<option value="">-- Select Sub-region --</option>';
-	document.getElementById('gBranch').innerHTML = '<option value="">-- Select Branch --</option>';
-	document.getElementById('globalSearchTableContainer').innerHTML = '';
+  document.getElementById('gFromDate').value = '';
+  document.getElementById('gToDate').value = '';
+  document.getElementById('gRegion').value = '';
+  document.getElementById('gSubregion').innerHTML = '<option value="">-- Select Sub-region --</option>';
+  document.getElementById('gBranch').innerHTML = '<option value="">-- Select Branch --</option>';
+  document.getElementById('globalSearchTableContainer').innerHTML = '';
+  document.getElementById('globalBookingSummaryContainer').innerHTML = '';
+  globalAllData = [];
+  globalLastSeenBookingId = null;
+  globalHasMore = true;
+  globalIsLoading = false;
 }
-
-
 
 // View-Only Mode Upgrade: In-place editing of LR
 

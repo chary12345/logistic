@@ -18,7 +18,8 @@ import jakarta.transaction.Transactional;
 public interface BookRepository extends JpaRepository<Booking, String> {
 	@Query("SELECT b FROM Booking b WHERE b.bookingDate BETWEEN :fromDate AND :toDate or b.consignStatus = :status AND b.BranchCode= :branchCode ORDER BY b.bookingDate DESC")
 	List<Booking> findByBookingDateBetween(@Param("fromDate") LocalDateTime fromDate,
-			@Param("toDate") LocalDateTime toDate, @Param("status") String status, @Param("branchCode") String branchCode);
+			@Param("toDate") LocalDateTime toDate, @Param("status") String status,
+			@Param("branchCode") String branchCode);
 
 	@Query("SELECT b FROM Booking b WHERE b.bookingDate BETWEEN :from AND :to AND b.consignStatus = :status AND b.BranchCode= :branchCode ORDER BY b.bookingDate DESC")
 	List<Booking> findFirstPage(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to,
@@ -51,5 +52,31 @@ public interface BookRepository extends JpaRepository<Booking, String> {
 	List<Booking> findBookingsByFilter(@Param("fromDate") String fromDate, @Param("toDate") String toDate,
 			@Param("status") String status, @Param("region") String region, @Param("subregion") String subregion,
 			@Param("branchCode") String branchCode, @Param("employeeName") String employeeName);
+
+	@Query("SELECT DISTINCT (TRIM(r.id.branchCode)) " + "FROM RegionMasterDto r "
+			+ "WHERE (:state IS NULL OR (TRIM(r.id.region)) = (TRIM(:state))) "
+			+ "AND (:city IS NULL OR (TRIM(r.id.subRegion)) = (TRIM(:city))) "
+			+ "AND (:branchCode IS NULL OR (TRIM(r.id.branchCode)) = (TRIM(:branchCode)))")
+	List<String> getlistofBranchcodes(@Param("city") String city, @Param("state") String state,
+			@Param("branchCode") String branchCode);
+
+	@Query("SELECT b FROM Booking b " +
+		       "WHERE b.bookingDate BETWEEN :fromDate AND :toDate " +
+		       "AND b.BranchCode IN (:branchCodes) " +
+		       "AND (:status IS NULL OR b.consignStatus = :status) " +
+		       "AND (:lastId IS NULL OR b.loadingReciept < :lastId) " +
+		       "ORDER BY b.bookingDate DESC")
+		List<Booking> searchBookings(
+		    @Param("fromDate") LocalDateTime fromDate,
+		    @Param("toDate") LocalDateTime toDate,
+		    @Param("status") String status,
+		    @Param("lastId") String lastId,
+		    @Param("branchCodes") List<String> branchCodes,
+		    Pageable pageable
+		);
+
+
+//	List<String> getlistofBranchcodes(@Param("city") String city, @Param("state") String state, @Param("branchCode") String branchCode);
+//	List<String> getlistofBranchcodes(String city, String state, String branchCode);
 
 }
