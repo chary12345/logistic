@@ -1,7 +1,6 @@
 package com.logic.logistic.controller;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +21,7 @@ import com.logic.logistic.dto.BookingSearchRequest;
 import com.logic.logistic.model.BookingDTO;
 import com.logic.logistic.model.BookingPageResponse;
 import com.logic.logistic.model.DispatchRequest;
+import com.logic.logistic.model.DispatchResponse;
 import com.logic.logistic.service.BookingService;
 
 @RestController
@@ -88,11 +88,10 @@ public class BookingController {
 	 */
 	
 	@PostMapping("/dispatchLoad")
-	public ResponseEntity<List<Booking>> dispatchLoad(@RequestBody DispatchRequest request) {
-	    List<Booking> dispatched = bookingService.dispatchLoad(request);
-	    return ResponseEntity.ok(dispatched);
+	public ResponseEntity<DispatchResponse> dispatchLoad(@RequestBody DispatchRequest request) {
+	    DispatchResponse result = bookingService.dispatchLoad(request);
+	    return ResponseEntity.ok(result);
 	}
-
 	@GetMapping("/searchBylr")
 	public ResponseEntity<?> searchByLR(@RequestParam String lr) {
 		try {

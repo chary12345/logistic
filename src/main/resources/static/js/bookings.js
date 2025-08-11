@@ -64,17 +64,12 @@ function showOperationSearchForm(status) {
 	}
 }
 
-function showAssociateVehicleModal() {
-	loadVehicleDropdown();
-	loadBranchesDropdown();
-	const modal = new bootstrap.Modal(document.getElementById("associateVehicleModal"));
-	modal.show();
-}
-
 function showVehicleManageForm() {
 	hideAllForms();
 	document.getElementById("vehicleManageContainer").style.display = "block";
 }
+
+
 
 document.getElementById("branchForm").addEventListener("submit", async function(e) {
 	e.preventDefault();
@@ -983,7 +978,7 @@ document.getElementById("bookingForm").addEventListener("submit", async function
 	event.preventDefault();
 
 	const deliveryInput = document.getElementById("deliveryDestination").value;
-	const match = deliveryInput.match(/\(([^)]+)\)/); // Extract code from "(CODE)"
+	const match = deliveryInput.match(/\(([^)]+)\)/); // Extract code from "(CODE)" 
 	const selectedBranchCode = match ? match[1] : null;
 
 	const currentBranchCode = userData?.companyAndBranchDeatils?.branchCode;
@@ -1065,6 +1060,15 @@ document.getElementById("bookingForm").addEventListener("submit", async function
 		alert("Failed to save booking.");
 	}
 });
+
+ document.addEventListener("DOMContentLoaded", function () {
+    $('#deliveryDestination').select2({
+      placeholder: "search for destination branch here..",
+      allowClear: true,
+      width: '100%'
+    });
+  });
+
 function resetPaymentModeUI() {
 	const hiddenInput = document.getElementById("paymentMode");
 	const displayBox = document.getElementById("selectedPaymentModeDisplay");
@@ -1237,12 +1241,30 @@ function changePassword() {
 		return;
 	}
 
+// AES encryption key and IV (must match backend)
+	const key = CryptoJS.enc.Utf8.parse("1234567890123456");
+	const iv = CryptoJS.enc.Utf8.parse("abcdefghijklmnop");
+
+	// Encrypt the newPassword
+	const encryptedNewPassword = CryptoJS.AES.encrypt(newPassword, key, {
+		iv: iv,
+		mode: CryptoJS.mode.CBC,
+		padding: CryptoJS.pad.Pkcs7
+	}).toString();
+	
+	// Encrypt the currentPassword
+	const encryptedCurrentPassword = CryptoJS.AES.encrypt(currentPassword, key, {
+		iv: iv,
+		mode: CryptoJS.mode.CBC,
+		padding: CryptoJS.pad.Pkcs7
+	}).toString();
+
 	fetch('/api/change-password', {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json'
 		},
-		body: JSON.stringify({ username: username, currentPassword: currentPassword, newPassword: newPassword })
+		body: JSON.stringify({ username: username, currentPassword: encryptedCurrentPassword, newPassword: encryptedNewPassword })
 	})
 		.then(response => response.json())
 		.then(data => {
@@ -1345,18 +1367,20 @@ document.getElementById("deliveryDestination").addEventListener("focus", loadBra
 
 
 
-// Function to validate GST number
+// Proper GST format validation (15-character format)
 function validateGST(gstInputId) {
 	const gstInput = document.getElementById(gstInputId);
-	const gstValue = gstInput.value.trim(); // Trim whitespace
-	const gstPattern = /^[0-9]{10}$/; // Correct regular expression for 10 digits
+	const gstValue = gstInput.value.trim().toUpperCase(); // Normalize to uppercase
 
-	if (!gstPattern.test(gstValue)) {
-		alert("Invalid GST number.");
-		gstInput.value = ""; // Clear the invalid input
-		return false; // Indicate validation failure
+	const gstPattern = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+
+	if (gstValue && !gstPattern.test(gstValue)) {
+		alert("Invalid GST number format.");
+		gstInput.value = "";
+		gstInput.focus();
+		return false;
 	}
-	return true; // Indicate validation success
+	return true;
 }
 
 // Add event listeners to the GST input fields
@@ -1401,24 +1425,86 @@ function dispatchSelected(vehicleDetails = {}) {
 		});
 }
 
-function openPrintWindow(bookings) {
+function openPrintWindow(response) {
+	const { bookings, loadingSheet } = response;
 	const printWindow = window.open('', '', 'width=1000,height=700');
+
+
+	const companyName = userData?.companyAndBranchDeatils?.companyName || "";
+	const branchName = userData?.companyAndBranchDeatils?.branchName || "";
+	const branchCode = userData?.companyAndBranchDeatils?.branchCode || "";
 
 	let html = `
     <html>
     <head>
       <title>Dispatched Booking Report</title>
       <style>
-        body { font-family: Arial, sans-serif; padding: 20px; }
-        h2 { text-align: center; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #000; padding: 8px; text-align: left; font-size: 13px; }
-        th { background-color: #f2f2f2; }
+        body { font-family: Arial, sans-serif; padding: 20px; margin: 0; }
+        h2, h3 { text-align: center; margin: 0; }
+        .top-header { margin-bottom: 20px; }
+        .sheet-box {
+          border: 1px solid #000;
+          padding: 10px;
+          margin: 0 auto 20px auto;
+          width: 100%;
+          box-sizing: border-box;
+        }
+        .sheet-box table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+        .sheet-box td {
+          border: 1px solid #000;
+          padding: 6px;
+          font-size: 13px;
+        }
+        .row-no-border td {
+          border: none !important;
+          padding-bottom: 4px;
+        }
+        table.bookings-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 20px;
+        }
+        table.bookings-table th, table.bookings-table td {
+          border: 1px solid #000;
+          padding: 8px;
+          text-align: left;
+          font-size: 13px;
+        }
+        table.bookings-table th {
+          background-color: #f2f2f2;
+        }
       </style>
     </head>
     <body>
-      <h2>Dispatched Bookings Report</h2>
-      <table>
+      <div class="top-header">
+<div><strong>${userData.companyAndBranchDeatils.companyName}</strong></div>
+				<div>${userData.companyAndBranchDeatils.branchName}</div>
+      </div>
+
+      <div class="sheet-box">
+        <h3 style="text-align: center; margin-bottom: 10px;">Loading Sheet</h3>
+        <table>
+          <tr class="row-no-border">
+            <td colspan="3"><strong>From:</strong> ${branchName} &nbsp;&nbsp;&nbsp;&nbsp; <strong>To:</strong> ${loadingSheet.destinationBranch}</td>
+          </tr>
+          <tr>
+            <td><strong>LS No:</strong> ${loadingSheet.loadingSheetNumber}</td>
+            <td><strong>Vehicle No:</strong> ${loadingSheet.vehicleNumber}</td>
+            <td><strong>Vehicle Name:</strong> ${loadingSheet.vehicleName}</td>
+          </tr>
+          <tr>
+            <td><strong>Driver:</strong> ${loadingSheet.driverName}</td>
+            <td><strong>Phone:</strong> ${loadingSheet.driverPhone}</td>
+            <td><strong>Date:</strong> ${new Date().toLocaleDateString()}</td>
+          </tr>
+        </table>
+      </div>
+
+      <h3 style="margin-top: 40px;">Dispatched Bookings</h3>
+      <table class="bookings-table">
         <thead>
           <tr>
             <th>LoadingReciept</th>
@@ -1427,23 +1513,22 @@ function openPrintWindow(bookings) {
             <th>Freight</th>
             <th>Status</th>
             <th>Dispatched Date</th>
-            <th>Payment Mode</th>
+            <th>Lr Type</th>
           </tr>
         </thead>
         <tbody>`;
 
 	bookings.forEach(booking => {
 		html += `
-      <tr>
-        <td>${booking.loadingReciept}</td>
-        <td>${booking.consignorName}</td>
-        <td>${booking.consigneeName}</td>
-        <td>${booking.freight}</td>
-        <td>${booking.consignStatus}</td>
-        <td>${booking.dispatchedDate ? new Date(booking.dispatchedDate).toLocaleString() : ''}</td>
-         <td>${booking.billType}</td>
-      </tr>
-    `;
+          <tr>
+            <td>${booking.loadingReciept}</td>
+            <td>${booking.consignorName}</td>
+            <td>${booking.consigneeName}</td>
+            <td>${booking.freight}</td>
+            <td>${booking.consignStatus}</td>
+            <td>${booking.dispatchDate ? new Date(booking.dispatchDate).toLocaleString() : ''}</td>
+            <td>${booking.billType}</td>
+          </tr>`;
 	});
 
 	html += `
@@ -1461,6 +1546,9 @@ function openPrintWindow(bookings) {
 	printWindow.document.write(html);
 	printWindow.document.close();
 }
+
+
+
 
 function showCreateEmployeeForm() {
 	hideAllForms();
@@ -2403,7 +2491,7 @@ async function loadOperationDropdowns() {
 		fillSelect("opRegion", regions);
 		fillSelect("opSubregion", []);
 		fillSelect("opBranch", []);
-		fillSelect("opEmployee", []); // initially empty
+
 	} catch (e) {
 		console.error("Dropdowns load error:", e);
 	}
@@ -2535,7 +2623,7 @@ async function submitOperationReport() {
 		if (data?.length) {
 			displayopsBookingSummary(data);
 		}
-
+		updateDispatchButtonState();
 	} catch (err) {
 		console.error("Operation report error:", err);
 		document.getElementById("operationResultContainer").innerHTML = "<div class='text-danger'>Error loading report</div>";
@@ -2613,7 +2701,7 @@ function renderOperationReportTable(bookings) {
 	// Reset button initially
 	if (dispatchBar) {
 		dispatchBar.style.display = "none";
-		dispatchBar.disabled = true;
+		//dispatchBar.disabled = true;
 	}
 
 	const checkboxes = document.querySelectorAll(".bookingCheckbox");
@@ -2622,7 +2710,7 @@ function renderOperationReportTable(bookings) {
 			const anyChecked = document.querySelectorAll(".bookingCheckbox:checked").length > 0;
 			if (dispatchBar) {
 				dispatchBar.style.display = anyChecked ? "inline-block" : "none";
-				dispatchBar.disabled = !anyChecked;
+				//dispatchBar.disabled = !anyChecked;
 			}
 		});
 	});
@@ -2716,11 +2804,6 @@ function displayopsBookingSummary(bookings) {
 	`;
 
 	container.innerHTML = html;
-
-	// Optional: scroll into view
-	setTimeout(() => {
-		container.scrollIntoView({ behavior: "smooth", block: "start" });
-	}, 100);
 }
 
 
@@ -2753,25 +2836,70 @@ function clearUnifiedFilters() {
 }
 
 
-//dispatch with vehicle
+function updateDispatchButtonState() {
+	const checkboxes = document.querySelectorAll(".bookingCheckbox:checked");
+	selectedLrNumbers = Array.from(checkboxes).map(cb => cb.value); // ✅ Always update global
 
-function submitVehicleDetails() {
+	const dispatchBtn = document.getElementById("dispatchActionBar");
+	if (dispatchBtn) {
+		dispatchBtn.style.display = selectedLrNumbers.length > 0 ? "inline-block" : "none";
+	}
+}
+
+
+document.addEventListener("change", function(e) {
+	if (e.target.classList.contains("bookingCheckbox") || e.target.id === "selectAll") {
+		updateDispatchButtonState();
+	}
+});
+
+// ✅ Global variable to track selected LRs
+let selectedLrNumbers = [];
+
+/*// ✅ Dispatch Selected button click handler
+function dispatchSelected() {
+	const checkboxes = document.querySelectorAll(".bookingCheckbox:checked");
+	selectedLrNumbers = Array.from(checkboxes).map(cb => cb.value);
+
+	if (selectedLrNumbers.length === 0) {
+		showCustomAlert("Please select at least one booking.");
+		return;
+	}
+
+	showAssociateVehicleModal();
+}
+*/
+// ✅ Open the vehicle info modal
+function showAssociateVehicleModal() {
+	const checkboxes = document.querySelectorAll(".bookingCheckbox:checked");
+	selectedLrNumbers = Array.from(checkboxes).map(cb => cb.value);
+	if (!selectedLrNumbers || selectedLrNumbers.length === 0) {
+		showCustomAlert("Please select at least one booking.");
+		return;
+	}
+
+	loadVehicleDropdown();
+	loadBranchesDropdown();
+
+	const modal = new bootstrap.Modal(document.getElementById("associateVehicleModal"));
+	modal.show();
+}
+
+// ✅ Handle vehicle form submission and dispatch
+function submitDispatchAlongWithVehicleDetails() {
+	if (!selectedLrNumbers || selectedLrNumbers.length === 0) {
+		showCustomAlert("No bookings selected for dispatch.");
+		return;
+	}
+
 	const vehicleNumber = document.getElementById("truckNumber").value.trim();
 	const vehicleName = document.getElementById("vehicleName").value.trim();
 	const driverName = document.getElementById("driverName").value.trim();
 	const driverPhone = document.getElementById("driverPhone").value.trim();
-	const destinationBranch = document.getElementById("destinationBranch").value.trim();
-
-	const selectedLrIds = Array.from(document.querySelectorAll(".bookingCheckbox:checked"))
-		.map(cb => cb.value);
+	const destinationBranch = document.getElementById("destinationBranchInput").value.trim();
 
 	if (!vehicleNumber || !driverName || !driverPhone || !destinationBranch) {
-		alert("Please fill all vehicle & driver details.");
-		return;
-	}
-
-	if (selectedLrIds.length === 0) {
-		alert("Please select at least one booking.");
+		showCustomAlert("Please fill all vehicle & driver details.");
 		return;
 	}
 
@@ -2781,7 +2909,7 @@ function submitVehicleDetails() {
 		destinationBranch,
 		driverName,
 		driverPhone,
-		lrIds: selectedLrIds
+		lrIds: selectedLrNumbers
 	};
 
 	fetch("/api/bookings/dispatchLoad", {
@@ -2790,28 +2918,23 @@ function submitVehicleDetails() {
 		body: JSON.stringify(payload)
 	})
 		.then(async res => {
-			if (!res.ok) {
-				const errorMsg = await res.text();
-				throw new Error(errorMsg || "Dispatch failed");
-			}
-
+			if (!res.ok) throw new Error(await res.text());
 			const data = await res.json();
 
-			if (!data || !Array.isArray(data) || data.length === 0) {
-				alert("Dispatch failed: No bookings were dispatched.");
+			if (!data || !Array.isArray(data.bookings) || data.bookings.length === 0) {
+				showCustomAlert("Dispatch failed: No bookings dispatched.");
 				return;
 			}
-			// optionally open loading sheet
-			openPrintWindow(data);
 
-			// hide modal and reset form
+			openPrintWindow(data); // includes bookings + loadingSheet
 			bootstrap.Modal.getInstance(document.getElementById("associateVehicleModal")).hide();
 			document.getElementById("associateVehicleForm").reset();
 			submitOperationReport();
 		})
+
 		.catch(err => {
 			console.error("Dispatch error:", err);
-			alert("Error dispatching bookings.");
+			showCustomAlert("Error dispatching bookings.");
 		});
 }
 
@@ -2983,4 +3106,99 @@ function protectPage() {
 	}
 }
 
+
+// ✅ Friendship Day popup - only August 1st
+window.addEventListener("DOMContentLoaded", () => {
+	const today = new Date();
+	const isFriendshipDay = today.getMonth() === 7 && today.getDate() === 3; // August 1
+
+	if (isFriendshipDay) {
+		setTimeout(() => showFriendshipPopup(), 300);
+	}
+});
+
+function showFriendshipPopup() {
+	// Blur background
+	document.getElementById("mainContainer")?.classList.add("blur-friend");
+
+	// Create overlay
+	const overlay = document.createElement("div");
+	overlay.id = "friendshipPopup";
+	overlay.style.cssText = `
+		position: fixed;
+		top: 0; left: 0;
+		width: 100vw; height: 100vh;
+		background: rgba(0, 0, 0, 0.85);
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		z-index: 9999;
+	`;
+
+	overlay.innerHTML = `
+		<div style="text-align: center; animation: popIn 0.8s ease-out;">
+			<div style="font-size: 70px;">🎁</div>
+			<h1 style="color: #fff; font-size: 28px;">Happy Friendship Day!</h1>
+			<p style="color: #ddd;">Thanks for being an awesome user 🤝</p>
+			<button style="
+				margin-top: 20px;
+				padding: 10px 25px;
+				font-size: 16px;
+				color: white;
+				background: #ff69b4;
+				border: none;
+				border-radius: 5px;
+				cursor: pointer;">Let's Start</button>
+		</div>
+	`;
+
+	document.body.appendChild(overlay);
+
+	// Close on button click
+	overlay.querySelector("button").addEventListener("click", () => {
+		overlay.remove();
+		document.getElementById("mainContainer")?.classList.remove("blur-friend");
+	});
+
+	addFloatingStars(overlay);
+}
+
+// Floating stars effect
+function addFloatingStars(container) {
+	for (let i = 0; i < 40; i++) {
+		const star = document.createElement("div");
+		star.classList.add("floating-star");
+		star.style.left = `${Math.random() * 100}vw`;
+		star.style.top = `${Math.random() * 100}vh`;
+		container.appendChild(star);
+	}
+}
+
+// Star + Blur style
+const style = document.createElement("style");
+style.textContent = `
+@keyframes floatUp {
+	0% { transform: translateY(0); opacity: 1; }
+	100% { transform: translateY(-100vh); opacity: 0; }
+}
+@keyframes popIn {
+	from { transform: scale(0.7); opacity: 0; }
+	to { transform: scale(1); opacity: 1; }
+}
+.floating-star {
+	position: fixed;
+	width: 6px;
+	height: 6px;
+	background: gold;
+	border-radius: 50%;
+	animation: floatUp 6s linear infinite;
+	z-index: 9999;
+}
+.blur-friend {
+	filter: blur(6px);
+	pointer-events: none;
+	user-select: none;
+}
+`;
+document.head.appendChild(style);
 
