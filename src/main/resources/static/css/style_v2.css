@@ -550,6 +550,40 @@ span.badge {
   cursor: pointer;
 }
 
+#globalSearchFormContainer {
+	max-height: calc(100vh - 120px);
+	overflow-y: auto;
+	padding-bottom: 80px;
+}
+
+.table-container {
+  max-height: 400px;      /* Set desired height */
+  overflow-y: auto;
+  border: 1px solid #ccc;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead th {
+  position: sticky;
+  top: 0;
+  background-color: #f5f5f5;
+  z-index: 10;
+  border-bottom: 2px solid #ccc;
+  padding: 10px;
+  /*text-align: left;*/
+  text-align: center;
+}
+
+td {
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+  white-space: nowrap;
+}
+
 /* Apply 85% scaling to all form containers for layout compactness */
 #bookingFormContainer,
 #CreateBranchContainer,
@@ -598,3 +632,4 @@ span.badge {
   padding: 4px 8px;
   height: auto;
 }
+

@@ -362,48 +362,59 @@
 		</form>
 	</div>
 
-	<div id="globalSearchFormContainer" class="report-form"
-		style="display: none; padding-bottom: 100px; overflow-y: auto; max-height: calc(100vh - 120px);">
-		<h3>Global Search Report</h3>
-		<div class="row g-3 align-items-center">
-			<div class="col-md-3">
-				<label for="gFromDate" class="form-label">From Date</label> <input
-					type="date" id="gFromDate" class="form-control">
-			</div>
-			<div class="col-md-3">
-				<label for="gToDate" class="form-label">To Date</label> <input
-					type="date" id="gToDate" class="form-control">
-			</div>
-		</div>
+	<!-- ✅ HTML Layout for Global Search with Scrollable Table Only -->
+<div id="globalSearchFormContainer" class="report-form"
+  style="display: block; padding-bottom: 100px; max-height: calc(100vh - 120px); border: 1px solid #ccc;">
 
-		<div class="row g-3 align-items-center mt-1">
-			<div class="col-md-3">
-				<label for="gRegion" class="form-label">Region</label> <select
-					id="gRegion" class="form-select">
-					<option value="">-- Select Region --</option>
-				</select>
-			</div>
-			<div class="col-md-3">
-				<label for="gSubregion" class="form-label">Sub-Region</label> <select
-					id="gSubregion" class="form-select">
-					<option value="">-- Select Sub-region --</option>
-				</select>
-			</div>
-			<div class="col-md-3">
-				<label for="gBranch" class="form-label">Branch</label> <select
-					id="gBranch" class="form-select">
-					<option value="">-- Select Branch --</option>
-				</select>
-			</div>
-			<div class="col-md-3 d-flex align-items-end gap-2">
-				<button class="btn btn-primary" onclick="findGlobalSearch()">Find</button>
-				<button class="btn btn-secondary" onclick="resetGlobalSearch()">Reset</button>
-			</div>
-		</div>
+  <h3>Global Search Report</h3>
 
-		<div id="globalSearchTableContainer" class="mt-4"
-			style="overflow-x: auto;"></div>
-	</div>
+  <div class="row g-3 align-items-center">
+    <div class="col-md-3">
+      <label for="gFromDate" class="form-label">From Date</label>
+      <input type="date" id="gFromDate" class="form-control">
+    </div>
+    <div class="col-md-3">
+      <label for="gToDate" class="form-label">To Date</label>
+      <input type="date" id="gToDate" class="form-control">
+    </div>
+  </div>
+
+  <div class="row g-3 align-items-center mt-1">
+    <div class="col-md-3">
+      <label for="gRegion" class="form-label">Region</label>
+      <select id="gRegion" class="form-select">
+        <option value="">-- Select Region --</option>
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label for="gSubregion" class="form-label">Sub-Region</label>
+      <select id="gSubregion" class="form-select">
+        <option value="">-- Select Sub-region --</option>
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label for="gBranch" class="form-label">Branch</label>
+      <select id="gBranch" class="form-select">
+        <option value="">-- Select Branch --</option>
+      </select>
+    </div>
+    <div class="col-md-3 d-flex align-items-end gap-2">
+      <button type="button" class="btn btn-primary" onclick="generateGlobalBookingReport()">Find</button>
+      <button type="button" class="btn btn-secondary" onclick="resetGlobalSearch()">Reset</button>
+    </div>
+  </div>
+
+  <!-- ✅ Scrollable Booking Table Container Only -->
+  <div id="globalSearchTableWrapper" class="mt-4" style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd;">
+    <div id="globalSearchTableContainer"></div>
+  </div>
+
+  <div id="globalLoadingIndicator" class="text-center mt-2" style="display: none;">Loading more records...</div>
+  <div id="globalBookingSummaryContainer" class="mt-4"></div>
+</div>
+
+
+
 
 	<div id="CreateBranchContainer"
 		style="display: flex; justify-content: center; align-items: center; height: 50vh; padding: 10px; overflow: visible;">
@@ -640,9 +651,9 @@
 
 		<!-- Dispatch Button (outside scroll) -->
 		<button id="dispatchActionBar" class="btn btn-success mt-2"
+
 			onclick="showAssociateVehicleModal()" style="display: none;">
 			🚚 Dispatch Selected</button>
-		`
 
 		<!-- Booking Summary (outside scroll) -->
 		<div id="bookingopsSummaryContainer"
@@ -790,5 +801,35 @@
 		src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 	<script src="/js/bookings.js"></script>
+
+	<!-- All HTML here -->
+
+	<script>
+	  window.addEventListener('DOMContentLoaded', () => {
+	    const today = new Date().toISOString().split('T')[0];
+	    document.getElementById('gFromDate').setAttribute('max', today);
+	    document.getElementById('gToDate').setAttribute('max', today);
+	  });
+	</script>
+	
+	<div class="table-wrapper">
+	  <table id="globalSearchTable">
+	    <thead>
+	      <tr>
+	        <th>LR No</th>
+	        <th>Consignor</th>
+	        <th>Consignee</th>
+	        <th>Branch</th>
+	        <th>Freight</th>
+	        <th>Booking Date</th>
+	      </tr>
+	    </thead>
+	    <tbody>
+	      <!-- Inject rows dynamically from API here -->
+	    </tbody>
+	  </table>
+	</div>
+
+
 </body>
 </html>
