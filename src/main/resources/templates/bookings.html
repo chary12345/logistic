@@ -222,9 +222,9 @@
 			<!-- Delivery Destination with Select2 -->
 			<div class="row mb-4">
 				<div class="col-md-6">
-					<label for="deliveryDestination" class="form-label" >Delivery 
+					<label for="deliveryDestination" class="form-label">Delivery
 						Destination:</label> <select id="deliveryDestination"
-						class="form-select select2" >
+						class="form-select select2">
 						<option value=""></option>
 					</select>
 				</div>
@@ -317,6 +317,7 @@
 
 
 				<!-- Charges Section - Right Side -->
+				<!-- Charges Section - Right Side (REPLACE existing #chargesPanel) -->
 				<div class="col-md-4">
 					<div id="chargesPanel"
 						style="display: none; border: 1px solid #ccc; padding: 12px; border-radius: 4px;">
@@ -324,34 +325,42 @@
 
 						<div class="mb-2">
 							<label for="freight">Freight:</label> <input type="number"
-								id="freight" class="form-control" readonly>
+								id="freight" class="form-control" readonly value="0">
 						</div>
+
 						<div class="mb-2">
-							<label for="igst">loading:</label> <input type="number" id="igst"
-								class="form-control" readonly>
+							<label for="loadingCharge">Loading:</label>
+							<!-- editable by user -->
+							<input type="number" id="loadingCharge" class="form-control"
+								value="0" step="0.01" min="0">
 						</div>
+
 						<div class="mb-2">
-							<label for="igst">lr charge:</label> <input type="number"
-								id="igst" class="form-control" readonly>
+							<label for="lrCharge">LR Charge:</label>
+							<!-- editable by user -->
+							<input type="number" id="lrCharge" class="form-control" value="0"
+								step="0.01" min="0">
 						</div>
+
 						<div class="mb-2">
 							<label for="sgst">SGST (2.5%):</label> <input type="number"
-								id="sgst" class="form-control" readonly>
+								id="sgst" class="form-control" readonly value="0">
 						</div>
 						<div class="mb-2">
 							<label for="cgst">CGST (2.5%):</label> <input type="number"
-								id="cgst" class="form-control" readonly>
+								id="cgst" class="form-control" readonly value="0">
 						</div>
 						<div class="mb-2">
 							<label for="igst">IGST (5%):</label> <input type="number"
-								id="igst" class="form-control" readonly>
+								id="igst" class="form-control" readonly value="0">
 						</div>
 						<div class="mb-2">
 							<label for="grandTotal">Grand Total:</label> <input type="number"
-								id="grandTotal" class="form-control fw-bold" readonly>
+								id="grandTotal" class="form-control fw-bold" readonly value="0">
 						</div>
 					</div>
 				</div>
+
 
 
 
@@ -363,55 +372,59 @@
 	</div>
 
 	<!-- ✅ HTML Layout for Global Search with Scrollable Table Only -->
-<div id="globalSearchFormContainer" class="report-form"
-  style="display: block; padding-bottom: 100px; max-height: calc(100vh - 120px); border: 1px solid #ccc;">
+	<div id="globalSearchFormContainer" class="report-form"
+		style="display: block; padding-bottom: 100px; max-height: calc(100vh - 120px); border: 1px solid #ccc;">
 
-  <h3>Global Search Report</h3>
+		<h3>Global Search Report</h3>
 
-  <div class="row g-3 align-items-center">
-    <div class="col-md-3">
-      <label for="gFromDate" class="form-label">From Date</label>
-      <input type="date" id="gFromDate" class="form-control">
-    </div>
-    <div class="col-md-3">
-      <label for="gToDate" class="form-label">To Date</label>
-      <input type="date" id="gToDate" class="form-control">
-    </div>
-  </div>
+		<div class="row g-3 align-items-center">
+			<div class="col-md-3">
+				<label for="gFromDate" class="form-label">From Date</label> <input
+					type="date" id="gFromDate" class="form-control">
+			</div>
+			<div class="col-md-3">
+				<label for="gToDate" class="form-label">To Date</label> <input
+					type="date" id="gToDate" class="form-control">
+			</div>
+		</div>
 
-  <div class="row g-3 align-items-center mt-1">
-    <div class="col-md-3">
-      <label for="gRegion" class="form-label">Region</label>
-      <select id="gRegion" class="form-select">
-        <option value="">-- Select Region --</option>
-      </select>
-    </div>
-    <div class="col-md-3">
-      <label for="gSubregion" class="form-label">Sub-Region</label>
-      <select id="gSubregion" class="form-select">
-        <option value="">-- Select Sub-region --</option>
-      </select>
-    </div>
-    <div class="col-md-3">
-      <label for="gBranch" class="form-label">Branch</label>
-      <select id="gBranch" class="form-select">
-        <option value="">-- Select Branch --</option>
-      </select>
-    </div>
-    <div class="col-md-3 d-flex align-items-end gap-2">
-      <button type="button" class="btn btn-primary" onclick="generateGlobalBookingReport()">Find</button>
-      <button type="button" class="btn btn-secondary" onclick="resetGlobalSearch()">Reset</button>
-    </div>
-  </div>
+		<div class="row g-3 align-items-center mt-1">
+			<div class="col-md-3">
+				<label for="gRegion" class="form-label">Region</label> <select
+					id="gRegion" class="form-select">
+					<option value="">-- Select Region --</option>
+				</select>
+			</div>
+			<div class="col-md-3">
+				<label for="gSubregion" class="form-label">Sub-Region</label> <select
+					id="gSubregion" class="form-select">
+					<option value="">-- Select Sub-region --</option>
+				</select>
+			</div>
+			<div class="col-md-3">
+				<label for="gBranch" class="form-label">Branch</label> <select
+					id="gBranch" class="form-select">
+					<option value="">-- Select Branch --</option>
+				</select>
+			</div>
+			<div class="col-md-3 d-flex align-items-end gap-2">
+				<button type="button" class="btn btn-primary"
+					onclick="generateGlobalBookingReport()">Find</button>
+				<button type="button" class="btn btn-secondary"
+					onclick="resetGlobalSearch()">Reset</button>
+			</div>
+		</div>
 
-  <!-- ✅ Scrollable Booking Table Container Only -->
-  <div id="globalSearchTableWrapper" class="mt-4" style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd;">
-    <div id="globalSearchTableContainer"></div>
-  </div>
+		<!-- ✅ Scrollable Booking Table Container Only -->
+		<div id="globalSearchTableWrapper" class="mt-4"
+			style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd;">
+			<div id="globalSearchTableContainer"></div>
+		</div>
 
-  <div id="globalLoadingIndicator" class="text-center mt-2" style="display: none;">Loading more records...</div>
-  <div id="globalBookingSummaryContainer" class="mt-4"></div>
-</div>
+		<div id="globalLoadingIndicator" class="text-center mt-2"
+			style="display: none;">Loading more records...</div>
+		<div id="globalBookingSummaryContainer" class="mt-4"></div>
+	</div>
 
 
 
@@ -651,7 +664,6 @@
 
 		<!-- Dispatch Button (outside scroll) -->
 		<button id="dispatchActionBar" class="btn btn-success mt-2"
-
 			onclick="showAssociateVehicleModal()" style="display: none;">
 			🚚 Dispatch Selected</button>
 
@@ -811,23 +823,23 @@
 	    document.getElementById('gToDate').setAttribute('max', today);
 	  });
 	</script>
-	
+
 	<div class="table-wrapper">
-	  <table id="globalSearchTable">
-	    <thead>
-	      <tr>
-	        <th>LR No</th>
-	        <th>Consignor</th>
-	        <th>Consignee</th>
-	        <th>Branch</th>
-	        <th>Freight</th>
-	        <th>Booking Date</th>
-	      </tr>
-	    </thead>
-	    <tbody>
-	      <!-- Inject rows dynamically from API here -->
-	    </tbody>
-	  </table>
+		<table id="globalSearchTable">
+			<thead>
+				<tr>
+					<th>LR No</th>
+					<th>Consignor</th>
+					<th>Consignee</th>
+					<th>Branch</th>
+					<th>Freight</th>
+					<th>Booking Date</th>
+				</tr>
+			</thead>
+			<tbody>
+				<!-- Inject rows dynamically from API here -->
+			</tbody>
+		</table>
 	</div>
 
 
