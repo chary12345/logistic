@@ -20,6 +20,8 @@ public class BookingDTO {
     private double sgst;
     private double cgst;
     private double igst;
+    private double loading;
+    private double loadingcharge;
 
     private LocalDateTime bookingDate;
     private LocalDateTime dispatchDate;
@@ -188,6 +190,19 @@ public class BookingDTO {
 	public void setEmployeeName(String employeeName) {
 		this.employeeName = employeeName;
 	}
+	public double getLoading() {
+		return loading;
+	}
+	public void setLoading(double loading) {
+		this.loading = loading;
+	}
+	public double getLoadingcharge() {
+		return loadingcharge;
+	}
+	public void setLoadingcharge(double loadingcharge) {
+		this.loadingcharge = loadingcharge;
+	}
+
 
     
 }

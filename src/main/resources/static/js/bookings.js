@@ -364,7 +364,7 @@ function generateBookingReport() {
 	const toDateRaw = document.getElementById('toDate').value;
 
 	if (!fromDateRaw || !toDateRaw) {
-		//alert("Please select both From and To dates.");
+
 		showCustomAlert("Please select both From and To dates.");
 		return;
 	}
@@ -701,29 +701,47 @@ function downloadBookingReportExcel() {
 	// Save the workbook as an Excel file
 	XLSX.writeFile(wb, `booking_report_${new Date().toISOString().slice(0, 10)}.xlsx`);
 }
-function calculateCharges() {
-	const freight = parseFloat(document.getElementById("freight").value) || 0;
 
-	const consignorGST = document.getElementById("consignorGST").value.trim();
-	const consigneeGST = document.getElementById("consigneeGST").value.trim();
+// ---------- Defaults you can change ----------
+const DEFAULT_LOADING_PERCENT = 0.0; // 2% of freight (auto default)
+const DEFAULT_LR_FLAT = 0.0;        // Rs. 50 flat (auto default)
+// ------------------------------------------------
 
-	let sgst = 0, cgst = 0, igst = 0;
+// call this once on page load (or after DOM ready)
 
-	// ✅ If GST is entered, calculate taxes
-	if (consignorGST || consigneeGST) {
-		sgst = parseFloat((freight * 0.025).toFixed(2));
-		cgst = parseFloat((freight * 0.025).toFixed(2));
-		igst = parseFloat((freight * 0.05).toFixed(2));
+function initChargesListeners() {
+	const loadingEl = document.getElementById("loadingCharge");
+	const lrEl = document.getElementById("lrCharge");
+
+	if (loadingEl) {
+		loadingEl.addEventListener("input", function() {
+			// mark as manually edited so autos don't overwrite
+			this.dataset.manual = "true";
+			calculateCharges();
+		});
+		// optional: clear manual flag on double-click
+		loadingEl.addEventListener("dblclick", function() {
+			delete this.dataset.manual;
+			calculateCharges();
+		});
 	}
 
-	const grandTotal = (freight + sgst + cgst + igst).toFixed(2);
-
-	document.getElementById("sgst").value = sgst;
-	document.getElementById("cgst").value = cgst;
-	document.getElementById("igst").value = igst;
-	document.getElementById("grandTotal").value = grandTotal;
+	if (lrEl) {
+		lrEl.addEventListener("input", function() {
+			this.dataset.manual = "true";
+			calculateCharges();
+		});
+		lrEl.addEventListener("dblclick", function() {
+			delete this.dataset.manual;
+			calculateCharges();
+		});
+	}
 }
 
+// Ensure listeners set up after DOM loaded
+document.addEventListener("DOMContentLoaded", initChargesListeners);
+
+// ----------------- Add Article (mark inserted rows) -----------------
 function addArticle() {
 	let tableBody = document.querySelector("#bookingForm table tbody");
 	let newRow = tableBody.insertRow(-1);
@@ -736,14 +754,16 @@ function addArticle() {
 	let totalCell = newRow.insertCell();
 	let actionCell = newRow.insertCell();
 
+	const qty = parseFloat(document.getElementById("artQuantity").value) || 0;
+	const amt = parseFloat(document.getElementById("artAmount").value) || 0;
+	const total = qty * amt;
+
 	articleCell.textContent = document.getElementById("article").value;
-	artQtyCell.textContent = document.getElementById("artQuantity").value;
+	artQtyCell.textContent = qty;
 	artTypeCell.textContent = document.getElementById("artType").value;
 	saidToContainCell.textContent = document.getElementById("saidToContain").value;
-	artAmtCell.textContent = document.getElementById("artAmount").value;
-	totalCell.textContent =
-		parseInt(document.getElementById("artQuantity").value) *
-		parseInt(document.getElementById("artAmount").value);
+	artAmtCell.textContent = amt.toFixed(2);
+	totalCell.textContent = total.toFixed(2);
 
 	let deleteButton = document.createElement("button");
 	deleteButton.className = "btn btn-danger btn-sm";
@@ -753,7 +773,10 @@ function addArticle() {
 	};
 	actionCell.appendChild(deleteButton);
 
-	// Clear input fields
+	// mark the row as an 'added' article so updateFreight sums it
+	newRow.dataset.added = "true";
+
+	// Clear input fields (keep initial input row intact)
 	document.getElementById("article").value = "Article";
 	document.getElementById("artQuantity").value = "0";
 	document.getElementById("artType").selectedIndex = 0;
@@ -766,49 +789,137 @@ function addArticle() {
 	updateFreight();
 }
 
-
+// ----------------- Delete Row -----------------
 function deleteRow(btn) {
-	let row = btn.parentNode.parentNode;
-	row.remove();
+	let row = btn.closest("tr");
+	if (row) row.remove();
 
-	let tableBody = document.querySelector("#bookingForm table tbody");
-	if (tableBody.rows.length <= 1) {
+	// check if any added rows remain
+	const addedRows = document.querySelectorAll("#bookingForm table tbody tr[data-added='true']");
+	if (addedRows.length === 0) {
+		// hide charges and reset values
 		document.getElementById("chargesPanel").style.display = "none";
-		document.getElementById("freight").value = 0;
-		document.getElementById("sgst").value = 0;
-		document.getElementById("cgst").value = 0;
-		document.getElementById("igst").value = 0;
-		document.getElementById("grandTotal").value = 0;
+		safeAssign("freight", 0);
+		safeAssign("loadingCharge", 0);
+		safeAssign("lrCharge", 0);
+		safeAssign("sgst", 0);
+		safeAssign("cgst", 0);
+		safeAssign("igst", 0);
+		safeAssign("grandTotal", 0);
+
+		// remove manual flags
+		const loadingEl = document.getElementById("loadingCharge");
+		const lrEl = document.getElementById("lrCharge");
+		if (loadingEl) delete loadingEl.dataset.manual;
+		if (lrEl) delete lrEl.dataset.manual;
 	} else {
 		updateFreight();
 	}
-
 }
 
+// small helper to set input safely if element exists
+function safeAssign(id, val) {
+	const el = document.getElementById(id);
+	if (el) el.value = (typeof val === 'number') ? val.toFixed(2) : val;
+}
 
+// ----------------- Update Freight (sums added rows only) -----------------
 function updateFreight() {
 	let totalFreight = 0;
-	let rows = document.querySelectorAll("table tr:not(:first-child)");
+	// only sum rows we marked with data-added="true"
+	const rows = document.querySelectorAll("#bookingForm table tbody tr[data-added='true']");
 	rows.forEach(row => {
-		let totalCell = row.querySelector("td:nth-child(6)");
+		const totalCell = row.querySelector("td:nth-child(6)");
 		if (totalCell) {
-			totalFreight += parseInt(totalCell.textContent) || 0;
+			totalFreight += parseFloat(totalCell.textContent) || 0;
 		}
 	});
-	document.getElementById("freight").value = totalFreight;
-	// Clear article table rows
-	const tableBody = document.getElementById("articleTableBody");
-	if (tableBody) tableBody.innerHTML = "";
 
+	// set freight (2 decimals)
+	const freightEl = document.getElementById("freight");
+	if (freightEl) freightEl.value = totalFreight.toFixed(2);
+
+
+	// Recalculate charges after freight update
 	calculateCharges();
 }
+
+// ----------------- Calculate Charges -----------------
+function calculateCharges() {
+	const freight = parseFloat(document.getElementById("freight").value) || 0;
+
+	const loadingInput = document.getElementById("loadingCharge");
+	const lrInput = document.getElementById("lrCharge");
+
+	// auto-fill defaults only when user has NOT manually edited
+	if (loadingInput && !loadingInput.dataset.manual) {
+		// default loading as percentage of freight
+		loadingInput.value = (freight * (DEFAULT_LOADING_PERCENT / 100)).toFixed(2);
+	}
+	if (lrInput && !lrInput.dataset.manual) {
+		lrInput.value = DEFAULT_LR_FLAT.toFixed(2);
+	}
+
+	const loadingCharge = parseFloat(loadingInput.value) || 0;
+	const lrCharge = parseFloat(lrInput.value) || 0;
+
+	const consignorGST = (document.getElementById("consignorGST") || {}).value || "";
+	const consigneeGST = (document.getElementById("consigneeGST") || {}).value || "";
+
+	let sgst = 0, cgst = 0, igst = 0;
+
+	// current behavior: GST calculated on freight only (same as existing logic)
+	if (consignorGST.trim() || consigneeGST.trim()) {
+		sgst = parseFloat((freight * 0.025).toFixed(2));
+		cgst = parseFloat((freight * 0.025).toFixed(2));
+		igst = parseFloat((freight * 0.05).toFixed(2));
+	}
+
+	// Grand total includes freight + loading + lr + taxes
+	const grandTotal = (freight + loadingCharge + lrCharge + sgst + cgst + igst).toFixed(2);
+
+	safeAssign("sgst", sgst);
+	safeAssign("cgst", cgst);
+	safeAssign("igst", igst);
+	safeAssign("loadingCharge", loadingCharge);
+	safeAssign("lrCharge", lrCharge);
+	safeAssign("grandTotal", parseFloat(grandTotal));
+}
+
+// ----------------- Reset Booking Form must clear manual flags -----------------
+function resetBookingForm() {
+	// existing resets...
+	const form = document.getElementById("bookingForm");
+	if (form) form.reset();
+
+	// Reset specific fields
+	["freight", "loadingCharge", "lrCharge", "sgst", "cgst", "igst", "grandTotal"].forEach(id => {
+		const el = document.getElementById(id);
+		if (el) el.value = id === "freight" ? "0.00" : "0";
+		if (el && el.dataset) delete el.dataset.manual;
+	});
+
+	// Clear article rows, hide charges
+	const tableBody = document.getElementById("articleTableBody");
+	if (tableBody) tableBody.innerHTML = ""; // if you use this body id
+	const addedRows = document.querySelectorAll("#bookingForm table tbody tr[data-added='true']");
+	addedRows.forEach(r => r.remove());
+	document.getElementById("chargesPanel").style.display = "none";
+
+	// Scroll to top optionally
+	window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+
 
 function printBookingReceipt(booking) {
 	const printWindow = window.open('', '', 'width=900,height=700');
 
 	const gst = ((booking.sgst || 0) + (booking.cgst || 0) + (booking.igst || 0)).toFixed(2);
 	const freight = (booking.freight || 0).toFixed(2);
-	const total = (parseFloat(freight) + parseFloat(gst)).toFixed(2);
+	const loading = (booking.loading || 0).toFixed(2);
+	const loadcharge = (booking.loadingCharge || 0).toFixed(2);
+	const total = (parseFloat(freight) + parseFloat(gst)).toFixed(2) + parseFloat(loading).toFixed(2) + parseFloat(loadcharge).toFixed(2);
 	const invValue = booking.invoiceValue || 0;
 	const paymentMode = booking.billType || '-';
 	const printedBy = "System";
@@ -840,6 +951,8 @@ function printBookingReceipt(booking) {
 						<div><strong>CHARGES</strong></div>
 						<div>Freight: ₹${freight}</div>
 						<div>GST: ₹${gst}</div>
+						<div>Loading: ₹${loading}</div>
+						<div>Load Charges: ₹${loadcharge}</div>
 						<hr>
 						<div class="charges-total"><strong>Total: ₹${total}</strong></div>
 					</td>
@@ -985,7 +1098,7 @@ document.getElementById("bookingForm").addEventListener("submit", async function
 	const paymentMode = document.getElementById("paymentMode").value;
 
 	if (selectedBranchCode && selectedBranchCode === currentBranchCode) {
-		alert("Destination branch cannot be the same as your current branch.");
+		showCustomAlert("Destination branch cannot be the same as your current branch.");
 		return;
 	}
 
@@ -1028,13 +1141,13 @@ document.getElementById("bookingForm").addEventListener("submit", async function
 		invoiceNumber: document.getElementById("invoiceNo").value,
 		invoiceValue: document.getElementById("Invoicevalue").value,
 		eWayBillNumber: document.getElementById("ewayBill").value,
+		loading: document.getElementById("loadingCharge").value,
+		loadingCharge: document.getElementById("lrCharge").value
 	};
-	showCustomAlert("Your booking grand total is: " + grandTotal);
+	showCustomAlert("Your booking grand total is: " + document.getElementById("grandTotal").value);
 
 	let url = "/api/bookings/bookLoad";
 	let method = "POST";
-
-
 
 	try {
 		let response = await fetch(url, {
@@ -1057,17 +1170,17 @@ document.getElementById("bookingForm").addEventListener("submit", async function
 		printBookingReceipt(result);
 	} catch (error) {
 		console.error("Error saving booking:", error);
-		alert("Failed to save booking.");
+		showCustomAlert("Failed to save booking.");
 	}
 });
 
- document.addEventListener("DOMContentLoaded", function () {
-    $('#deliveryDestination').select2({
-      placeholder: "search for destination branch here..",
-      allowClear: true,
-      width: '100%'
-    });
-  });
+document.addEventListener("DOMContentLoaded", function() {
+	$('#deliveryDestination').select2({
+		placeholder: "search for destination branch here..",
+		allowClear: true,
+		width: '100%'
+	});
+});
 
 function resetPaymentModeUI() {
 	const hiddenInput = document.getElementById("paymentMode");
@@ -1241,7 +1354,7 @@ function changePassword() {
 		return;
 	}
 
-// AES encryption key and IV (must match backend)
+	// AES encryption key and IV (must match backend)
 	const key = CryptoJS.enc.Utf8.parse("1234567890123456");
 	const iv = CryptoJS.enc.Utf8.parse("abcdefghijklmnop");
 
@@ -1251,7 +1364,7 @@ function changePassword() {
 		mode: CryptoJS.mode.CBC,
 		padding: CryptoJS.pad.Pkcs7
 	}).toString();
-	
+
 	// Encrypt the currentPassword
 	const encryptedCurrentPassword = CryptoJS.AES.encrypt(currentPassword, key, {
 		iv: iv,
@@ -1375,7 +1488,7 @@ function validateGST(gstInputId) {
 	const gstPattern = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
 
 	if (gstValue && !gstPattern.test(gstValue)) {
-		alert("Invalid GST number format.");
+		showCustomAlert("Invalid GST number format.");
 		gstInput.value = "";
 		gstInput.focus();
 		return false;
@@ -1396,7 +1509,7 @@ function dispatchSelected(vehicleDetails = {}) {
 		.map(cb => cb.value);
 
 	if (selected.length === 0) {
-		alert("Please select at least one booking.");
+		showCustomAlert("Please select at least one booking.");
 		return;
 	}
 
@@ -1412,7 +1525,7 @@ function dispatchSelected(vehicleDetails = {}) {
 	})
 		.then(res => res.json())
 		.then(data => {
-			alert("Dispatch successful!");
+			showCustomAlert("Dispatch successful!");
 
 			const dispatchedBookings = Array.isArray(data) ? data : (data.data || []);
 
@@ -1421,7 +1534,7 @@ function dispatchSelected(vehicleDetails = {}) {
 		})
 		.catch(err => {
 			console.error("Dispatch error:", err);
-			alert("Error dispatching bookings.");
+			showCustomAlert("Error dispatching bookings.");
 		});
 }
 
@@ -1513,12 +1626,15 @@ function openPrintWindow(response) {
             <th>Freight</th>
             <th>Status</th>
             <th>Dispatched Date</th>
+			<th>Loading Charges</th>
             <th>Lr Type</th>
           </tr>
         </thead>
         <tbody>`;
 
 	bookings.forEach(booking => {
+		const loadingCharges = Number(booking.loading || 0) + Number(booking.loadingCharge || 0);
+		
 		html += `
           <tr>
             <td>${booking.loadingReciept}</td>
@@ -1527,7 +1643,8 @@ function openPrintWindow(response) {
             <td>${booking.freight}</td>
             <td>${booking.consignStatus}</td>
             <td>${booking.dispatchDate ? new Date(booking.dispatchDate).toLocaleString() : ''}</td>
-            <td>${booking.billType}</td>
+            <td>${loadingCharges}</td>
+			<td>${booking.billType}</td>
           </tr>`;
 	});
 
@@ -1562,7 +1679,7 @@ function showCreateEmployeeForm() {
 	if (userData?.companyAndBranchDeatils?.companyCode) {
 		loadBranchesByCompanyCode(userData.companyAndBranchDeatils.companyCode);
 	} else {
-		alert("User session not available.");
+		showCustomAlert("User session not available.");
 	}
 }
 
@@ -1685,7 +1802,7 @@ function submitEmployeeForm() {
 					toast.style.display = 'none';
 					window.location.href = "/createEmployee";
 				}, 3000);*/
-				alert("New Employee created successful!");
+				showCustomAlert("New Employee created successful!");
 				resetEmployeeForm();
 			} else {
 				document.getElementById("formMessage").innerHTML = `<div class='alert alert-danger'>Error: ${data.message}</div>`;
@@ -1953,7 +2070,7 @@ function setupLRSearch() {
 	searchButton.addEventListener("click", () => {
 		const lrNumber = searchInput.value.trim();
 		if (!lrNumber) {
-			alert("Please enter LR number to search.");
+			showCustomAlert("Please enter LR number to search.");
 			return;
 		}
 		searchLRByNumber(lrNumber);
@@ -2108,120 +2225,129 @@ let globalHasMore = true;
 let globalIsLoading = false;
 
 function generateGlobalBookingReport() {
-  const from = document.getElementById("gFromDate").value;
-  const to = document.getElementById("gToDate").value;
-  const state = document.getElementById("gRegion").value;
-  const city = document.getElementById("gSubregion")?.value || null;
-  const branchCode = document.getElementById("gBranch")?.value || null;
+	const from = document.getElementById("gFromDate").value;
+	const to = document.getElementById("gToDate").value;
+	const state = document.getElementById("gRegion").value;
+	const city = document.getElementById("gSubregion")?.value || null;
+	const branchCode = document.getElementById("gBranch")?.value || null;
 
-  if (!from || !to) {
-    alert("Please select From and To dates");
-    return;
-  }
+	if (!from || !to) {
+		showCustomAlert("Please select From and To dates");
+		return;
+	}
 
-  globalLastSeenBookingId = null;
-  globalAllData = [];
-  globalHasMore = true;
-  globalIsLoading = false;
+	globalLastSeenBookingId = null;
+	globalAllData = [];
+	globalHasMore = true;
+	globalIsLoading = false;
 
-  document.getElementById("globalSearchTableContainer").innerHTML = "";
-  document.getElementById("globalBookingSummaryContainer").innerHTML = "";
+	document.getElementById("globalSearchTableContainer").innerHTML = "";
+	document.getElementById("globalBookingSummaryContainer").innerHTML = "";
 
-  loadMoreGlobalData({ from, to, state, city, branchCode });
+	loadMoreGlobalData({ from, to, state, city, branchCode });
 }
 
 function loadMoreGlobalData(filters) {
-  if (!globalHasMore || globalIsLoading) return;
-  globalIsLoading = true;
-  document.getElementById("globalLoadingIndicator").style.display = "block";
+	if (!globalHasMore || globalIsLoading) return;
+	globalIsLoading = true;
+	document.getElementById("globalLoadingIndicator").style.display = "block";
 
-  const payload = {
-    fromDate: filters.from + "T00:00:00",
-    toDate: filters.to + "T23:59:59",
-    state: filters.state,
-    city: filters.city,
-    branchCode: filters.branchCode,
-    lastId: globalLastSeenBookingId
-  };
+	const payload = {
+		fromDate: filters.from + "T00:00:00",
+		toDate: filters.to + "T23:59:59",
+		state: filters.state,
+		city: filters.city,
+		branchCode: filters.branchCode,
+		lastId: globalLastSeenBookingId
+	};
 
-  fetch("/api/bookings/get-Global-Search-Reports", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  })
-    .then((res) => res.json())
-    .then((response) => {
-      const data = response.content || [];
-      if (!Array.isArray(data) || data.length === 0) {
-        globalHasMore = false;
-        if (globalAllData.length > 0) showGlobalSummary(globalAllData);
-        return;
-      }
+	fetch("/api/bookings/get-Global-Search-Reports", {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(payload)
+	})
+		.then((res) => res.json())
+		.then((response) => {
+			const data = response.content || [];
+			if (!Array.isArray(data) || data.length === 0) {
+				globalHasMore = false;
+				if (globalAllData.length > 0) showGlobalSummary(globalAllData);
+				return;
+			}
 
-      globalLastSeenBookingId = response.lastId || null;
-      globalAllData.push(...data);
-      appendGlobalUI(data);
-    })
-    .catch((err) => console.error("Error fetching global data:", err))
-    .finally(() => {
-      globalIsLoading = false;
-      document.getElementById("globalLoadingIndicator").style.display = "none";
-    });
+			globalLastSeenBookingId = response.lastId || null;
+			globalAllData.push(...data);
+			appendGlobalUI(data);
+		})
+		.catch((err) => console.error("Error fetching global data:", err))
+		.finally(() => {
+			globalIsLoading = false;
+			document.getElementById("globalLoadingIndicator").style.display = "none";
+		});
 }
 
 function appendGlobalUI(data) {
-  const container = document.getElementById("globalSearchTableContainer");
-  let table = container.querySelector("table");
+	const container = document.getElementById("globalSearchTableContainer");
+	let table = container.querySelector("table");
 
-  if (!table) {
-    table = document.createElement("table");
-    table.className = "table table-bordered table-striped";
-    table.innerHTML = `
+	if (!table) {
+		table = document.createElement("table");
+		table.className = "table table-bordered table-striped";
+		table.innerHTML = `
       <thead class="table-light">
         <tr>
           <th>LR No</th>
+		  <th>Booking Date</th>
           <th>Consignor</th>
           <th>Consignee</th>
           <th>Branch</th>
-          <th>Freight</th>
-          <th>Booking Date</th>
+          <th>Freight</th>         
+		  <th>Loading Charges</th>
+		  <th>Total</th>
         </tr>
       </thead>
       <tbody></tbody>`;
-    container.appendChild(table);
-  }
+		container.appendChild(table);
+	}
 
-  const tbody = table.querySelector("tbody");
-  data.forEach((item) => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
+	const tbody = table.querySelector("tbody");
+	data.forEach((item) => {
+		const loadingCharges = Number(item.loading || 0) + Number(item.loadingCharge || 0);
+		const total = Number(item.freight || 0) + loadingCharges;
+		const tr = document.createElement("tr");
+		tr.innerHTML = `
       <td>${item.loadingReciept}</td>
+	  <td>${new Date(item.bookingDate).toLocaleDateString()}</td>
       <td>${item.consignorName}</td>
       <td>${item.consigneeName}</td>
       <td>${item.branchCode}</td>
       <td>${item.freight}</td>
-      <td>${new Date(item.bookingDate).toLocaleDateString()}</td>`;
-    tbody.appendChild(tr);
-  });
+	   <td>${loadingCharges}</td>
+	   <td>${total}</td>`;
+		tbody.appendChild(tr);
+	});
 }
 
 function showGlobalSummary(data) {
-  let totalFreight = 0, totalGST = 0, grandTotal = 0;
-  data.forEach((row) => {
-    const freight = Number(row.freight || 0);
-    const gst = Number(row.sgst || 0) + Number(row.cgst || 0) + Number(row.igst || 0);
-    totalFreight += freight;
-    totalGST += gst;
-    grandTotal += freight + gst;
-  });
+	let totalFreight = 0, totalGST = 0, grandTotal = 0, totalLoadingCharges = 0;
+	data.forEach((row) => {
+		const freight = Number(row.freight || 0);
+		const gst = Number(row.sgst || 0) + Number(row.cgst || 0) + Number(row.igst || 0);
+		const loadingCharges = Number(row.loading || 0) + Number(row.loadingCharge || 0);
+		totalFreight += freight;
+		totalGST += gst;
+		totalLoadingCharges += loadingCharges;
+		grandTotal += freight + gst + totalLoadingCharges;
+	});
 
-  document.getElementById("globalBookingSummaryContainer").innerHTML = `
+	document.getElementById("globalBookingSummaryContainer").innerHTML = `
     <h5 class="text-center text-success">Booking Summary</h5>
     <table class="table table-bordered text-center">
       <thead class="table-light">
         <tr>
           <th>Total Freight</th>
           <th>Total GST</th>
+		  <th>Total Loading Charges</th>
           <th>Grand Total</th>
         </tr>
       </thead>
@@ -2229,6 +2355,7 @@ function showGlobalSummary(data) {
         <tr>
           <td>${totalFreight.toFixed(2)}</td>
           <td>${totalGST.toFixed(2)}</td>
+		  <td>${totalLoadingCharges.toFixed(2)}</td>
           <td>${grandTotal.toFixed(2)}</td>
         </tr>
       </tbody>
@@ -2236,29 +2363,29 @@ function showGlobalSummary(data) {
 }
 
 document.getElementById("globalSearchTableWrapper").addEventListener("scroll", () => {
-  const el = document.getElementById("globalSearchTableWrapper");
-  if (el.scrollTop + el.clientHeight >= el.scrollHeight - 10 && globalHasMore && !globalIsLoading) {
-    const from = document.getElementById("gFromDate").value;
-    const to = document.getElementById("gToDate").value;
-    const state = document.getElementById("gRegion").value;
-    const city = document.getElementById("gSubregion")?.value || null;
-    const branchCode = document.getElementById("gBranch")?.value || null;
-    loadMoreGlobalData({ from, to, state, city, branchCode });
-  }
+	const el = document.getElementById("globalSearchTableWrapper");
+	if (el.scrollTop + el.clientHeight >= el.scrollHeight - 10 && globalHasMore && !globalIsLoading) {
+		const from = document.getElementById("gFromDate").value;
+		const to = document.getElementById("gToDate").value;
+		const state = document.getElementById("gRegion").value;
+		const city = document.getElementById("gSubregion")?.value || null;
+		const branchCode = document.getElementById("gBranch")?.value || null;
+		loadMoreGlobalData({ from, to, state, city, branchCode });
+	}
 });
 
 function resetGlobalSearch() {
-  document.getElementById('gFromDate').value = '';
-  document.getElementById('gToDate').value = '';
-  document.getElementById('gRegion').value = '';
-  document.getElementById('gSubregion').innerHTML = '<option value="">-- Select Sub-region --</option>';
-  document.getElementById('gBranch').innerHTML = '<option value="">-- Select Branch --</option>';
-  document.getElementById('globalSearchTableContainer').innerHTML = '';
-  document.getElementById('globalBookingSummaryContainer').innerHTML = '';
-  globalAllData = [];
-  globalLastSeenBookingId = null;
-  globalHasMore = true;
-  globalIsLoading = false;
+	document.getElementById('gFromDate').value = '';
+	document.getElementById('gToDate').value = '';
+	document.getElementById('gRegion').value = '';
+	document.getElementById('gSubregion').innerHTML = '<option value="">-- Select Sub-region --</option>';
+	document.getElementById('gBranch').innerHTML = '<option value="">-- Select Branch --</option>';
+	document.getElementById('globalSearchTableContainer').innerHTML = '';
+	document.getElementById('globalBookingSummaryContainer').innerHTML = '';
+	globalAllData = [];
+	globalLastSeenBookingId = null;
+	globalHasMore = true;
+	globalIsLoading = false;
 }
 
 // View-Only Mode Upgrade: In-place editing of LR
@@ -2437,15 +2564,15 @@ function submitInlineEdit(lrNumber) {
 		.then(response => response.json())
 		.then(result => {
 			if (result && result.loadingReciept) {
-				alert("Booking updated successfully!");
+				showCustomAlert("Booking updated successfully!");
 				searchLRByNumber(lrNumber);
 			} else {
-				alert("Update failed");
+				showCustomAlert("Update failed");
 			}
 		})
 		.catch(err => {
 			console.error("Error:", err);
-			alert("Update error occurred");
+			showCustomAlert("Update error occurred");
 		});
 }
 function extractInlineArticleData() {
@@ -2667,6 +2794,8 @@ function renderOperationReportTable(bookings) {
 				<th>SGST</th>
 				<th>CGST</th>
 				<th>IGST</th>
+				<th>Loading</th>
+				<th>Loading Charges</th>
 				<th>ConsignStatus</th>
 				<th>Booking Date</th>
 			</tr>
@@ -2691,6 +2820,8 @@ function renderOperationReportTable(bookings) {
 			<td>${booking.sgst}</td>
 			<td>${booking.cgst}</td>
 			<td>${booking.igst}</td>
+			<td>${booking.loading}</td>
+			<td>${booking.loadingCharge}</td>
 			<td>${booking.consignStatus}</td>
 			<td>${new Date(booking.bookingDate).toLocaleDateString()}</td>
 		`;
@@ -2744,9 +2875,10 @@ function displayopsBookingSummary(bookings) {
 	container.style.display = "block";
 
 	const summary = {
-		auto: { freight: 0, gst: 0, grandTotal: 0 },
+		auto: { freight: 0, gst: 0, grandTotal: 0, },
 		manual: { freight: 0, gst: 0, grandTotal: 0 },
-		total: { freight: 0, gst: 0, grandTotal: 0 }
+		total: { freight: 0, gst: 0, grandTotal: 0 },
+		//totalLoadingCharges: { loading: 0, loadingCharge: 0 }
 	};
 
 	bookings.forEach(row => {
@@ -2756,8 +2888,9 @@ function displayopsBookingSummary(bookings) {
 		const cgst = Number(row.cgst || 0);
 		const igst = Number(row.igst || 0);
 		const gst = sgst + cgst + igst;
-		const grandTotal = freight + gst;
-
+		//const loadcharges = Number(row.loading || 0) + Number(row.loadingCharge || 0);
+		const grandTotal = freight + gst /*+ totalLoadingCharges*/;
+		//totalLoadingCharges += loadcharges;
 		summary[type].freight += freight;
 		summary[type].gst += gst;
 		summary[type].grandTotal += grandTotal;
@@ -2966,16 +3099,16 @@ function submitVehicleForm(event) {
 	})
 		.then(async res => {
 			if (res.status === 200) {
-				alert("Vehicle saved successfully!");
+				showCustomAlert("Vehicle saved successfully!");
 				document.getElementById("vehicleForm").reset();
 			} else {
 				const msg = await res.text();
-				alert("Error: " + msg);
+				showCustomAlert("Error: " + msg);
 			}
 		})
 		.catch(err => {
 			console.error("Vehicle save failed:", err);
-			alert("Failed to save vehicle. Try again.");
+			showCustomAlert("Failed to save vehicle. Try again.");
 		});
 }
 

@@ -88,6 +88,12 @@ public class Booking {
     @Column(name = "employee_name")
     private String employeeName;
     
+    @Column(name = "loading")
+    private double loading;
+    
+    @Column(name = "loading_charge")
+    private double loadingCharge;
+    
     @Transient
     private String companyCode;
    
@@ -319,6 +325,22 @@ public class Booking {
 
 	public void setEmployeeName(String employeeName) {
 		this.employeeName = employeeName;
+	}
+
+	public double getLoading() {
+		return loading;
+	}
+
+	public void setLoading(double loading) {
+		this.loading = loading;
+	}
+
+	public double getLoadingCharge() {
+		return loadingCharge;
+	}
+
+	public void setLoadingCharge(double loadingCharge) {
+		this.loadingCharge = loadingCharge;
 	}
 	
 
