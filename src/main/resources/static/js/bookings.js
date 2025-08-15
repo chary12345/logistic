@@ -235,7 +235,7 @@ async function fetchCityState(postalCode) {
 			document.getElementById("postalCodeError").innerText = "Invalid Postal Code. Please try again.";
 			/*const cityList = postalData.PostOffice;
 			const state = postalData.PostOffice[0].State;
-			let citiesHtml = '';
+			let citiesHtml = '';`
 
 			// If there are multiple cities, show them as a dropdown
 			cityList.forEach(city => {
@@ -915,15 +915,15 @@ function resetBookingForm() {
 function printBookingReceipt(booking) {
 	const printWindow = window.open('', '', 'width=900,height=700');
 
-	const gst = ((booking.sgst || 0) + (booking.cgst || 0) + (booking.igst || 0)).toFixed(2);
-	const freight = (booking.freight || 0).toFixed(2);
-	const loading = (booking.loading || 0).toFixed(2);
-	const loadcharge = (booking.loadingCharge || 0).toFixed(2);
-	const total = (parseFloat(freight) + parseFloat(gst)).toFixed(2) + parseFloat(loading).toFixed(2) + parseFloat(loadcharge).toFixed(2);
+	const gst = (parseFloat(booking.sgst || 0) + parseFloat(booking.cgst || 0) + parseFloat(booking.igst || 0));
+	const freight = parseFloat(booking.freight || 0);
+	const loading = parseFloat(booking.loading || 0);
+	const loadingCharge = parseFloat(booking.loadingCharge || 0);
+
+	const total = (freight + gst + loading + loadingCharge).toFixed(2);
 	const invValue = booking.invoiceValue || 0;
 	const paymentMode = booking.billType || '-';
-	const printedBy = "System";
-	const printedOn = new Date().toLocaleString();
+
 
 	// Quantity & Description
 	let totalQty = 0;
@@ -937,8 +937,8 @@ function printBookingReceipt(booking) {
 		<div class="receipt">
 			<div class="header">
 			
-				<div><strong>${userData.companyAndBranchDeatils.companyName}</strong></div>
-				<div>Hyderabad</div>
+				<div class="company-name"><strong>${userData.companyAndBranchDeatils.companyName}</strong></div>
+    <div class="branch-name">${userData.companyAndBranchDeatils.branchName}</div>
 			</div>
 
 			<table class="excel-table">
@@ -952,7 +952,7 @@ function printBookingReceipt(booking) {
 						<div>Freight: ₹${freight}</div>
 						<div>GST: ₹${gst}</div>
 						<div>Loading: ₹${loading}</div>
-						<div>Load Charges: ₹${loadcharge}</div>
+						<div>Load Charges: ₹${loadingCharge}</div>
 						<hr>
 						<div class="charges-total"><strong>Total: ₹${total}</strong></div>
 					</td>
@@ -994,7 +994,6 @@ function printBookingReceipt(booking) {
 				</tr>
 				<tr>
 					<td colspan="2" class="sign">Signature: ____________________________</td>
-					<td class="footer-info">Printed By: ${printedBy}<br>On: ${printedOn}</td>
 				</tr>
 			</table>
 		</div>
@@ -1060,6 +1059,20 @@ function printBookingReceipt(booking) {
 		margin-bottom: 10px;
 	}
 }
+.header {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.company-name {
+    font-size: 1.8rem; /* bigger */
+    font-weight: bold;
+}
+
+.branch-name {
+    font-size: 0.9rem; /* smaller */
+    color: #555;
+}
 				
 		</style>
 	`;
@@ -1074,7 +1087,7 @@ function printBookingReceipt(booking) {
 			<script>
 				window.onload = function() {
 					window.print();
-					setTimeout(() => window.close(), 1000);
+					setTimeout(() => window.close(), 3000);
 				}
 			</script>
 		</body>
@@ -1091,6 +1104,10 @@ document.getElementById("bookingForm").addEventListener("submit", async function
 	event.preventDefault();
 
 	const deliveryInput = document.getElementById("deliveryDestination").value;
+	if (!deliveryInput) {
+		await showCustomAlert("Please select a Delivery Destination.");
+		return;
+	}
 	const match = deliveryInput.match(/\(([^)]+)\)/); // Extract code from "(CODE)" 
 	const selectedBranchCode = match ? match[1] : null;
 
@@ -1102,6 +1119,56 @@ document.getElementById("bookingForm").addEventListener("submit", async function
 		return;
 	}
 
+	if (!document.getElementById("consignorName").value.trim()) {
+		await showCustomAlert("Please enter Consignor Name.");
+		return;
+	}
+
+	const consignorMobile = document.getElementById("consignorMobile").value.trim();
+	if (!/^\d{10}$/.test(consignorMobile)) {
+		await showCustomAlert("Consignor Mobile must be 10 digits.");
+		return;
+	}
+
+	if (!document.getElementById("consignorAddress").value.trim()) {
+		await showCustomAlert("Please enter Consignor Address.");
+		return;
+	}
+
+	// GST is optional, but if entered, validate format
+	const consignorGST = document.getElementById("consignorGST").value.trim();
+	if (consignorGST && !/^[0-9A-Z]{15}$/.test(consignorGST)) {
+		await showCustomAlert("Invalid Consignor GST format.");
+		return;
+	}
+
+	// --- CONSIGNEE VALIDATION ---
+	if (!document.getElementById("consigneeName").value.trim()) {
+		await showCustomAlert("Please enter Consignee Name.");
+		return;
+	}
+
+	const consigneeMobile = document.getElementById("consigneeMobile").value.trim();
+	if (!/^\d{10}$/.test(consigneeMobile)) {
+		await showCustomAlert("Consignee Mobile must be 10 digits.");
+		return;
+	}
+
+	if (!document.getElementById("consigneeAddress").value.trim()) {
+		await showCustomAlert("Please enter Consignee Address.");
+		return;
+	}
+
+	const consigneeGST = document.getElementById("consigneeGST").value.trim();
+	if (consigneeGST && !/^[0-9A-Z]{15}$/.test(consigneeGST)) {
+		await showCustomAlert("Invalid Consignee GST format.");
+		return;
+	}
+	const freightValue = parseFloat(document.getElementById("freight").value) || 0;
+	if (freightValue <= 0) {
+		await showCustomAlert("Freight value must be greater than 0.");
+		return;
+	}
 
 	let articleDetails = [];
 	let rows = document.querySelectorAll("table tr:not(:first-child)");
@@ -1144,7 +1211,7 @@ document.getElementById("bookingForm").addEventListener("submit", async function
 		loading: document.getElementById("loadingCharge").value,
 		loadingCharge: document.getElementById("lrCharge").value
 	};
-	showCustomAlert("Your booking grand total is: " + document.getElementById("grandTotal").value);
+	await showCustomAlert("Your booking grand total is: " + document.getElementById("grandTotal").value);
 
 	let url = "/api/bookings/bookLoad";
 	let method = "POST";
@@ -1157,11 +1224,16 @@ document.getElementById("bookingForm").addEventListener("submit", async function
 		});
 		let result = await response.json();
 
-		showCustomAlert("Booking saved successfully!");
+		await showCustomAlert("Booking saved successfully!");
 
 		document.getElementById("bookingForm").reset();
+
+		// Reset Select2 dropdown
+		$('#deliveryDestination').val('').trigger('change');
+
 		// Optionally clear the article table as well
 		const articleTableRows = document.querySelectorAll("#bookingForm table tr:not(:first-child)");
+
 		articleTableRows.forEach(row => row.remove());
 		resetPaymentModeUI();
 
@@ -1634,7 +1706,7 @@ function openPrintWindow(response) {
 
 	bookings.forEach(booking => {
 		const loadingCharges = Number(booking.loading || 0) + Number(booking.loadingCharge || 0);
-		
+
 		html += `
           <tr>
             <td>${booking.loadingReciept}</td>
@@ -2083,25 +2155,108 @@ function setupLRSearch() {
 	});
 }
 
-function addArticleRow(article = {}) {
-	const tbody = document.getElementById("articleTableBody");
-
-	const row = document.createElement("tr");
-
-	row.innerHTML = `
-		<td><input type="text" class="form-control" value="${article.article || ''}"></td>
-		<td><input type="text" class="form-control" value="${article.artQty || ''}"></td>
-		<td><input type="text" class="form-control" value="${article.artType || ''}"></td>
-		<td><input type="text" class="form-control" value="${article.saidToContain || ''}"></td>
-		<td><input type="text" class="form-control" value="${article.artAmt || ''}"></td>
-		<td><input type="text" class="form-control" value="${article.total || ''}"></td>
-		<td><button class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()">❌</button></td>
-	`;
-
-	tbody.appendChild(row);
-	recalculateChargesFromArticles();
+function resetArticleInputRow() {
+	document.getElementById("article").selectedIndex = 0;
+	document.getElementById("artQuantity").value = 0;
+	document.getElementById("artType").selectedIndex = 0;
+	document.getElementById("saidToContain").selectedIndex = 0;
+	document.getElementById("artAmount").value = 0;
 }
 
+function addArticle() {
+	const articleEl = document.getElementById("article");
+	const artQtyEl = document.getElementById("artQuantity");
+	const artTypeEl = document.getElementById("artType");
+	const saidToContainEl = document.getElementById("saidToContain");
+	const artAmtEl = document.getElementById("artAmount");
+
+	const article = articleEl.value;
+	const artQty = parseFloat(artQtyEl.value) || 0;
+	const artType = artTypeEl.value;
+	const saidToContain = saidToContainEl.value;
+	const artAmt = parseFloat(artAmtEl.value) || 0;
+	const total = artQty * artAmt;
+
+	if (artQty <= 0 || artAmt <= 0) {
+		showCustomAlert("Please enter valid article quantity and amount");
+		return;
+	}
+
+	const tbody = document.getElementById("editArticleTableBody");
+	const row = document.createElement("tr");
+	row.innerHTML = `
+        <td>${article}</td>
+        <td>${artQty}</td>
+        <td>${artType}</td>
+        <td>${saidToContain}</td>
+        <td>${artAmt}</td>
+        <td>${total.toFixed(2)}</td>
+        <td><button type="button" class="btn btn-sm btn-danger" onclick="removeArticle(this)">Remove</button></td>
+    `;
+	tbody.appendChild(row);
+
+	// Reset the input row
+	resetArticleInputRow();
+
+	calculateCharges();
+}
+
+function removeArticle(btn) {
+	btn.closest("tr").remove();
+	calculateCharges();
+
+	// Reset the input row after delete too
+	resetArticleInputRow();
+}
+
+function calculateCharges() {
+	const rows = document.querySelectorAll("#editArticleTableBody tr");
+	let freight = 0;
+
+	rows.forEach(row => {
+		const totalCell = row.querySelectorAll("td")[5];
+		freight += parseFloat(totalCell.textContent) || 0;
+	});
+
+	const loadingCharge = parseFloat(document.getElementById("loadingCharge").value) || 0;
+	const lrCharge = parseFloat(document.getElementById("lrCharge").value) || 0;
+
+	let sgst = 0, cgst = 0, igst = 0, grandTotal = 0;
+
+	const consignorGST = (document.getElementById("consignorGST") || {}).value || "";
+	const consigneeGST = (document.getElementById("consigneeGST") || {}).value || "";
+
+	if (freight > 0) {
+		// current behavior: GST calculated on freight only (same as existing logic)
+		if (consignorGST.trim() || consigneeGST.trim()) {
+			sgst = parseFloat((freight * 0.025).toFixed(2));
+			cgst = parseFloat((freight * 0.025).toFixed(2));
+			igst = parseFloat((freight * 0.05).toFixed(2));
+		}
+	}
+
+	grandTotal = freight + loadingCharge + lrCharge + sgst + cgst;
+
+	// Update fields (always show panel even if freight = 0)
+	document.getElementById("freight").value = freight.toFixed(2);
+	document.getElementById("sgst").value = sgst.toFixed(2);
+	document.getElementById("cgst").value = cgst.toFixed(2);
+	document.getElementById("igst").value = igst.toFixed(2);
+	document.getElementById("grandTotal").value = grandTotal.toFixed(2);
+
+	// Reset to 0 if no articles
+	if (rows.length === 0) {
+		document.getElementById("freight").value = "0.00";
+		document.getElementById("sgst").value = "0.00";
+		document.getElementById("cgst").value = "0.00";
+		document.getElementById("igst").value = "0.00";
+		document.getElementById("grandTotal").value = "0.00";
+	}
+}
+
+// Listen to changes in loading & LR charges to recalc grand total
+document.getElementById("loadingCharge").addEventListener("input", calculateCharges);
+document.getElementById("lrCharge").addEventListener("input", calculateCharges);
 
 
 document.addEventListener("DOMContentLoaded", setupLRSearch);
@@ -2466,6 +2621,44 @@ function enableInlineEditMode(data) {
 	(data.articleDetails || []).forEach(a => addInlineArticleRow(a));
 	recalculateInlineCharges();
 }
+// Function to update charges panel based on articles table
+function updateChargesPanelFromArticles() {
+	let totalFreight = 0;
+
+	// Loop through booking articles table rows and sum freight
+	document.querySelectorAll("#articlesTable tbody tr").forEach(row => {
+		let weight = parseFloat(row.cells[1]?.innerText) || 0;
+		let rate = parseFloat(row.cells[2]?.innerText) || 0;
+		totalFreight += weight * rate;
+	});
+
+	// Update freight
+	document.getElementById("freight").value = totalFreight.toFixed(2);
+
+	// User editable values
+	let loadingCharge = parseFloat(document.getElementById("loadingCharge").value) || 0;
+	let lrCharge = parseFloat(document.getElementById("lrCharge").value) || 0;
+
+	// Tax calculations
+	let sgst = totalFreight * 0.025;
+	let cgst = totalFreight * 0.025;
+	let igst = totalFreight * 0.05;
+
+	document.getElementById("sgst").value = sgst.toFixed(2);
+	document.getElementById("cgst").value = cgst.toFixed(2);
+	document.getElementById("igst").value = igst.toFixed(2);
+
+	// Grand total
+	let grandTotal = totalFreight + loadingCharge + lrCharge + sgst + cgst + igst;
+	document.getElementById("grandTotal").value = grandTotal.toFixed(2);
+}
+
+// Update charges when loading or LR charge changes
+document.getElementById("loadingCharge").addEventListener("input", updateChargesPanelFromArticles);
+document.getElementById("lrCharge").addEventListener("input", updateChargesPanelFromArticles);
+
+// Show charges panel on page load
+document.getElementById("chargesPanel").style.display = "block";
 
 function addInlineArticleRow(article = {}) {
 	const tbody = document.getElementById("editArticleTableBody");
@@ -2502,6 +2695,7 @@ function addInlineArticleRow(article = {}) {
     <td><input type="number" class="form-control form-control-sm totalInput" value="${(article.artQty || 0) * (article.artAmt || 0)}" readonly></td>
     <td><button class="btn btn-sm btn-danger" onclick="this.closest('tr').remove(); recalculateInlineCharges();">Delete</button></td>
   `;
+	updateChargesPanelFromArticles();
 }
 
 function recalculateInlineRow(input) {
@@ -3194,10 +3388,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 //custom alert form
-function showCustomAlert(message, title = "Alert") {
-	document.getElementById("customAlertMessage").innerText = message;
-	document.getElementById("customAlertTitle").innerText = title;
-	document.getElementById("customAlert").style.display = "flex";
+function showCustomAlert(message) {
+	return new Promise((resolve) => {
+		const modal = document.getElementById("customAlert");
+		document.getElementById("customAlertMessage").textContent = message;
+
+		modal.querySelector(".btn-ok").onclick = function() {
+			bootstrap.Modal.getInstance(modal).hide();
+			resolve();
+		};
+
+		new bootstrap.Modal(modal).show();
+	});
 }
 
 function closeCustomAlert() {
@@ -3238,100 +3440,4 @@ function protectPage() {
 		window.location.href = "/login.html"; // or your login route
 	}
 }
-
-
-// ✅ Friendship Day popup - only August 1st
-window.addEventListener("DOMContentLoaded", () => {
-	const today = new Date();
-	const isFriendshipDay = today.getMonth() === 7 && today.getDate() === 3; // August 1
-
-	if (isFriendshipDay) {
-		setTimeout(() => showFriendshipPopup(), 300);
-	}
-});
-
-function showFriendshipPopup() {
-	// Blur background
-	document.getElementById("mainContainer")?.classList.add("blur-friend");
-
-	// Create overlay
-	const overlay = document.createElement("div");
-	overlay.id = "friendshipPopup";
-	overlay.style.cssText = `
-		position: fixed;
-		top: 0; left: 0;
-		width: 100vw; height: 100vh;
-		background: rgba(0, 0, 0, 0.85);
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		z-index: 9999;
-	`;
-
-	overlay.innerHTML = `
-		<div style="text-align: center; animation: popIn 0.8s ease-out;">
-			<div style="font-size: 70px;">🎁</div>
-			<h1 style="color: #fff; font-size: 28px;">Happy Friendship Day!</h1>
-			<p style="color: #ddd;">Thanks for being an awesome user 🤝</p>
-			<button style="
-				margin-top: 20px;
-				padding: 10px 25px;
-				font-size: 16px;
-				color: white;
-				background: #ff69b4;
-				border: none;
-				border-radius: 5px;
-				cursor: pointer;">Let's Start</button>
-		</div>
-	`;
-
-	document.body.appendChild(overlay);
-
-	// Close on button click
-	overlay.querySelector("button").addEventListener("click", () => {
-		overlay.remove();
-		document.getElementById("mainContainer")?.classList.remove("blur-friend");
-	});
-
-	addFloatingStars(overlay);
-}
-
-// Floating stars effect
-function addFloatingStars(container) {
-	for (let i = 0; i < 40; i++) {
-		const star = document.createElement("div");
-		star.classList.add("floating-star");
-		star.style.left = `${Math.random() * 100}vw`;
-		star.style.top = `${Math.random() * 100}vh`;
-		container.appendChild(star);
-	}
-}
-
-// Star + Blur style
-const style = document.createElement("style");
-style.textContent = `
-@keyframes floatUp {
-	0% { transform: translateY(0); opacity: 1; }
-	100% { transform: translateY(-100vh); opacity: 0; }
-}
-@keyframes popIn {
-	from { transform: scale(0.7); opacity: 0; }
-	to { transform: scale(1); opacity: 1; }
-}
-.floating-star {
-	position: fixed;
-	width: 6px;
-	height: 6px;
-	background: gold;
-	border-radius: 50%;
-	animation: floatUp 6s linear infinite;
-	z-index: 9999;
-}
-.blur-friend {
-	filter: blur(6px);
-	pointer-events: none;
-	user-select: none;
-}
-`;
-document.head.appendChild(style);
 

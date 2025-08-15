@@ -87,7 +87,7 @@ public class BookingService {
 			if (dto.getConsigneeAddress() != null)
 				booking.setConsigneeAddress(dto.getConsigneeAddress());
 			booking.setLoading(dto.getLoading());
-			booking.setLoadingCharge(dto.getLoadingcharge());
+			booking.setLoadingCharge(dto.getLoadingCharge());
 			
 			saveBookingArticles(loadingReceipt, dto.getArticleDetails());
 			booking.setSgst(dto.getSgst());

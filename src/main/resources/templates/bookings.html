@@ -4,8 +4,9 @@
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Logistics Booking</title>
+<title>Dashboard-1Uniq</title>
 <!-- Select2 CSS -->
+<link rel="icon" type="image/png" sizes="512x512" href="/favicon.png">
 <link
 	href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
 	rel="stylesheet" />
@@ -169,6 +170,180 @@
 			style="margin-top: 10px; display: none; color: red;"></div>
 	</div>
 
+	<!-- #1booking form start -->
+	<div class="container" id="bookingFormContainer"
+		style="display: block;">
+		<div id="selectedPaymentModeDisplay" class="h2"
+			style="margin-bottom: 10px; display: none;">
+			<span class="badge bg-primary" id="selectedModeLabel"></span>
+		</div>
+
+		<form id="bookingForm">
+			<input type="hidden" id="paymentMode" name="paymentMode">
+
+			<div class="row">
+				<!-- Left Column: All Form Fields -->
+				<div class="col-md-8">
+					<!-- Delivery Destination -->
+					<h3>Delivery Destination:</h3>
+					<div class="mb-3">
+						<label for="deliveryDestination" class="form-label"> </label> <select
+							id="deliveryDestination" class="form-select select2">
+							<option value=""></option>
+						</select>
+					</div>
+
+					<!-- Consignor Row -->
+					<h3>Consignor (From)</h3>
+					<div class="row mb-3">
+						<div class="col-md-3">
+							<label class="form-label">Consignor Name</label> <input
+								type="text" id="consignorName" class="form-control"
+								name="consignorName">
+						</div>
+						<div class="col-md-3">
+							<label class="form-label">Mobile</label> <input type="text"
+								id="consignorMobile" class="form-control" name="consignorMobile"
+								maxlength="10" pattern="[0-9]{10}" inputmode="numeric">
+						</div>
+						<div class="col-md-2">
+							<label class="form-label">GST</label> <input type="text"
+								id="consignorGST" class="form-control" name="consignorGST">
+						</div>
+						<div class="col-md-4">
+							<label class="form-label">Address</label> <input type="text"
+								id="consignorAddress" class="form-control"
+								name="consignorAddress">
+						</div>
+					</div>
+
+					<!-- Consignee Row -->
+					<h3>Consignee (To)</h3>
+					<div class="row mb-3">
+						<div class="col-md-3">
+							<label class="form-label">Consignee Name</label> <input
+								type="text" id="consigneeName" class="form-control"
+								name="consigneeName">
+						</div>
+						<div class="col-md-3">
+							<label class="form-label">Mobile</label> <input type="text"
+								id="consigneeMobile" class="form-control" name="consigneeMobile"
+								maxlength="10" pattern="[0-9]{10}" inputmode="numeric">
+						</div>
+						<div class="col-md-2">
+							<label class="form-label">GST</label> <input type="text"
+								id="consigneeGST" class="form-control" name="consigneeGST">
+						</div>
+						<div class="col-md-4">
+							<label class="form-label">Address</label> <input type="text"
+								id="consigneeAddress" class="form-control"
+								name="consigneeAddress">
+						</div>
+					</div>
+
+					<!-- Article Table -->
+					<h3>Article Details</h3>
+					<table class="table table-bordered" id="articlesTable">
+						<thead>
+							<tr>
+								<th>Article</th>
+								<th>Art Quantity</th>
+								<th>Art Type</th>
+								<th>Said To Contains</th>
+								<th>Art Amt</th>
+								<th>Total</th>
+								<th>Action</th>
+							</tr>
+						</thead>
+						<tbody id="editArticleTableBody">
+							<tr>
+								<td><select id="article" class="form-select">
+										<option value="Article">Article</option>
+										<option value="Weight">Weight</option>
+										<option value="Fix">Fix</option>
+								</select></td>
+								<td><input type="number" id="artQuantity" value="0"
+									class="form-control"></td>
+								<td><select id="artType" class="form-select">
+										<option value="Auto Parts">Auto Parts</option>
+										<option value="Electronics">Electronics</option>
+										<option value="Garments">Garments</option>
+								</select></td>
+								<td><select id="saidToContain" class="form-select">
+										<option value="Spare Parts">Spare Parts</option>
+										<option value="Components">Components</option>
+										<option value="Accessories">Accessories</option>
+								</select></td>
+								<td><input type="number" id="artAmount" value="0"
+									class="form-control"></td>
+								<td><span id="totalAmount">0</span></td>
+								<td><button type="button" class="btn btn-sm btn-success"
+										onclick="addArticle()">Add</button></td>
+							</tr>
+						</tbody>
+					</table>
+
+					<!-- Invoice / E-Waybill Row -->
+					<div class="row g-2 mb-3">
+						<div class="col-md-4">
+							<input type="text" id="invoiceNo"
+								class="form-control form-control-sm" placeholder="INVOICE NO.">
+						</div>
+						<div class="col-md-2">
+							<input type="text" id="Invoicevalue"
+								class="form-control form-control-sm" placeholder="0">
+						</div>
+						<div class="col-md-6">
+							<input type="text" id="ewayBill"
+								class="form-control form-control-sm" placeholder="E-Waybill">
+						</div>
+					</div>
+
+					<button type="submit" class="btn btn-primary">Booking</button>
+				</div>
+
+				<!-- Right Column: Charges Panel -->
+				<div class="col-md-4">
+					<div id="chargesPanel" class="charges-panel">
+						<h6 class="text-center mb-2">Charges</h6>
+						<div class="mb-2">
+							<label for="freight">Freight:</label> <input type="number"
+								id="freight" class="form-control" readonly value="0">
+						</div>
+						<div class="mb-2">
+							<label for="loadingCharge">Loading:</label> <input type="number"
+								id="loadingCharge" class="form-control" value="0" step="0.01"
+								min="0">
+						</div>
+						<div class="mb-2">
+							<label for="lrCharge">LR Charge:</label> <input type="number"
+								id="lrCharge" class="form-control" value="0" step="0.01" min="0">
+						</div>
+						<div class="mb-2">
+							<label for="sgst">SGST (2.5%):</label> <input type="number"
+								id="sgst" class="form-control" readonly value="0">
+						</div>
+						<div class="mb-2">
+							<label for="cgst">CGST (2.5%):</label> <input type="number"
+								id="cgst" class="form-control" readonly value="0">
+						</div>
+						<div class="mb-2">
+							<label for="igst">IGST (5%):</label> <input type="number"
+								id="igst" class="form-control" readonly value="0">
+						</div>
+						<div class="mb-2">
+							<label for="grandTotal">Grand Total:</label> <input type="number"
+								id="grandTotal" class="form-control fw-bold" readonly value="0">
+						</div>
+					</div>
+				</div>
+			</div>
+		</form>
+	</div>
+
+	<!-- #1booking form end -->
+
+
 	<div id="bookingReportForm" class="report-form"
 		style="padding-bottom: 100px; overflow-y: auto; max-height: calc(100vh - 120px);">
 		<h3>Booking Report</h3>
@@ -208,168 +383,7 @@
 		<div id="bookingSummaryContainer" class="mt-4"></div>
 	</div>
 
-	<div class="container" id="bookingFormContainer"
-		style="display: block;">
 
-		<div id="selectedPaymentModeDisplay" class="h2"
-			style="margin-bottom: 10px; display: none;">
-			<span class="badge bg-primary" id="selectedModeLabel"></span>
-		</div>
-
-		<form id="bookingForm">
-			<input type="hidden" id="paymentMode" name="paymentMode">
-
-			<!-- Delivery Destination with Select2 -->
-			<div class="row mb-4">
-				<div class="col-md-6">
-					<label for="deliveryDestination" class="form-label">Delivery
-						Destination:</label> <select id="deliveryDestination"
-						class="form-select select2">
-						<option value=""></option>
-					</select>
-				</div>
-			</div>
-
-
-
-
-
-			<h3>Consignor (From)</h3>
-			<label for="consignorName">Name:</label> <input type="text"
-				id="consignorName" required> <label for="consignorMobile">Mobile
-				No:</label> <input type="text" id="consignorMobile" inputmode="numeric"
-				pattern="^[0-9]{10}$" maxlength="10" required
-				title="Please enter valid phone number"> <label
-				for="consignorGST">GST No:</label> <input type="text"
-				id="consignorGST"> <label for="consignorAddress">Address:</label>
-			<input type="text" id="consignorAddress">
-			<h3>Consignee (To)</h3>
-			<label for="consigneeName">Name:</label> <input type="text"
-				id="consigneeName" required> <label for="consigneeMobile">Mobile
-				No:</label> <input type="text" id="consigneeMobile" inputmode="numeric"
-				pattern="^[0-9]{10}$" maxlength="10" required> <label
-				for="consigneeGST">GST No:</label> <input type="text"
-				id="consigneeGST"> <label for="consigneeAddress">Address:</label>
-			<input type="text" id="consigneeAddress">
-
-
-			<h3>Article Details</h3>
-			<div class="row align-items-start">
-				<!-- Article Form -->
-				<div class="col-md-8">
-					<table class="table table-bordered">
-						<thead>
-							<tr>
-								<th>Article</th>
-								<th>Art Quantity</th>
-								<th>Art Type</th>
-								<th>Said To Contains</th>
-								<th>Art Amt</th>
-								<th>Total</th>
-								<th>Action</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr>
-								<td><select id="article" class="form-select">
-										<option value="Article">Article</option>
-										<option value="Weight">Weight</option>
-										<option value="Fix">Fix</option>
-								</select></td>
-								<td><input type="number" id="artQuantity" value="0"
-									class="form-control"></td>
-								<td><select id="artType" class="form-select">
-										<option value="Auto Parts">Auto Parts</option>
-										<option value="Electronics">Electronics</option>
-										<option value="Garments">Garments</option>
-								</select></td>
-								<td><select id="saidToContain" class="form-select">
-										<option value="Spare Parts">Spare Parts</option>
-										<option value="Components">Components</option>
-										<option value="Accessories">Accessories</option>
-								</select></td>
-								<td><input type="number" id="artAmount" value="0"
-									class="form-control"></td>
-								<td><span id="totalAmount">0</span></td>
-								<td><button type="button" class="btn btn-sm btn-success"
-										onclick="addArticle()">Add</button></td>
-							</tr>
-						</tbody>
-					</table>
-					<!-- Invoice / E-Waybill Row (Tightly below article inputs) -->
-					<div class="row g-2 mb-3" style="margin-top: -10px;">
-						<div class="col-md-4">
-							<input type="text" id="invoiceNo"
-								class="form-control form-control-sm" placeholder="INVOICE NO.">
-						</div>
-						<div class="col-md-2">
-							<input type="text" id="Invoicevalue"
-								class="form-control form-control-sm" placeholder="0">
-						</div>
-						<div class="col-md-6">
-							<input type="text" id="ewayBill"
-								class="form-control form-control-sm" placeholder="E-Waybill">
-						</div>
-					</div>
-
-				</div>
-
-
-
-				<!-- Charges Section - Right Side -->
-				<!-- Charges Section - Right Side (REPLACE existing #chargesPanel) -->
-				<div class="col-md-4">
-					<div id="chargesPanel"
-						style="display: none; border: 1px solid #ccc; padding: 12px; border-radius: 4px;">
-						<h6 class="text-center mb-2">Charges</h6>
-
-						<div class="mb-2">
-							<label for="freight">Freight:</label> <input type="number"
-								id="freight" class="form-control" readonly value="0">
-						</div>
-
-						<div class="mb-2">
-							<label for="loadingCharge">Loading:</label>
-							<!-- editable by user -->
-							<input type="number" id="loadingCharge" class="form-control"
-								value="0" step="0.01" min="0">
-						</div>
-
-						<div class="mb-2">
-							<label for="lrCharge">LR Charge:</label>
-							<!-- editable by user -->
-							<input type="number" id="lrCharge" class="form-control" value="0"
-								step="0.01" min="0">
-						</div>
-
-						<div class="mb-2">
-							<label for="sgst">SGST (2.5%):</label> <input type="number"
-								id="sgst" class="form-control" readonly value="0">
-						</div>
-						<div class="mb-2">
-							<label for="cgst">CGST (2.5%):</label> <input type="number"
-								id="cgst" class="form-control" readonly value="0">
-						</div>
-						<div class="mb-2">
-							<label for="igst">IGST (5%):</label> <input type="number"
-								id="igst" class="form-control" readonly value="0">
-						</div>
-						<div class="mb-2">
-							<label for="grandTotal">Grand Total:</label> <input type="number"
-								id="grandTotal" class="form-control fw-bold" readonly value="0">
-						</div>
-					</div>
-				</div>
-
-
-
-
-			</div>
-
-
-			<button type="submit">Booking</button>
-		</form>
-	</div>
 
 	<!-- ✅ HTML Layout for Global Search with Scrollable Table Only -->
 	<div id="globalSearchFormContainer" class="report-form"
@@ -800,14 +814,21 @@
 			</div>
 		</form>
 	</div>
-	<div id="customAlert" class="custom-alert-overlay"
-		style="display: none;">
-		<div class="custom-alert-box">
-			<h4 id="customAlertTitle" class="mb-2">Alert</h4>
-			<p id="customAlertMessage"></p>
-			<button class="btn btn-primary mt-3" onclick="closeCustomAlert()">OK</button>
+	<!-- Custom Alert Box -->
+	<div id="customAlert" class="modal fade" tabindex="-1"
+		aria-hidden="true">
+		<div class="modal-dialog modal-sm modal-dialog-centered">
+			<!-- small size -->
+			<div class="modal-content text-center p-3">
+				<div class="modal-body">
+					<p id="customAlertMessage" class="mb-3"></p>
+					<button type="button" class="btn btn-primary btn-sm btn-ok">OK</button>
+				</div>
+			</div>
 		</div>
 	</div>
+
+
 
 	<script
 		src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -824,23 +845,6 @@
 	  });
 	</script>
 
-	<div class="table-wrapper">
-		<table id="globalSearchTable">
-			<thead>
-				<tr>
-					<th>LR No</th>
-					<th>Consignor</th>
-					<th>Consignee</th>
-					<th>Branch</th>
-					<th>Freight</th>
-					<th>Booking Date</th>
-				</tr>
-			</thead>
-			<tbody>
-				<!-- Inject rows dynamically from API here -->
-			</tbody>
-		</table>
-	</div>
 
 
 </body>
