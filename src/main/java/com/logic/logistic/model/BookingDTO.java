@@ -21,7 +21,7 @@ public class BookingDTO {
     private double cgst;
     private double igst;
     private double loading;
-    private double loadingcharge;
+    private double loadingCharge;
 
     private LocalDateTime bookingDate;
     private LocalDateTime dispatchDate;
@@ -196,13 +196,13 @@ public class BookingDTO {
 	public void setLoading(double loading) {
 		this.loading = loading;
 	}
-	public double getLoadingcharge() {
-		return loadingcharge;
+	public double getLoadingCharge() {
+		return loadingCharge;
 	}
-	public void setLoadingcharge(double loadingcharge) {
-		this.loadingcharge = loadingcharge;
+	public void setLoadingCharge(double loadingCharge) {
+		this.loadingCharge = loadingCharge;
 	}
-
+	
 
     
 }
