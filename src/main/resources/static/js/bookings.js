@@ -708,6 +708,11 @@ const DEFAULT_LR_FLAT = 0.0;        // Rs. 50 flat (auto default)
 // ------------------------------------------------
 
 // call this once on page load (or after DOM ready)
+document.addEventListener("DOMContentLoaded", () => {
+	document.getElementById("loadingCharge").addEventListener("input", calculateCharges);
+	document.getElementById("lrCharge").addEventListener("input", calculateCharges);
+});
+
 
 function initChargesListeners() {
 	const loadingEl = document.getElementById("loadingCharge");
@@ -717,19 +722,19 @@ function initChargesListeners() {
 		loadingEl.addEventListener("input", function() {
 			// mark as manually edited so autos don't overwrite
 			this.dataset.manual = "true";
-			calculateCharges();
+			calculateChargesBooking();
 		});
 		// optional: clear manual flag on double-click
 		loadingEl.addEventListener("dblclick", function() {
 			delete this.dataset.manual;
-			calculateCharges();
+			calculateChargesBooking();
 		});
 	}
 
 	if (lrEl) {
 		lrEl.addEventListener("input", function() {
 			this.dataset.manual = "true";
-			calculateCharges();
+			calculateChargesBooking();
 		});
 		lrEl.addEventListener("dblclick", function() {
 			delete this.dataset.manual;
@@ -742,7 +747,7 @@ function initChargesListeners() {
 document.addEventListener("DOMContentLoaded", initChargesListeners);
 
 // ----------------- Add Article (mark inserted rows) -----------------
-function addArticle() {
+function addArticlebooking() {
 	let tableBody = document.querySelector("#bookingForm table tbody");
 	let newRow = tableBody.insertRow(-1);
 
@@ -794,28 +799,21 @@ function deleteRow(btn) {
 	let row = btn.closest("tr");
 	if (row) row.remove();
 
-	// check if any added rows remain
+	// always recalc after deletion
+	updateFreight();
+
+	// DO NOT hide chargesPanel even if no rows
+	// Only reset freight, GSTs, etc., but keep panel visible
 	const addedRows = document.querySelectorAll("#bookingForm table tbody tr[data-added='true']");
 	if (addedRows.length === 0) {
-		// hide charges and reset values
-		document.getElementById("chargesPanel").style.display = "none";
 		safeAssign("freight", 0);
-		safeAssign("loadingCharge", 0);
-		safeAssign("lrCharge", 0);
 		safeAssign("sgst", 0);
 		safeAssign("cgst", 0);
 		safeAssign("igst", 0);
-		safeAssign("grandTotal", 0);
-
-		// remove manual flags
-		const loadingEl = document.getElementById("loadingCharge");
-		const lrEl = document.getElementById("lrCharge");
-		if (loadingEl) delete loadingEl.dataset.manual;
-		if (lrEl) delete lrEl.dataset.manual;
-	} else {
-		updateFreight();
+		calculateCharges(); // recalc with 0 freight but keep user charges
 	}
 }
+
 
 // small helper to set input safely if element exists
 function safeAssign(id, val) {
@@ -841,49 +839,57 @@ function updateFreight() {
 
 
 	// Recalculate charges after freight update
-	calculateCharges();
+	calculateChargesBooking();
 }
 
-// ----------------- Calculate Charges -----------------
-function calculateCharges() {
+// ----------------- Calculate Charges for Booking Form -----------------
+function calculateChargesBooking() {
 	const freight = parseFloat(document.getElementById("freight").value) || 0;
+	const loadingCharge = parseFloat(document.getElementById("loadingCharge").value) || 0;
+	const lrCharge = parseFloat(document.getElementById("lrCharge").value) || 0;
 
-	const loadingInput = document.getElementById("loadingCharge");
-	const lrInput = document.getElementById("lrCharge");
-
-	// auto-fill defaults only when user has NOT manually edited
-	if (loadingInput && !loadingInput.dataset.manual) {
-		// default loading as percentage of freight
-		loadingInput.value = (freight * (DEFAULT_LOADING_PERCENT / 100)).toFixed(2);
-	}
-	if (lrInput && !lrInput.dataset.manual) {
-		lrInput.value = DEFAULT_LR_FLAT.toFixed(2);
-	}
-
-	const loadingCharge = parseFloat(loadingInput.value) || 0;
-	const lrCharge = parseFloat(lrInput.value) || 0;
-
-	const consignorGST = (document.getElementById("consignorGST") || {}).value || "";
-	const consigneeGST = (document.getElementById("consigneeGST") || {}).value || "";
+	const consignorGST = (document.getElementById("consignorGST")?.value || "").trim();
+	const consigneeGST = (document.getElementById("consigneeGST")?.value || "").trim();
 
 	let sgst = 0, cgst = 0, igst = 0;
+	if (freight > 0) {
 
-	// current behavior: GST calculated on freight only (same as existing logic)
-	if (consignorGST.trim() || consigneeGST.trim()) {
-		sgst = parseFloat((freight * 0.025).toFixed(2));
-		cgst = parseFloat((freight * 0.025).toFixed(2));
-		igst = parseFloat((freight * 0.05).toFixed(2));
+		// GST calculation only based on GST inputs
+		if (consignorGST && consigneeGST) {
+			const consignorState = consignorGST.substring(0, 2);
+			const consigneeState = consigneeGST.substring(0, 2);
+
+			if (consignorState === consigneeState) {
+				// Same state → SGST + CGST
+				sgst = +(freight * 0.025).toFixed(2);
+				cgst = +(freight * 0.025).toFixed(2);
+				igst = 0; // 🚨 explicitly reset IGST
+			} else {
+				// Different state → IGST
+				igst = +(freight * 0.05).toFixed(2);
+				sgst = 0; // 🚨 reset SGST
+				cgst = 0; // 🚨 reset CGST
+			}
+		} else if (consignorGST || consigneeGST) {
+			// Only one GST → IGST
+			igst = +(freight * 0.05).toFixed(2);
+			sgst = 0; // 🚨 reset SGST
+			cgst = 0; // 🚨 reset CGST
+		} else {
+			// No GST → all 0
+			sgst = 0;
+			cgst = 0;
+			igst = 0;
+		}
 	}
-
-	// Grand total includes freight + loading + lr + taxes
 	const grandTotal = (freight + loadingCharge + lrCharge + sgst + cgst + igst).toFixed(2);
+
 
 	safeAssign("sgst", sgst);
 	safeAssign("cgst", cgst);
 	safeAssign("igst", igst);
-	safeAssign("loadingCharge", loadingCharge);
-	safeAssign("lrCharge", lrCharge);
 	safeAssign("grandTotal", parseFloat(grandTotal));
+	document.getElementById("chargesPanel").style.display = "block";
 }
 
 // ----------------- Reset Booking Form must clear manual flags -----------------
@@ -1170,6 +1176,27 @@ document.getElementById("bookingForm").addEventListener("submit", async function
 		return;
 	}
 
+	// --- Invoice Validation ---
+	const invoiceNo = document.getElementById("invoiceNo").value.trim();
+	const invoiceValue = document.getElementById("Invoicevalue").value.trim();
+
+	if (invoiceNo && !invoiceValue) {
+		await showCustomAlert("Please enter Invoice Value when Invoice Number is provided.");
+		return;
+	}
+	if (invoiceValue && !/^\d+(\.\d{1,2})?$/.test(invoiceValue)) {
+		await showCustomAlert("Invoice Value must be a valid number (up to 2 decimals).");
+		return;
+	}
+
+	// --- E-Way Bill Validation ---
+	const ewayBill = document.getElementById("ewayBill").value.trim();
+	if (ewayBill && !/^\d{12}$/.test(ewayBill)) {
+		await showCustomAlert("E-Way Bill must be exactly 12 digits numeric.");
+		return;
+	}
+
+
 	let articleDetails = [];
 	let rows = document.querySelectorAll("table tr:not(:first-child)");
 	rows.forEach(row => {
@@ -1253,6 +1280,20 @@ document.addEventListener("DOMContentLoaded", function() {
 		width: '100%'
 	});
 });
+
+// Invoice Value: allow only digits and dot
+document.getElementById("Invoicevalue").addEventListener("input", function () {
+  this.value = this.value.replace(/[^0-9.]/g, ""); 
+});
+
+// E-Way Bill: allow only digits (max 12)
+document.getElementById("ewayBill").addEventListener("input", function () {
+  this.value = this.value.replace(/\D/g, ""); // remove non-digits
+  if (this.value.length > 12) {
+    this.value = this.value.slice(0, 12); // trim to 12 digits
+  }
+});
+
 
 function resetPaymentModeUI() {
 	const hiddenInput = document.getElementById("paymentMode");
@@ -2254,9 +2295,7 @@ function calculateCharges() {
 	}
 }
 
-// Listen to changes in loading & LR charges to recalc grand total
-document.getElementById("loadingCharge").addEventListener("input", calculateCharges);
-document.getElementById("lrCharge").addEventListener("input", calculateCharges);
+
 
 
 document.addEventListener("DOMContentLoaded", setupLRSearch);
