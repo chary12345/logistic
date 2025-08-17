@@ -1,6 +1,7 @@
 package com.logic.logistic.controller;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,19 +52,7 @@ public class BookingController {
 	            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Update failed: " + e.getMessage());
 	        }
 	    }
-		/*
-		 * // @GetMapping("/report") public ResponseEntity<?> getBookingReport(
-		 * 
-		 * @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime
-		 * fromDate,
-		 * 
-		 * @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime
-		 * toDate,
-		 * 
-		 * @RequestParam(required = false) String status) { return
-		 * ResponseEntity.ok(bookingService.getBookingReportsBetweenDates(fromDate,
-		 * toDate, status)); }
-		 */
+	
 
 	@GetMapping("/report")
 	public ResponseEntity<BookingPageResponse> getReport(
@@ -74,18 +63,6 @@ public class BookingController {
 		BookingPageResponse response = bookingService.getReports(fromDate, toDate, status, lastId, branchCode);
 		return ResponseEntity.ok(response);
 	}
-
-	/*
-	 * @GetMapping("/todayReports") public ResponseEntity<?> toDayBookingRepoprts(
-	 * 
-	 * @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime
-	 * fromDate,
-	 * 
-	 * @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime
-	 * toDate, String status) { return
-	 * ResponseEntity.ok(bookingService.getBookingReportsBetweenDates(fromDate,
-	 * toDate, status)); }
-	 */
 	
 	@PostMapping("/dispatchLoad")
 	public ResponseEntity<DispatchResponse> dispatchLoad(@RequestBody DispatchRequest request) {
@@ -108,20 +85,15 @@ public class BookingController {
 		}
 	}
 
-//	@GetMapping("/get-Global-Search-Repoprts")
-//	public ResponseEntity<BookingPageResponse> getGlobalSearchreports(
-//			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fromDate,
-//			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime toDate,
-//			@RequestParam String status, @RequestParam(required = false) String lastId,
-//			@RequestParam(required = false) String branchCode) {
-//		BookingPageResponse response = bookingService.getGlobalSearchreports(fromDate, toDate, lastId, branchCode);
-//		return ResponseEntity.ok(response);
-//	}
-	
+
 	@PostMapping("/get-Global-Search-Reports")
 	public ResponseEntity<BookingPageResponse> getGlobalSearchReports(@RequestBody BookingSearchRequest request) {
 	    BookingPageResponse response = bookingService.getGlobalSearchReports(request);
 	    return ResponseEntity.ok(response);
 	}
 
+	 @GetMapping("Get-ditinct-saidtocontains/{companyCode}")
+	    public List<String> getSaidToContainsByCompany(@PathVariable String companyCode) {
+	        return bookingService.getSaidToContainsByCompany(companyCode);
+	    }
 }
