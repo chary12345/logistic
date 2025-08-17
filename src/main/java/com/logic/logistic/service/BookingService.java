@@ -355,6 +355,10 @@ public class BookingService {
 	    return response;
 	}
 
+	public List<String> getSaidToContainsByCompany(String companyCode) {
+		 return articleRepo.findDistinctSaidToContainsByCompanyCode(companyCode);
+	}
+
 
 
 

@@ -321,7 +321,6 @@ function showReportForm(reportType) {
 
 	document.getElementById("reportStatusHidden").value = status;
 	document.querySelector("#bookingReportForm h3").textContent = headingText;
-	updateDispatchButtonVisibility(status);
 
 	// Optional: clear previous table
 	document.getElementById("reportTableContainer").innerHTML = '';
@@ -342,13 +341,7 @@ function resetReportView() {
 	lastSeenBookingId = null;
 }
 
-function updateDispatchButtonVisibility(status) {
-	const btn = document.getElementById("dispatchSelectedButton");
-	if (!btn) return;
 
-	// Show button only if status is "BOOKED"
-	btn.style.display = (status === "BOOKED") ? "inline-block" : "none";
-}
 
 let reportData = [];              // for download
 let reportPages = [];             // paginated cache
@@ -384,7 +377,7 @@ function generateBookingReport() {
 	document.getElementById("reportActions").style.display = 'none';
 	document.getElementById("paginationControls").style.display = 'none';
 
-	//updateDispatchButtonVisibility(currentReportStatus);
+
 
 	// 🚀 Always fetch first page fresh
 	loadPage(0);
@@ -470,7 +463,7 @@ function displayReportData(data) {
 		table.innerHTML = `
 			<thead>
 			<tr>
-				<th><input type="checkbox" id="selectAll" onclick="toggleAllCheckboxes(this)"></th>
+				<th>S.No</th>
 				<th>LoadingReciept</th>
 				<th>Consignor Name</th>
 				<th>Consignor Mobile</th>
@@ -491,10 +484,10 @@ function displayReportData(data) {
 		tbody = table.querySelector("tbody");
 	}
 
-	data.forEach(booking => {
+	data.forEach((booking, index) => {
 		const row = document.createElement("tr");
 		row.innerHTML = `
-			<td><input type="checkbox" class="bookingCheckbox" value="${booking.loadingReciept}"></td>
+			<td>${index + 1}</td>
 			<td>${booking.loadingReciept}</td>
 			<td>${booking.consignorName}</td>
 			<td>${booking.consignorMobile}</td>
@@ -965,7 +958,7 @@ function printBookingReceipt(booking) {
 				</tr>
 				<tr>
 					<td>
-						<strong>FROM:</strong> ${booking.branchCode}<br>
+						<strong>FROM:</strong> ${userData.companyAndBranchDeatils.branchName} (${booking.branchCode})<br>
 						<strong>Consignor:</strong> ${booking.consignorName}<br>
 						<strong>Address:</strong> ${booking.consignorAddress}<br>
 						<strong>Mobile:</strong> ${booking.consignorMobile}
@@ -979,7 +972,6 @@ function printBookingReceipt(booking) {
 				</tr>
 				<tr>
 					<td><strong>Quantity:</strong> ${totalQty}</td>
-					<td><strong>Description:</strong> ${description}</td>
 				</tr>
 				<tr>
 					<td>
@@ -994,9 +986,6 @@ function printBookingReceipt(booking) {
 				</tr>
 				<tr>
 					<td colspan="2"><strong>Remarks:</strong></td>
-				</tr>
-				<tr>
-					<td colspan="2" class="note">Goods booked at owner's risk and said to contain basis. Non-Negotiable.</td>
 				</tr>
 				<tr>
 					<td colspan="2" class="sign">Signature: ____________________________</td>
@@ -1020,20 +1009,22 @@ function printBookingReceipt(booking) {
 				padding: 5px;
 			}
 			.charges-box {
-				width: 30%;
-				text-align: left;
-				font-weight: bold;
-			}
+    width: 30%;
+    text-align: left;
+    font-weight: bold;
+    vertical-align: bottom;   /* ✅ Align bottom */
+}
 			.charges-box hr {
 				border: none;
 				border-top: 1px dashed #000;
 				margin: 6px 0;
 			}
 			.charges-total {
-				font-size: 14px;
-				font-weight: bold;
-				margin-top: 10px;
-			}
+    font-size: 14px;
+    font-weight: bold;
+    margin-top: 40px;        /* ✅ Push down to align with signature */
+}
+
 			.note {
 				text-align: center;
 				font-size: 12px;
@@ -1282,16 +1273,16 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 // Invoice Value: allow only digits and dot
-document.getElementById("Invoicevalue").addEventListener("input", function () {
-  this.value = this.value.replace(/[^0-9.]/g, ""); 
+document.getElementById("Invoicevalue").addEventListener("input", function() {
+	this.value = this.value.replace(/[^0-9.]/g, "");
 });
 
 // E-Way Bill: allow only digits (max 12)
-document.getElementById("ewayBill").addEventListener("input", function () {
-  this.value = this.value.replace(/\D/g, ""); // remove non-digits
-  if (this.value.length > 12) {
-    this.value = this.value.slice(0, 12); // trim to 12 digits
-  }
+document.getElementById("ewayBill").addEventListener("input", function() {
+	this.value = this.value.replace(/\D/g, ""); // remove non-digits
+	if (this.value.length > 12) {
+		this.value = this.value.slice(0, 12); // trim to 12 digits
+	}
 });
 
 
@@ -2417,6 +2408,7 @@ let globalLastSeenBookingId = null;
 let globalAllData = [];
 let globalHasMore = true;
 let globalIsLoading = false;
+let snoCounter = 1; // 🔑 Serial number counter
 
 function generateGlobalBookingReport() {
 	const from = document.getElementById("gFromDate").value;
@@ -2434,6 +2426,7 @@ function generateGlobalBookingReport() {
 	globalAllData = [];
 	globalHasMore = true;
 	globalIsLoading = false;
+	snoCounter = 1; // 🔑 reset S.No
 
 	document.getElementById("globalSearchTableContainer").innerHTML = "";
 	document.getElementById("globalBookingSummaryContainer").innerHTML = "";
@@ -2480,6 +2473,8 @@ function loadMoreGlobalData(filters) {
 		});
 }
 
+
+
 function appendGlobalUI(data) {
 	const container = document.getElementById("globalSearchTableContainer");
 	let table = container.querySelector("table");
@@ -2490,14 +2485,20 @@ function appendGlobalUI(data) {
 		table.innerHTML = `
       <thead class="table-light">
         <tr>
+          <th>S.No</th>
           <th>LR No</th>
-		  <th>Booking Date</th>
+          <th>Status</th>
+          <th>Booking Date</th>
+          <th>Dispatch Date</th>
           <th>Consignor</th>
           <th>Consignee</th>
-          <th>Branch</th>
-          <th>Freight</th>         
-		  <th>Loading Charges</th>
-		  <th>Total</th>
+          <th>From Branch</th>
+          <th>To Branch</th>
+          <th>Freight</th>
+          <th>GST</th>
+          <th>Loading Charges</th>
+          <th>Total</th>
+          
         </tr>
       </thead>
       <tbody></tbody>`;
@@ -2505,19 +2506,27 @@ function appendGlobalUI(data) {
 	}
 
 	const tbody = table.querySelector("tbody");
+
 	data.forEach((item) => {
+		const gst = Number(item.sgst || 0) + Number(item.cgst || 0) + Number(item.igst || 0);
 		const loadingCharges = Number(item.loading || 0) + Number(item.loadingCharge || 0);
-		const total = Number(item.freight || 0) + loadingCharges;
+		const total = Number(item.freight || 0) + gst + loadingCharges;
+
 		const tr = document.createElement("tr");
 		tr.innerHTML = `
+      <td>${snoCounter++}</td>
       <td>${item.loadingReciept}</td>
-	  <td>${new Date(item.bookingDate).toLocaleDateString()}</td>
-      <td>${item.consignorName}</td>
-      <td>${item.consigneeName}</td>
+      <td>${item.consignStatus}</td>
+      <td>${new Date(item.bookingDate).toLocaleDateString()}</td>
+      <td>${item.dispatchDate ? new Date(item.dispatchDate).toLocaleDateString() : "-"}</td>
+      <td>${item.consignorName} (${item.consignorMobile || ""})</td>
+      <td>${item.consigneeName} (${item.consigneeMobile || ""})</td>
       <td>${item.branchCode}</td>
-      <td>${item.freight}</td>
-	   <td>${loadingCharges}</td>
-	   <td>${total}</td>`;
+      <td>${item.destinationBranchCode}</td>
+      <td>${item.freight.toFixed(2)}</td>
+      <td>${gst.toFixed(2)}</td>
+      <td>${loadingCharges.toFixed(2)}</td>
+      <td>${total.toFixed(2)}</td>`;
 		tbody.appendChild(tr);
 	});
 }
@@ -3479,4 +3488,62 @@ function protectPage() {
 		window.location.href = "/login.html"; // or your login route
 	}
 }
+
+window.addEventListener('DOMContentLoaded', () => {
+	const today = new Date().toISOString().split('T')[0];
+	document.getElementById('gFromDate').setAttribute('max', today);
+	document.getElementById('gToDate').setAttribute('max', today);
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+    const select = $('#saidToContain');
+
+    // Default static values
+    const defaultValues = [
+        { id: 'Spare Parts', text: 'Spare Parts' },
+        { id: 'Accessories', text: 'Accessories' },
+        { id: 'Components', text: 'Components' }
+    ];
+
+    select.select2({
+        placeholder: "Enter said to contain",
+        allowClear: true,
+        tags: true, // user can add custom values
+        data: defaultValues, // show default values initially
+        ajax: {
+            transport: function (params, success, failure) {
+                const companyCode = userData.companyAndBranchDeatils.companyCode;
+
+                // If no companyCode, fallback to default values
+                if (!companyCode) {
+                 console.error("empty comp[anycode",);
+                    success({ results: defaultValues });
+                    return;
+                }
+
+                fetch(`/api/bookings/Get-ditinct-saidtocontains/${encodeURIComponent(companyCode)}`)
+                    .then(res => {
+                        if (!res.ok) throw new Error("Failed to fetch");
+                        return res.json();
+                    })
+                    .then(data => {
+                        // Merge API data with default values, avoiding duplicates
+                        const merged = [...defaultValues];
+                        data.forEach(item => {
+                            if (!merged.some(d => d.id === item)) {
+                                merged.push({ id: item, text: item });
+                            }
+                        });
+                        success({ results: merged });
+                    })
+                    .catch(err => {
+                        console.error("Error loading saidToContains:", err);
+                        success({ results: defaultValues });
+                    });
+            },
+            delay: 250
+        },
+        minimumInputLength: 0
+    });
+});
 

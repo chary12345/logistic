@@ -74,9 +74,4 @@ public interface BookRepository extends JpaRepository<Booking, String> {
 		    @Param("branchCodes") List<String> branchCodes,
 		    Pageable pageable
 		);
-
-
-//	List<String> getlistofBranchcodes(@Param("city") String city, @Param("state") String state, @Param("branchCode") String branchCode);
-//	List<String> getlistofBranchcodes(String city, String state, String branchCode);
-
 }
