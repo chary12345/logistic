@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.logic.logistic.LogisticApplication;
 import com.logic.logistic.model.Branch;
 import com.logic.logistic.model.BranchMap;
 import com.logic.logistic.service.CompanyRegisterService;
@@ -142,4 +141,9 @@ public class CompanyBranchController {
 		return companyRegisterService.findByCompanyDetails_CompanyCode(companyCode);
 
 	}
+	
+	 @GetMapping("/nextLr/{branchCode}")
+	    public String getNextLrNumber(@PathVariable String branchCode) {
+		 return companyRegisterService.getNextLrNumber(branchCode);
+	    }
 }

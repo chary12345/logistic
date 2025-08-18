@@ -22,4 +22,6 @@ public interface CompanyRegisterService {
 
 	ResponseEntity<byte[]> findByCompanyDetails_CompanyCode(String companyCode);
 
+	String getNextLrNumber(String branchCode);
+
 }

@@ -118,6 +118,11 @@
 
 		<div class="navbar-right">
 
+			<!-- LR No Display -->
+			<div id="nextLrDisplay" class="badge"
+				style="background-color: red; color: white; font-weight: bold; margin-right: 15px;">
+				LR No: --</div>
+
 			<div class="navbar-lr-search" style="margin-right: 10px;">
 				<input type="text" id="lrSearchInput"
 					class="form-control d-inline-block" placeholder="Search LR"
@@ -299,7 +304,15 @@
 								inputmode="numeric" maxlength="12" pattern="^\d{12}$">
 						</div>
 					</div>
-
+					<!-- Paid Via dropdown (smaller height) -->
+					<div class="mb-3" id="paidViaContainer"
+						style="display: none; max-width: 200px;">
+						<label for="paidVia" class="form-label">Paid Via*</label> <select
+							id="paidVia" name="paidVia" class="form-select form-select-sm">
+							<option value="CASH">Cash</option>
+							<option value="ONLINE">Online</option>
+						</select>
+					</div>
 
 					<button type="submit" class="btn btn-primary">Booking</button>
 				</div>

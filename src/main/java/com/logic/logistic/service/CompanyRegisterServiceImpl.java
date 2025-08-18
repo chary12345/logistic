@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.logic.logistic.dto.AddressDto;
+import com.logic.logistic.dto.BookingReceiptSequence;
 import com.logic.logistic.dto.BranchDTO;
 import com.logic.logistic.dto.CompanyDto;
 import com.logic.logistic.dto.RegionMasterDto;
@@ -21,6 +22,7 @@ import com.logic.logistic.model.Branch;
 import com.logic.logistic.model.BranchMap;
 import com.logic.logistic.model.CompanyAndUserDetailsPojo;
 import com.logic.logistic.repository.AddressRepo;
+import com.logic.logistic.repository.BookingReceiptSequenceRepository;
 import com.logic.logistic.repository.BranchRepo;
 import com.logic.logistic.repository.CompanyRegisterrepo;
 import com.logic.logistic.repository.RegionMasterRepository;
@@ -43,6 +45,9 @@ public class CompanyRegisterServiceImpl implements CompanyRegisterService {
 
 	@Autowired
 	private RegionMasterRepository regionMasterRepo;
+	
+	@Autowired
+	private BookingReceiptSequenceRepository sequenceRepo;
 
 	@Override
 	public String isCompanyCodeExists(String companyCode) {
@@ -168,6 +173,21 @@ public class CompanyRegisterServiceImpl implements CompanyRegisterService {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 		}
 		return ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG).body(logo);
+	}
+
+	@Override
+	public String getNextLrNumber(String branchCode) {
+        BookingReceiptSequence sequence = sequenceRepo.findById(branchCode)
+            .orElseGet(() -> {
+                BookingReceiptSequence s = new BookingReceiptSequence();
+                s.setKeyCode(branchCode);
+                s.setLastNumber(0);
+                return s;
+            });
+
+        int nextSerial = sequence.getLastNumber() + 1;
+        return branchCode + "/" + String.format("%03d", nextSerial);
+		
 	}
 
 }
