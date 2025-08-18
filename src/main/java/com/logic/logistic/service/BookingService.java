@@ -52,7 +52,7 @@ public class BookingService {
 	
 	@Transactional
 	public Booking saveBooking(BookingDTO dto) {
-		String key = dto.getCompanyCode() + dto.getBranchCode();
+		String key =  dto.getBranchCode();
 		Booking save = null;
 		try {
 			BookingReceiptSequence sequence = sequenceRepo.findById(key).orElseGet(() -> {
@@ -68,7 +68,7 @@ public class BookingService {
 			sequence.setLastNumber(newSerial);
 			sequenceRepo.save(sequence);
 
-			String loadingReceipt = key + String.format("%03d", newSerial);
+			String loadingReceipt = key+"/" + String.format("%03d", newSerial);
 
 			Booking booking = new Booking();
 			booking.setLoadingReciept(loadingReceipt);
@@ -119,7 +119,10 @@ public class BookingService {
 				booking.setDestinationBranchCode(dto.getDestinationBranchCode());
 			if (dto.getEmployeeName() != null)
 				booking.setEmployeeName(dto.getEmployeeName());
+			if (dto.getPaidVia() != null)
+				booking.setPaidVia(dto.getPaidVia());
 			save = bookingRepo.save(booking);
+			save.setNextLr(key+"/" + String.format("%03d", newSerial+1));
 			logger.info("booking saved:: " + save.getLoadingReciept());
 		} catch (Exception e) {
 			

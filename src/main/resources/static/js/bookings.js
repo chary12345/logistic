@@ -30,15 +30,36 @@ function hideAllForms() {
 
 function showBookingForm() {
 	hideAllForms();
-
 	document.getElementById('bookingFormContainer').style.display = 'block';
+	// first time or refresh case → fetch from API
+	const currentBranch = userData?.companyAndBranchDeatils?.branchCode || null;
+	if (!currentBranch) {
+		console.error("Branch code not found in userData:", userData);
+		return;
+	}
+	if (!globalNextLr) {
+		initNextLr(currentBranch);
+	} else if (globalNextLr) {
+		// already available → directly update UI
+		document.getElementById("nextLrDisplay").textContent = "LR No: " + globalNextLr;
+	}
+
 }
 
+function initNextLr(branchCode) {
+	fetch(`/nextLr/${branchCode}`)
+		.then(resp => resp.text())
+		.then(data => {
+			document.getElementById("nextLrDisplay").textContent = "LR No: " + data;
+		})
+		.catch(err => console.error("Error fetching initial LR:", err));
+}
 function showCreateBranchForm() {
 	hideAllForms();
 
 	document.getElementById('CreateBranchContainer').style.display = 'block';
 }
+
 
 function showOperationSearchForm(status) {
 	hideAllForms();
@@ -469,12 +490,11 @@ function displayReportData(data) {
 				<th>Consignor Mobile</th>
 				<th>Consignee Name</th>
 				<th>Consignee Mobile</th>
-				<th>Article Type</th>
-				<th>Article Weight</th>
 				<th>Freight</th>
 				<th>SGST</th>
 				<th>CGST</th>
-				<th>IGST</th>
+				<th>IGST</th>		
+				<th>Loading Charges</th>
 				<th>ConsignStatus</th>
 				<th>Booking Date</th>
 			</tr>
@@ -485,6 +505,8 @@ function displayReportData(data) {
 	}
 
 	data.forEach((booking, index) => {
+		const loadingCharges = Number(booking.loading || 0) + Number(booking.loadingCharge || 0);
+
 		const row = document.createElement("tr");
 		row.innerHTML = `
 			<td>${index + 1}</td>
@@ -493,12 +515,11 @@ function displayReportData(data) {
 			<td>${booking.consignorMobile}</td>
 			<td>${booking.consigneeName}</td>
 			<td>${booking.consigneeMobile}</td>
-			<td>${booking.articleType}</td>
-			<td>${booking.articleWeight}</td>
 			<td>${booking.freight}</td>
 			<td>${booking.sgst}</td>
 			<td>${booking.cgst}</td>
 			<td>${booking.igst}</td>
+			<td>${loadingCharges}</td>
 			<td>${booking.consignStatus}</td>
 			<td>${new Date(booking.bookingDate).toLocaleDateString()}</td>
 		`;
@@ -1095,7 +1116,7 @@ function printBookingReceipt(booking) {
 	printWindow.document.close();
 }
 
-
+let globalNextLr = null;
 
 document.getElementById("bookingForm").addEventListener("submit", async function(event) {
 	event.preventDefault();
@@ -1243,6 +1264,11 @@ document.getElementById("bookingForm").addEventListener("submit", async function
 		let result = await response.json();
 
 		await showCustomAlert("Booking saved successfully!");
+
+		// update next LR badge
+		if (result.nextLr) {
+			globalNextLr = result.nextLr;
+		}
 
 		document.getElementById("bookingForm").reset();
 
@@ -1986,6 +2012,7 @@ function loadBranchesByCompanyCode(companyCode) {
 		.catch(error => console.error("Error fetching branches:", error));
 }
 
+
 function setPaymentMode(mode) {
 	const hiddenInput = document.getElementById("paymentMode");
 	const displayBox = document.getElementById("selectedPaymentModeDisplay");
@@ -2015,6 +2042,17 @@ function setPaymentMode(mode) {
 	if (selector) {
 		const btn = document.querySelector(selector);
 		if (btn) btn.classList.add("selected-mode");
+	}
+
+	// Show / hide Paid Via dropdown
+	const paidViaContainer = document.getElementById("paidViaContainer");
+	if (paidViaContainer) {
+		if (mode === "PAID") {
+			paidViaContainer.style.display = "block";
+		} else {
+			paidViaContainer.style.display = "none";
+			document.getElementById("paidVia").value = ""; // reset
+		}
 	}
 }
 
@@ -3496,54 +3534,54 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 document.addEventListener("DOMContentLoaded", () => {
-    const select = $('#saidToContain');
+	const select = $('#saidToContain');
 
-    // Default static values
-    const defaultValues = [
-        { id: 'Spare Parts', text: 'Spare Parts' },
-        { id: 'Accessories', text: 'Accessories' },
-        { id: 'Components', text: 'Components' }
-    ];
+	// Default static values
+	const defaultValues = [
+		{ id: 'Spare Parts', text: 'Spare Parts' },
+		{ id: 'Accessories', text: 'Accessories' },
+		{ id: 'Components', text: 'Components' }
+	];
 
-    select.select2({
-        placeholder: "Enter said to contain",
-        allowClear: true,
-        tags: true, // user can add custom values
-        data: defaultValues, // show default values initially
-        ajax: {
-            transport: function (params, success, failure) {
-                const companyCode = userData.companyAndBranchDeatils.companyCode;
+	select.select2({
+		placeholder: "Enter said to contain",
+		allowClear: true,
+		tags: true, // user can add custom values
+		data: defaultValues, // show default values initially
+		ajax: {
+			transport: function(params, success, failure) {
+				const companyCode = userData.companyAndBranchDeatils.companyCode;
 
-                // If no companyCode, fallback to default values
-                if (!companyCode) {
-                 console.error("empty comp[anycode",);
-                    success({ results: defaultValues });
-                    return;
-                }
+				// If no companyCode, fallback to default values
+				if (!companyCode) {
+					console.error("empty comp[anycode",);
+					success({ results: defaultValues });
+					return;
+				}
 
-                fetch(`/api/bookings/Get-ditinct-saidtocontains/${encodeURIComponent(companyCode)}`)
-                    .then(res => {
-                        if (!res.ok) throw new Error("Failed to fetch");
-                        return res.json();
-                    })
-                    .then(data => {
-                        // Merge API data with default values, avoiding duplicates
-                        const merged = [...defaultValues];
-                        data.forEach(item => {
-                            if (!merged.some(d => d.id === item)) {
-                                merged.push({ id: item, text: item });
-                            }
-                        });
-                        success({ results: merged });
-                    })
-                    .catch(err => {
-                        console.error("Error loading saidToContains:", err);
-                        success({ results: defaultValues });
-                    });
-            },
-            delay: 250
-        },
-        minimumInputLength: 0
-    });
+				fetch(`/api/bookings/Get-ditinct-saidtocontains/${encodeURIComponent(companyCode)}`)
+					.then(res => {
+						if (!res.ok) throw new Error("Failed to fetch");
+						return res.json();
+					})
+					.then(data => {
+						// Merge API data with default values, avoiding duplicates
+						const merged = [...defaultValues];
+						data.forEach(item => {
+							if (!merged.some(d => d.id === item)) {
+								merged.push({ id: item, text: item });
+							}
+						});
+						success({ results: merged });
+					})
+					.catch(err => {
+						console.error("Error loading saidToContains:", err);
+						success({ results: defaultValues });
+					});
+			},
+			delay: 250
+		},
+		minimumInputLength: 0
+	});
 });
 

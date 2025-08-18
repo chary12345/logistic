@@ -37,6 +37,7 @@ public class BookingDTO {
     private Double  invoiceValue;
     private String eWayBillNumber;
     private String employeeName;
+    private String paidVia;
     
 	public String getConsignorName() {
 		return consignorName;
@@ -201,6 +202,12 @@ public class BookingDTO {
 	}
 	public void setLoadingCharge(double loadingCharge) {
 		this.loadingCharge = loadingCharge;
+	}
+	public String getPaidVia() {
+		return paidVia;
+	}
+	public void setPaidVia(String paidVia) {
+		this.paidVia = paidVia;
 	}
 	
 

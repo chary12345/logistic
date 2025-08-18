@@ -94,11 +94,17 @@ public class Booking {
     @Column(name = "loading_charge")
     private double loadingCharge;
     
+    @Column(name = "Paid_via")
+    private String paidVia;
+    
     @Transient
     private String companyCode;
    
     @Transient
     private int lastNumber;
+    
+    @Transient
+    private String nextLr;
 
     
     @Column(name = "modified_date")
@@ -342,8 +348,23 @@ public class Booking {
 	public void setLoadingCharge(double loadingCharge) {
 		this.loadingCharge = loadingCharge;
 	}
-	
 
-	
+	public String getPaidVia() {
+		return paidVia;
+	}
+
+	public void setPaidVia(String paidVia) {
+		this.paidVia = paidVia;
+	}
+
+	public String getNextLr() {
+		return nextLr;
+	}
+
+	public void setNextLr(String nextLr) {
+		this.nextLr = nextLr;
+	}
+
+
 
 }
