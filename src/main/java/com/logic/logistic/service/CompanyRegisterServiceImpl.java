@@ -1,5 +1,7 @@
 package com.logic.logistic.service;
 
+import java.sql.Date;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -188,6 +190,77 @@ public class CompanyRegisterServiceImpl implements CompanyRegisterService {
         int nextSerial = sequence.getLastNumber() + 1;
         return branchCode + "/" + String.format("%03d", nextSerial);
 		
+	}
+
+	@SuppressWarnings("deprecation")
+	@Override
+	public Branch getBranchByCode(String branchCode) {
+		Branch branchDetails=null;
+		try {
+		if(branchCode!=null) {
+		BranchDTO BranchObj = branchRepo.getById(branchCode);
+		AddressDto addressObj=addressRepo.findByBranchCode(branchCode);
+		branchDetails=BranchAndAddressMapper.DtostoBranchMap(BranchObj, addressObj);
+		}
+		}catch (Exception e) {
+			System.out.println("exception occured at getbranchbycode :: "+e.getMessage());
+		}
+		return branchDetails;
+	}
+
+	@Override
+	public Branch updateBranch(String branchCode, Branch updatedBranch) {
+	    BranchDTO existing = branchRepo.findById(branchCode)
+	        .orElseThrow(() -> new RuntimeException("Branch not found"));
+
+	    // ✅ Null checks before setting
+	    if (updatedBranch.getBranchType() != null) {
+	        existing.setBranchType(updatedBranch.getBranchType());
+	    }
+	    if (updatedBranch.getBranchPhone() != null) {
+	        existing.setBranchPhone(updatedBranch.getBranchPhone());
+	    }
+	    if (updatedBranch.getBranchPhoneAlt() != null) {
+	        existing.setBranchPhoneAlt(updatedBranch.getBranchPhoneAlt());
+	    }
+	    if (updatedBranch.getBranchEmail() != null) {
+	        existing.setBranchEmail(updatedBranch.getBranchEmail());
+	    }
+	    if (updatedBranch.getGstIn() != null) {
+	        existing.setGstIn(updatedBranch.getGstIn());
+	    }
+	    if (updatedBranch.getContactPersonName() != null) {
+	        existing.setContactPersonName(updatedBranch.getContactPersonName());
+	    }
+
+	    // ✅ set current SQL date
+	    existing.setUpdateDate(Date.valueOf(LocalDate.now()));
+
+	    // address update
+	    AddressDto address = addressRepo.findByBranchCode(branchCode);
+	    if (address != null && updatedBranch.getBranchAddress() != null) {
+	        Address updatedAddr = updatedBranch.getBranchAddress();
+
+	        if (updatedAddr.getAreaOrStreetline() != null) {
+	            address.setAreaOrStreetline(updatedAddr.getAreaOrStreetline());
+	        }
+	        if (updatedAddr.getFlatOrApartmentNumber() != null) {
+	            address.setFlatOrApartmentNumber(updatedAddr.getFlatOrApartmentNumber());
+	        }
+	        if (updatedAddr.getLandMark() != null) {
+	            address.setLandMark(updatedAddr.getLandMark());
+	        }
+	        if (updatedAddr.getPostalCode() != null) {
+	            address.setPostalCode(updatedAddr.getPostalCode());
+	        }
+
+	        address.setUpdatedDate(Date.valueOf(LocalDate.now()));
+	        addressRepo.save(address);
+	    }
+
+	    branchRepo.save(existing);
+
+	    return BranchAndAddressMapper.DtostoBranchMap(existing, address); 
 	}
 
 }

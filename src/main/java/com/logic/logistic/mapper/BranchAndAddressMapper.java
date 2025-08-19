@@ -136,5 +136,52 @@ public class BranchAndAddressMapper {
 
 	        return dto;
 	    }
+	 
+	
+	    public static Branch DtostoBranchMap(BranchDTO branchDTO, AddressDto addressDto) {
+	        if (branchDTO == null) return null;
+
+	        Branch branch = new Branch();
+	        branch.setBranchCode(nullSafe(branchDTO.getBranchCode()));
+	        branch.setBranchName(nullSafe(branchDTO.getBranchName()));
+	        branch.setBranchType(nullSafe(branchDTO.getBranchType()));
+	        branch.setBranchOpperations(nullSafe(branchDTO.getBranchOpperations()));
+	        branch.setBranchPhone(nullSafe(branchDTO.getBranchPhone()));
+	        branch.setBranchPhoneAlt(nullSafe(branchDTO.getBranchPhoneAlt()));
+	        branch.setBranchEmail(nullSafe(branchDTO.getBranchEmail()));
+	        branch.setBranchPan(nullSafe(branchDTO.getBranchPan()));
+	        branch.setGstIn(nullSafe(branchDTO.getGstIn()));
+	        branch.setContactPersonName(nullSafe(branchDTO.getContactPersonName()));
+	        branch.setCreateDate(copyDate(branchDTO.getCreateDate()));
+	        branch.setUpdateDate(copyDate(branchDTO.getUpdateDate()));
+	        branch.setBranchCreatedBy(nullSafe(branchDTO.getBranchCreatedBy()));
+	        branch.setCompanyCode(nullSafe(branchDTO.getCompanyCode()));
+
+	        // Address map
+	        if (addressDto != null) {
+	            Address address = new Address();
+	            address.setFlatOrApartmentNumber(nullSafe(addressDto.getFlatOrApartmentNumber()));
+	            address.setAreaOrStreetline(nullSafe(addressDto.getAreaOrStreetline()));
+	            address.setLandMark(nullSafe(addressDto.getLandMark()));
+	            address.setPostalCode(nullSafe(addressDto.getPostalCode()));
+	            address.setState(nullSafe(addressDto.getState()));
+	            address.setCity(nullSafe(addressDto.getCity()));
+	            address.setCountry(nullSafe(addressDto.getCountry()));
+	            address.setCreateDate(copyDate(addressDto.getCreateDate()));
+	            address.setUpdatedDate(copyDate(addressDto.getUpdatedDate()));
+	            branch.setBranchAddress(address);
+	        }
+
+	        return branch;
+	    }
+	    
+	    // --- Utility Helpers ---
+	    private static String nullSafe(String val) {
+	        return (val == null) ? "" : val.trim();
+	    }
+
+	    private static Date copyDate(Date date) {
+	        return (date == null) ? null : new Date(date.getTime());
+	    }
 
 }

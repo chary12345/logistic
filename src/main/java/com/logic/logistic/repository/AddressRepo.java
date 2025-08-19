@@ -9,4 +9,6 @@ import com.logic.logistic.dto.AddressDto;
 @Repository
 public interface AddressRepo extends JpaRepository<AddressDto, Long>{
 
+	AddressDto findByBranchCode(String branchCode);
+
 }

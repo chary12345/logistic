@@ -24,4 +24,8 @@ public interface CompanyRegisterService {
 
 	String getNextLrNumber(String branchCode);
 
+	Branch getBranchByCode(String branchCode);
+
+	Branch updateBranch(String branchCode, Branch updatedBranch);
+
 }
