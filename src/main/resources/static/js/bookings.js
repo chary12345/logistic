@@ -67,9 +67,9 @@ function showOperationSearchForm(status) {
 	currentOperationStatus = status;
 
 	const titleMap = {
-		DISPATCHED: "Dispatch Filter",
-		RECEIVED: "Receive Filter",
-		DELIVERED: "Delivery Filter"
+		DISPATCHED: "Dispatch",
+		RECEIVED: "Receive",
+		DELIVERED: "Delivery"
 	};
 	document.getElementById("operationFormTitle").innerText = titleMap[status] || "Operation Search";
 
@@ -304,6 +304,127 @@ document.getElementById('city').addEventListener('focus', function() {
 	}
 });
 
+
+async function loadBranchesForEdit() {
+    const companyCode = userData.companyAndBranchDeatils.companyCode;
+    try {
+        const response = await fetch(`/BranchesByCompanyCode/${companyCode}`);
+        if (!response.ok) throw new Error("Failed to load branches");
+
+        const result = await response.json();   // 🔹 {status:"SUCCESS", data:[...]}
+        if (result.status !== "SUCCESS" || !Array.isArray(result.data)) {
+            throw new Error("Invalid branch data");
+        }
+
+        const dropdown = document.getElementById("branchSelectDropdown");
+        dropdown.innerHTML = '<option value="">-- Select Branch --</option>';
+
+        result.data.filter(branch => branch.branchType !== "HEAD-OFFICE") 
+		.forEach(branch => {
+            const option = document.createElement("option");
+            option.value = branch.branchCode;
+            option.textContent = `${branch.branchName} (${branch.branchCode})`;
+            dropdown.appendChild(option);
+        });
+
+        // 🔹 Show the row
+        document.getElementById("branchSelectRow").style.display = "block";
+
+    } catch (err) {
+        console.error("Error fetching branches:", err);
+    }
+}
+document.getElementById("branchSelectDropdown").addEventListener("change", async function () {
+    const branchCode = this.value;
+    if (!branchCode) return;
+
+    try {
+        const resp = await fetch(`/getBranchDetails/${branchCode}`);
+        if (!resp.ok) throw new Error("Failed to fetch branch details");
+
+        const data = await resp.json();
+
+        // ===== Fill fields as per HTML form =====
+        // Row 1
+        document.getElementById("state").value = data.branchAddress?.state || "";
+        document.getElementById("city").value = data.branchAddress?.city || "";
+
+        // Row 2
+        document.getElementById("branchname").value = data.branchName || "";
+        document.getElementById("branchcode").value = data.branchCode || "";
+
+        // Row 3
+        document.getElementById("branchType").value = data.branchType || "";
+
+        // Row 5 (Address full text)
+        document.getElementById("AddressStreet").value =
+            (data.branchAddress?.flatOrApartmentNumber || "") + " " +
+            (data.branchAddress?.areaOrStreetline || "") + " " +
+            (data.branchAddress?.landMark || "");
+
+        // Row 6 (phones, email)
+        document.getElementById("phone").value = data.branchPhone || "";
+        document.getElementById("phone2").value = data.branchPhoneAlt || "";
+        document.getElementById("email").value = data.branchEmail || "";
+
+        // Row 7 (gst, contact person, postal code)
+        document.getElementById("gstin").value = data.gstIn || "";
+        document.getElementById("contactperson").value = data.contactPersonName || "";
+        document.getElementById("postalCode").value = data.branchAddress?.postalCode || "";
+
+        // ===== Disable uneditable fields =====
+        ["state", "city", "branchname", "branchcode"].forEach(id => {
+            document.getElementById(id).setAttribute("disabled", true);
+        });
+		// ===== Toggle UI for Update mode =====
+		        document.getElementById("submitBtn").style.display = "none";   // hide Add
+		        document.getElementById("updateBtn").style.display = "inline-block"; // show Update
+
+    } catch (err) {
+        console.error("Error loading branch details:", err);
+    }
+});
+
+async function updateBranch() {
+    const branchCode = document.getElementById("branchcode").value;
+
+    // build payload from form
+    const payload = {
+        branchCode: branchCode,
+        branchName: document.getElementById("branchname").value,
+        branchType: document.getElementById("branchType").value,
+        branchPhone: document.getElementById("phone").value,
+        branchPhoneAlt: document.getElementById("phone2").value,
+        branchEmail: document.getElementById("email").value,
+        gstIn: document.getElementById("gstin").value,
+        contactPersonName: document.getElementById("contactperson").value,
+        branchAddress: {
+            state: document.getElementById("state").value,
+            city: document.getElementById("city").value,
+            postalCode: document.getElementById("postalCode").value,
+            areaOrStreetline: document.getElementById("AddressStreet").value
+        }
+    };
+
+    try {
+        const resp = await fetch(`/updateBranch/${branchCode}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        if (!resp.ok) throw new Error("Update failed");
+        const result = await resp.json();
+
+        showCustomAlert("Branch updated successfully!");
+
+        resetBranchForm(); // after update → reset back to add mode
+
+    } catch (err) {
+        console.error("Error updating branch:", err);
+        showCustomAlert("Failed to update branch", true);
+    }
+}
 
 
 
@@ -1419,6 +1540,34 @@ document.addEventListener("DOMContentLoaded", function() {
 		});
 	}
 });
+
+// Force expose to window
+window.resetBranchForm = resetBranchForm;
+function resetBranchForm() {
+    document.getElementById("branchForm").reset();
+
+    // enable disabled fields again
+    ["state", "city", "branchname", "branchcode"].forEach(id => {
+        document.getElementById(id).removeAttribute("disabled");
+    });
+
+    // reset button visibility
+    document.getElementById("submitBtn").style.display = "inline-block"; // show Add
+    document.getElementById("updateBtn").style.display = "none";         // hide Update
+
+    // hide branch select row again
+    document.getElementById("branchSelectRow").style.display = "none";
+}
+
+
+function showToast(msg, isError = false) {
+    const toastEl = document.getElementById("liveToast");
+    document.getElementById("toastMessage").textContent = msg;
+    toastEl.classList.remove("bg-success", "bg-danger");
+    toastEl.classList.add(isError ? "bg-danger" : "bg-success");
+    const toast = new bootstrap.Toast(toastEl);
+    toast.show();
+}
 
 function redirectToBranch() {
 	// Redirect to Java backend endpoint

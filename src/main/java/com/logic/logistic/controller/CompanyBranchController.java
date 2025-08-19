@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -146,4 +147,32 @@ public class CompanyBranchController {
 	    public String getNextLrNumber(@PathVariable String branchCode) {
 		 return companyRegisterService.getNextLrNumber(branchCode);
 	    }
+	 
+	 @GetMapping("/getBranchDetails/{branchCode}")
+	    public ResponseEntity<Branch> getBranchDetails(@PathVariable String branchCode) {
+	        Branch branch = companyRegisterService.getBranchByCode(branchCode);
+	        if (branch != null) {
+	            return ResponseEntity.ok(branch);
+	        } else {
+	            return ResponseEntity.notFound().build();
+	        }
+	    }
+	 
+
+	 @PutMapping("/updateBranch/{branchCode}")
+	 public ResponseEntity<Map<String, Object>> updateBranch(
+	         @PathVariable String branchCode,
+	         @RequestBody Branch updatedBranch) {
+	     Map<String, Object> response = new HashMap<>();
+	     try {
+	         Branch saved = companyRegisterService.updateBranch(branchCode, updatedBranch);
+	         response.put("status", "SUCCESS");
+	         response.put("data", saved);
+	         return ResponseEntity.ok(response);
+	     } catch (Exception e) {
+	         response.put("status", "FAILURE");
+	         response.put("message", e.getMessage());
+	         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+	     }
+	 }
 }
