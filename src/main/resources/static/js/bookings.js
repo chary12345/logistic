@@ -1405,7 +1405,8 @@ document.getElementById("bookingForm").addEventListener("submit", async function
 		resetPaymentModeUI();
 
 		updateFreight();
-
+		saveConsignorProfile();
+		saveConsigneeProfile();
 		printBookingReceipt(result);
 	} catch (error) {
 		console.error("Error saving booking:", error);
@@ -1529,8 +1530,13 @@ document.addEventListener('DOMContentLoaded', function() {
 function logout() {
 	sessionStorage.removeItem('user');  // Remove the stored user object from sessionStorage
 
-	window.location.href = '/'; // Redirect to logout route
+	window.location.replace("/");  
 }
+// Prevent going back after logout
+window.history.pushState(null, "", window.location.href);
+window.onpopstate = function () {
+    window.history.pushState(null, "", window.location.href);
+};
 
 document.addEventListener("DOMContentLoaded", function() {
 	const branchLink = document.getElementById("createBranchLink");
@@ -1683,7 +1689,11 @@ function changePassword() {
 let userData = {};
 function populateUserData() {
 	userData = JSON.parse(sessionStorage.getItem('user'));
-
+	if (!userData) {
+	       // No session → force logout
+	       window.location.href = "/";
+	       return;
+	   }
 	document.getElementById('userFirstName').textContent = userData.firstName;
 	document.getElementById('userLastName').textContent = userData.lastName;
 	document.getElementById('branchresult').textContent = userData.companyAndBranchDeatils.branchName + "-[" + userData.companyAndBranchDeatils.branchType + "]";
@@ -3754,6 +3764,102 @@ document.addEventListener("DOMContentLoaded", () => {
 		},
 		minimumInputLength: 0
 	});
+});
+//cache consignor consignee
+// ✅ Save consignor profile
+function saveConsignorProfile() {
+    const profile = {
+        name: document.getElementById("consignorName").value,
+        mobile: document.getElementById("consignorMobile").value,
+        gst: document.getElementById("consignorGST").value,
+        address: document.getElementById("consignorAddress").value
+    };
+
+    if (!profile.name) return;
+
+    let consignors = JSON.parse(localStorage.getItem("consignors") || "[]");
+    const existing = consignors.findIndex(c => c.name.toLowerCase() === profile.name.toLowerCase());
+    if (existing >= 0) {
+        consignors[existing] = profile;
+    } else {
+        consignors.push(profile);
+    }
+    localStorage.setItem("consignors", JSON.stringify(consignors));
+    loadConsignorSuggestions();
+}
+
+// ✅ Save consignee profile
+function saveConsigneeProfile() {
+    const profile = {
+        name: document.getElementById("consigneeName").value,
+        mobile: document.getElementById("consigneeMobile").value,
+        gst: document.getElementById("consigneeGST").value,
+        address: document.getElementById("consigneeAddress").value
+    };
+
+    if (!profile.name) return;
+
+    let consignees = JSON.parse(localStorage.getItem("consignees") || "[]");
+    const existing = consignees.findIndex(c => c.name.toLowerCase() === profile.name.toLowerCase());
+    if (existing >= 0) {
+        consignees[existing] = profile;
+    } else {
+        consignees.push(profile);
+    }
+    localStorage.setItem("consignees", JSON.stringify(consignees));
+    loadConsigneeSuggestions();
+}
+
+// ✅ Load suggestions
+function loadConsignorSuggestions() {
+    const consignors = JSON.parse(localStorage.getItem("consignors") || "[]");
+    const list = document.getElementById("consignorList");
+    list.innerHTML = "";
+    consignors.forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = c.name;
+        list.appendChild(opt);
+    });
+}
+
+function loadConsigneeSuggestions() {
+    const consignees = JSON.parse(localStorage.getItem("consignees") || "[]");
+    const list = document.getElementById("consigneeList");
+    list.innerHTML = "";
+    consignees.forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = c.name;
+        list.appendChild(opt);
+    });
+}
+
+// ✅ Auto-fill when selecting a name
+document.getElementById("consignorName").addEventListener("change", function() {
+    const name = this.value.toLowerCase();
+    const consignors = JSON.parse(localStorage.getItem("consignors") || "[]");
+    const found = consignors.find(c => c.name.toLowerCase() === name);
+    if (found) {
+        document.getElementById("consignorMobile").value = found.mobile;
+        document.getElementById("consignorGST").value = found.gst;
+        document.getElementById("consignorAddress").value = found.address;
+    }
+});
+
+document.getElementById("consigneeName").addEventListener("change", function() {
+    const name = this.value.toLowerCase();
+    const consignees = JSON.parse(localStorage.getItem("consignees") || "[]");
+    const found = consignees.find(c => c.name.toLowerCase() === name);
+    if (found) {
+        document.getElementById("consigneeMobile").value = found.mobile;
+        document.getElementById("consigneeGST").value = found.gst;
+        document.getElementById("consigneeAddress").value = found.address;
+    }
+});
+
+// ✅ Load suggestions on page load
+document.addEventListener("DOMContentLoaded", function() {
+    loadConsignorSuggestions();
+    loadConsigneeSuggestions();
 });
 
 // Disable F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
