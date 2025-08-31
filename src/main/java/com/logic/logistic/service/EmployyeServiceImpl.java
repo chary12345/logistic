@@ -30,7 +30,25 @@ public class EmployyeServiceImpl implements EmployeecreationService{
 		
 			UserDto findUser = userRepository.findByUsername(employee.getUserName()+employee.getCompanyDetails().getCompanyCode());
 			if (findUser == null) {
+				List<UserDto> branchUsers = userRepository.findBycompanyName(employee.getCompanyDetails().getCompanyBranch().getBranchCode());
+				// === Rule 1: Max 3 EMPLOYEE per branch ===
+	            if (employee.getRole() != null && employee.getRole().equalsIgnoreCase("Employee")) {
+	                long employeeCount = branchUsers.stream()
+	                        .filter(u -> u.getRole() != null && u.getRole().equalsIgnoreCase("EMPLOYEE"))
+	                        .count();
+	                if (employeeCount >= 3) {
+	                    return "Maximum 3 Employees allowed in this branch";
+	                }
+	            }
 
+	            // === Rule 2: Only one Admin per branch ===
+	            if (employee.getRole() != null && employee.getRole().equalsIgnoreCase("Admin")) {
+	                boolean adminExists = branchUsers.stream()
+	                        .anyMatch(u -> u.getRole() != null && u.getRole().equalsIgnoreCase("Admin"));
+	                if (adminExists) {
+	                    return "An Admin already exists in this branch. Cannot create another Admin.";
+	                }
+	            }
 				try {
 					Map<String, Object> convertPojotoDto = EmployeeMapper.newEmployeeToDto(employee);
 					// Iterate over the map

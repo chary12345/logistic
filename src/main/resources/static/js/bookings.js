@@ -306,124 +306,124 @@ document.getElementById('city').addEventListener('focus', function() {
 
 
 async function loadBranchesForEdit() {
-    const companyCode = userData.companyAndBranchDeatils.companyCode;
-    try {
-        const response = await fetch(`/BranchesByCompanyCode/${companyCode}`);
-        if (!response.ok) throw new Error("Failed to load branches");
+	const companyCode = userData.companyAndBranchDeatils.companyCode;
+	try {
+		const response = await fetch(`/BranchesByCompanyCode/${companyCode}`);
+		if (!response.ok) throw new Error("Failed to load branches");
 
-        const result = await response.json();   // 🔹 {status:"SUCCESS", data:[...]}
-        if (result.status !== "SUCCESS" || !Array.isArray(result.data)) {
-            throw new Error("Invalid branch data");
-        }
+		const result = await response.json();   // 🔹 {status:"SUCCESS", data:[...]}
+		if (result.status !== "SUCCESS" || !Array.isArray(result.data)) {
+			throw new Error("Invalid branch data");
+		}
 
-        const dropdown = document.getElementById("branchSelectDropdown");
-        dropdown.innerHTML = '<option value="">-- Select Branch --</option>';
+		const dropdown = document.getElementById("branchSelectDropdown");
+		dropdown.innerHTML = '<option value="">-- Select Branch --</option>';
 
-        result.data.filter(branch => branch.branchType !== "HEAD-OFFICE") 
-		.forEach(branch => {
-            const option = document.createElement("option");
-            option.value = branch.branchCode;
-            option.textContent = `${branch.branchName} (${branch.branchCode})`;
-            dropdown.appendChild(option);
-        });
+		result.data.filter(branch => branch.branchType !== "HEAD-OFFICE")
+			.forEach(branch => {
+				const option = document.createElement("option");
+				option.value = branch.branchCode;
+				option.textContent = `${branch.branchName} (${branch.branchCode})`;
+				dropdown.appendChild(option);
+			});
 
-        // 🔹 Show the row
-        document.getElementById("branchSelectRow").style.display = "block";
+		// 🔹 Show the row
+		document.getElementById("branchSelectRow").style.display = "block";
 
-    } catch (err) {
-        console.error("Error fetching branches:", err);
-    }
+	} catch (err) {
+		console.error("Error fetching branches:", err);
+	}
 }
-document.getElementById("branchSelectDropdown").addEventListener("change", async function () {
-    const branchCode = this.value;
-    if (!branchCode) return;
+document.getElementById("branchSelectDropdown").addEventListener("change", async function() {
+	const branchCode = this.value;
+	if (!branchCode) return;
 
-    try {
-        const resp = await fetch(`/getBranchDetails/${branchCode}`);
-        if (!resp.ok) throw new Error("Failed to fetch branch details");
+	try {
+		const resp = await fetch(`/getBranchDetails/${branchCode}`);
+		if (!resp.ok) throw new Error("Failed to fetch branch details");
 
-        const data = await resp.json();
+		const data = await resp.json();
 
-        // ===== Fill fields as per HTML form =====
-        // Row 1
-        document.getElementById("state").value = data.branchAddress?.state || "";
-        document.getElementById("city").value = data.branchAddress?.city || "";
+		// ===== Fill fields as per HTML form =====
+		// Row 1
+		document.getElementById("state").value = data.branchAddress?.state || "";
+		document.getElementById("city").value = data.branchAddress?.city || "";
 
-        // Row 2
-        document.getElementById("branchname").value = data.branchName || "";
-        document.getElementById("branchcode").value = data.branchCode || "";
+		// Row 2
+		document.getElementById("branchname").value = data.branchName || "";
+		document.getElementById("branchcode").value = data.branchCode || "";
 
-        // Row 3
-        document.getElementById("branchType").value = data.branchType || "";
+		// Row 3
+		document.getElementById("branchType").value = data.branchType || "";
 
-        // Row 5 (Address full text)
-        document.getElementById("AddressStreet").value =
-            (data.branchAddress?.flatOrApartmentNumber || "") + " " +
-            (data.branchAddress?.areaOrStreetline || "") + " " +
-            (data.branchAddress?.landMark || "");
+		// Row 5 (Address full text)
+		document.getElementById("AddressStreet").value =
+			(data.branchAddress?.flatOrApartmentNumber || "") + " " +
+			(data.branchAddress?.areaOrStreetline || "") + " " +
+			(data.branchAddress?.landMark || "");
 
-        // Row 6 (phones, email)
-        document.getElementById("phone").value = data.branchPhone || "";
-        document.getElementById("phone2").value = data.branchPhoneAlt || "";
-        document.getElementById("email").value = data.branchEmail || "";
+		// Row 6 (phones, email)
+		document.getElementById("phone").value = data.branchPhone || "";
+		document.getElementById("phone2").value = data.branchPhoneAlt || "";
+		document.getElementById("email").value = data.branchEmail || "";
 
-        // Row 7 (gst, contact person, postal code)
-        document.getElementById("gstin").value = data.gstIn || "";
-        document.getElementById("contactperson").value = data.contactPersonName || "";
-        document.getElementById("postalCode").value = data.branchAddress?.postalCode || "";
+		// Row 7 (gst, contact person, postal code)
+		document.getElementById("gstin").value = data.gstIn || "";
+		document.getElementById("contactperson").value = data.contactPersonName || "";
+		document.getElementById("postalCode").value = data.branchAddress?.postalCode || "";
 
-        // ===== Disable uneditable fields =====
-        ["state", "city", "branchname", "branchcode"].forEach(id => {
-            document.getElementById(id).setAttribute("disabled", true);
-        });
+		// ===== Disable uneditable fields =====
+		["state", "city", "branchname", "branchcode"].forEach(id => {
+			document.getElementById(id).setAttribute("disabled", true);
+		});
 		// ===== Toggle UI for Update mode =====
-		        document.getElementById("submitBtn").style.display = "none";   // hide Add
-		        document.getElementById("updateBtn").style.display = "inline-block"; // show Update
+		document.getElementById("submitBtn").style.display = "none";   // hide Add
+		document.getElementById("updateBtn").style.display = "inline-block"; // show Update
 
-    } catch (err) {
-        console.error("Error loading branch details:", err);
-    }
+	} catch (err) {
+		console.error("Error loading branch details:", err);
+	}
 });
 
 async function updateBranch() {
-    const branchCode = document.getElementById("branchcode").value;
+	const branchCode = document.getElementById("branchcode").value;
 
-    // build payload from form
-    const payload = {
-        branchCode: branchCode,
-        branchName: document.getElementById("branchname").value,
-        branchType: document.getElementById("branchType").value,
-        branchPhone: document.getElementById("phone").value,
-        branchPhoneAlt: document.getElementById("phone2").value,
-        branchEmail: document.getElementById("email").value,
-        gstIn: document.getElementById("gstin").value,
-        contactPersonName: document.getElementById("contactperson").value,
-        branchAddress: {
-            state: document.getElementById("state").value,
-            city: document.getElementById("city").value,
-            postalCode: document.getElementById("postalCode").value,
-            areaOrStreetline: document.getElementById("AddressStreet").value
-        }
-    };
+	// build payload from form
+	const payload = {
+		branchCode: branchCode,
+		branchName: document.getElementById("branchname").value,
+		branchType: document.getElementById("branchType").value,
+		branchPhone: document.getElementById("phone").value,
+		branchPhoneAlt: document.getElementById("phone2").value,
+		branchEmail: document.getElementById("email").value,
+		gstIn: document.getElementById("gstin").value,
+		contactPersonName: document.getElementById("contactperson").value,
+		branchAddress: {
+			state: document.getElementById("state").value,
+			city: document.getElementById("city").value,
+			postalCode: document.getElementById("postalCode").value,
+			areaOrStreetline: document.getElementById("AddressStreet").value
+		}
+	};
 
-    try {
-        const resp = await fetch(`/updateBranch/${branchCode}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-        });
+	try {
+		const resp = await fetch(`/updateBranch/${branchCode}`, {
+			method: "PUT",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(payload)
+		});
 
-        if (!resp.ok) throw new Error("Update failed");
-        const result = await resp.json();
+		if (!resp.ok) throw new Error("Update failed");
+		const result = await resp.json();
 
-        showCustomAlert("Branch updated successfully!");
+		showCustomAlert("Branch updated successfully!");
 
-        resetBranchForm(); // after update → reset back to add mode
+		resetBranchForm(); // after update → reset back to add mode
 
-    } catch (err) {
-        console.error("Error updating branch:", err);
-        showCustomAlert("Failed to update branch", true);
-    }
+	} catch (err) {
+		console.error("Error updating branch:", err);
+		showCustomAlert("Failed to update branch", true);
+	}
 }
 
 
@@ -454,11 +454,13 @@ function showReportForm(reportType) {
 		case "received":
 			status = "RECEIVED";
 			headingText = "Receive Report";
-			break;
+			showCustomAlert("Coming Soon!.");
+			return;
 		case "delivered":
 			status = "DELIVERED";
 			headingText = "Delivery Report";
-			break;
+			showCustomAlert("Coming Soon!.");
+			return;
 	}
 
 	document.getElementById("reportStatusHidden").value = status;
@@ -1544,29 +1546,29 @@ document.addEventListener("DOMContentLoaded", function() {
 // Force expose to window
 window.resetBranchForm = resetBranchForm;
 function resetBranchForm() {
-    document.getElementById("branchForm").reset();
+	document.getElementById("branchForm").reset();
 
-    // enable disabled fields again
-    ["state", "city", "branchname", "branchcode"].forEach(id => {
-        document.getElementById(id).removeAttribute("disabled");
-    });
+	// enable disabled fields again
+	["state", "city", "branchname", "branchcode"].forEach(id => {
+		document.getElementById(id).removeAttribute("disabled");
+	});
 
-    // reset button visibility
-    document.getElementById("submitBtn").style.display = "inline-block"; // show Add
-    document.getElementById("updateBtn").style.display = "none";         // hide Update
+	// reset button visibility
+	document.getElementById("submitBtn").style.display = "inline-block"; // show Add
+	document.getElementById("updateBtn").style.display = "none";         // hide Update
 
-    // hide branch select row again
-    document.getElementById("branchSelectRow").style.display = "none";
+	// hide branch select row again
+	document.getElementById("branchSelectRow").style.display = "none";
 }
 
 
 function showToast(msg, isError = false) {
-    const toastEl = document.getElementById("liveToast");
-    document.getElementById("toastMessage").textContent = msg;
-    toastEl.classList.remove("bg-success", "bg-danger");
-    toastEl.classList.add(isError ? "bg-danger" : "bg-success");
-    const toast = new bootstrap.Toast(toastEl);
-    toast.show();
+	const toastEl = document.getElementById("liveToast");
+	document.getElementById("toastMessage").textContent = msg;
+	toastEl.classList.remove("bg-success", "bg-danger");
+	toastEl.classList.add(isError ? "bg-danger" : "bg-success");
+	const toast = new bootstrap.Toast(toastEl);
+	toast.show();
 }
 
 function redirectToBranch() {
@@ -2071,24 +2073,18 @@ function submitEmployeeForm() {
 	})
 		.then(response => response.json())
 		.then(data => {
-			if (data.status) {
-				/*const toast = document.getElementById('toastNotification');
-				const toastMessage = document.getElementById('toastMessage');
-				toastMessage.textContent = "Employee Created!";
-				toast.style.display = 'block';
-	
-				setTimeout(() => {
-					toast.style.display = 'none';
-					window.location.href = "/createEmployee";
-				}, 3000);*/
+			if (data.status == "SUCCESS") {
+
 				showCustomAlert("New Employee created successful!");
 				resetEmployeeForm();
 			} else {
-				document.getElementById("formMessage").innerHTML = `<div class='alert alert-danger'>Error: ${data.message}</div>`;
+				//document.getElementById("formMessage").innerHTML = `<div class='alert alert-danger'>Error: ${data.message}</div>`;
+				showCustomAlert(data.status);
 			}
 		})
 		.catch(error => {
-			document.getElementById("formMessage").innerHTML = "<div class='alert alert-danger'>Something went wrong. Please try again.</div>";
+			//document.getElementById("formMessage").innerHTML = "<div class='alert alert-danger'>Something went wrong. Please try again.</div>";
+			showCustomAlert(data.status);
 		});
 }
 function resetEmployeeForm() {
@@ -2263,11 +2259,7 @@ function searchLRByNumber(lrNumber) {
 				<div class="lr-search-card">
 					<h5 class="text-primary mb-3">🔍 Loading Receipt: ${data.loadingReciept}</h5>
 
-					<div class="text-end mt-3">
-<button class="btn btn-warning btn-sm" onclick="enableInlineEditMode(window.lastSearchResult)">✏️ Edit</button>
-						
-						
-					</div>
+
 
 					<div class="row mb-2">
 						<div class="col-md-6"><strong>Status:</strong> ${data.consignStatus || 'N/A'}</div>
@@ -2786,7 +2778,7 @@ function enableInlineEditMode(data) {
 	if (!container) return;
 
 	container.innerHTML = `
-    <h5 class="text-primary mb-3">✏️ Edit Booking: ${data.loadingReciept}</h5>
+   
 
     <div class="row">
       <div class="col-md-6">
@@ -3637,6 +3629,36 @@ function showCustomAlert(message) {
 	});
 }
 
+function comingSoon() {
+    showCustomAlert("Coming Soon!");
+}
+
+function checkManageAccess(action) {
+	if (userData && userData.role && userData.role.toLowerCase() === "superadmin") {
+		// If no action → just allow menu to open
+		if (!action) {
+			return;
+		}
+
+		// If clicked inside submenu
+		if (action === "branch") {
+			showCreateBranchForm();
+		} else if (action === "employee") {
+			showCreateEmployeeForm();
+		} else if (action === "vehicle") {
+			showVehicleManageForm();
+		}
+	} else {
+		// Not authorized
+		showCustomAlert("You are not authorized to access Manage section!");
+		const menu = document.getElementById("manageMenu");
+		if (menu) {
+			menu.style.display = "none";
+		}
+	}
+}
+
+
 function closeCustomAlert() {
 	document.getElementById("customAlert").style.display = "none";
 }
@@ -3733,4 +3755,15 @@ document.addEventListener("DOMContentLoaded", () => {
 		minimumInputLength: 0
 	});
 });
+
+// Disable F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
+document.addEventListener("keydown", function(e) {
+	if (e.key === "F12" ||
+		(e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J")) ||
+		(e.ctrlKey && e.key === "U")) {
+		e.preventDefault();
+		return false;
+	}
+});
+
 
