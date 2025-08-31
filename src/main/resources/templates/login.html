@@ -86,20 +86,43 @@
     }
     .login-btn:hover {background:linear-gradient(45deg,#ffbd69,#ff5733);}
     .error {color:red;font-size:.8em;margin-top:5px;display:none;text-align:left;}
+    .welcome-note {
+  position: fixed;
+  top: 35px;               /* exactly below contact line */
+  left: 0;
+  width: 100%;
+  background: rgba(0,0,0,0.7);
+  color: #ffbd69;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 6px 0;
+  z-index: 1000;           /* ensures it's always visible */
+}
+
+.welcome-note marquee {
+  margin: 0;
+}
+    
   </style>
 </head>
 <body>
 
   <!-- top contact line -->
   <div class="contact-line">
-    <span>📞 +91 98665 99680</span>
     <span>📞 +91 95730 06639</span>
     <span>✉️ support@1uniqcargo.com</span>
   </div>
+  <!-- scrolling welcome note -->
+<div class="welcome-note">
+  <marquee behavior="scroll" direction="left" scrollamount="6">
+    🚚 Welcome to 1UNIQ TRANS Logistics Portal — Reliable, Fast & Secure Cargo Solutions 🚀
+  </marquee>
+</div>
+  
 
   <!-- Login box -->
   <div class="login-container">
-    <h2>Welcome to 1UNIQ Cargo</h2>
+    <h2>Welcome to 1UNIQ TRANS</h2>
     <p>Login to continue</p>
 
     <div class="input-box">

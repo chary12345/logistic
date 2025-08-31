@@ -627,6 +627,37 @@ td {
     border-radius: 4px;
     box-shadow: 0 0 5px rgba(0,0,0,0.1);
 }
+/* Common dropdown style for navbar */
+.navbar .dropdown-menu {
+  background-color: #34495e !important;   /* dark gray bg */
+  border: none;                          /* no border */
+}
+
+.navbar .dropdown-menu .dropdown-item {
+  color: #fff !important;                /* white text */
+}
+
+.navbar .dropdown-menu .dropdown-item:hover {
+  background-color: #0d6efd !important;  /* blue highlight */
+  color: #fff !important;
+}
+
+/* Fix arrow: show only Bootstrap arrow */
+.navbar .dropdown-toggle::after {
+  margin-left: .3em;
+  border-top: .3em solid; /* keep bootstrap default arrow */
+}
+.navbar .dropdown-toggle i {
+  display: none !important; /* hide manual icons if any */
+}
+/* User dropdown alignment fix */
+.navbar .dropdown-menu-end {
+  right: 0 !important;
+  left: auto !important;
+  top: 100% !important;
+  margin-top: 0.5rem;
+  z-index: 2000; /* stay above forms */
+}
 
 
  

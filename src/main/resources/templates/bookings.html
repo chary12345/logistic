@@ -50,7 +50,8 @@
 		style="background-color: #2c3e50; position: relative; height: 20px;">
 
 		<div id="logoContainer">
-			<img id="companyLogo" src="" alt="Company Logo" style="height: 50px;">
+			<img id="companyLogo" src="" alt="Company Logo"
+				style="height: 100px;">
 		</div>
 
 		<div class="flex-grow-1 text-center">
@@ -67,9 +68,9 @@
 					<a href="#" onclick="showBookingForm()">Booking</a> <a
 						href="#dispatchops"
 						onclick="showOperationSearchForm('DISPATCHED')">Dispatch</a> <a
-						href="#recieveops" onclick="showOperationSearchForm('RECEIVED')">Receive</a>
+						href="#recieveops"  onclick="comingSoon()">Receive</a>
 					<a href="#deliveryops"
-						onclick="showOperationSearchForm('DELIVERED')">Delivery</a>
+						onclick="comingSoon()">Delivery</a>
 				</div>
 			</div>
 			<div class="dropdown">
@@ -77,8 +78,8 @@
 				<div class="dropdown-content">
 					<a href="#booking" onclick="showReportForm('booking')">Booking
 						Report</a> <a href="#dispatch" onclick="showReportForm('dispatched')">Dispatch
-						Report</a> <a href="#receive" onclick="showReportForm('received')">Receive
-						Report</a> <a href="#delivered" onclick="showReportForm('delivered')">Delivery
+						Report</a> <a href="#receive" onclick="comingSoon()">Receive
+						Report</a> <a href="#delivered" onclick="comingSoon()">Delivery
 						Report</a>
 
 				</div>
@@ -90,13 +91,17 @@
 			</div>
 			<!-- Inside the Manage dropdown -->
 			<div class="dropdown">
-				<a href="#">Manage</a>
+				<a class="nav-link text-white" href="javascript:void(0)"
+					onclick="checkManageAccess()">Manage</a>
+
 				<div class="dropdown-content">
 					<!-- <li><a id="createBranchLink" class="dropdown-item" href="#">Create
 							Branch</a></li> -->
-					<a href="#" onclick="showCreateBranchForm()">Branch Manage</a> <a
-						href="#" onclick="showCreateEmployeeForm()">Create Employee</a> <a
-						href="#" onclick="showVehicleManageForm()">Vehicle Manage</a>
+					<a href="javascript:void(0)" onclick="checkManageAccess('branch')">Branch
+						Manage</a> <a href="javascript:void(0)"
+						onclick="checkManageAccess('employee')">Create Employee</a> <a
+						href="javascript:void(0)" onclick="checkManageAccess('vehicle')">Vehicle
+						Manage</a>
 
 				</div>
 			</div>
@@ -579,7 +584,7 @@
 					<button type="button" id="updateBtn"
 						class="btn btn-warning text-white" style="display: none;"
 						onclick="updateBranch()">Update</button>
-					<button type="button" class="btn btn-danger">Deactivate</button>
+					<!-- <button type="button" class="btn btn-danger">Deactivate</button> -->
 					<button type="button" class="btn btn-secondary"
 						onclick="resetBranchForm()">Reset</button>
 				</div>
@@ -644,9 +649,9 @@
 							<div id="employeeconfirmPasswordError" class="text-danger small"></div>
 						</div>
 						<div class="col-md-3">
-							<label class="form-label">Phone</label><input type="text"
-								id="employeephone" class="form-control" maxlength="10"
-								pattern="\d{10}" required>
+							<label class="form-label">Phone</label> <input type="text"
+								id="employeephone" class="form-control" maxlength="10" required
+								oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,10);">
 						</div>
 						<div class="col-md-3">
 							<label class="form-label">Email</label><input type="email"
