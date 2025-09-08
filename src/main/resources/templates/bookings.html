@@ -68,9 +68,8 @@
 					<a href="#" onclick="showBookingForm()">Booking</a> <a
 						href="#dispatchops"
 						onclick="showOperationSearchForm('DISPATCHED')">Dispatch</a> <a
-						href="#recieveops"  onclick="comingSoon()">Receive</a>
-					<a href="#deliveryops"
-						onclick="comingSoon()">Delivery</a>
+						href="#recieveops" onclick="comingSoon()">Receive</a> <a
+						href="#deliveryops" onclick="comingSoon()">Delivery</a>
 				</div>
 			</div>
 			<div class="dropdown">
@@ -106,7 +105,12 @@
 				</div>
 			</div>
 
-
+			<div class="dropdown">
+				<a href="#">Statements</a>
+				<div class="dropdown-content">
+					<a href="#statements" onclick="showStatementsForm()">Statements</a>
+				</div>
+			</div>
 
 		</div>
 
@@ -845,6 +849,48 @@
 			</div>
 		</form>
 	</div>
+	
+	<!-- STATEMENTS FORM -->
+<div id="statementsFormContainer" class="report-form"
+     style="display:none; padding-bottom:100px; max-height:calc(100vh - 120px);">
+  <h3>Statements</h3>
+
+  <div class="row g-3 align-items-center">
+    <div class="col-md-3">
+      <label for="sFromDate" class="form-label">From Date*</label>
+      <input type="date" id="sFromDate" class="form-control" required>
+    </div>
+    <div class="col-md-3">
+      <label for="sToDate" class="form-label">To Date*</label>
+      <input type="date" id="sToDate" class="form-control" required>
+    </div>
+    <div class="col-md-3">
+      <label for="sPaymentMode" class="form-label">Payment Mode</label>
+      <select id="sPaymentMode" class="form-select">
+        <option value="">ALL</option>
+        <option value="PAID">PAID</option>
+        <option value="TO PAY">TO PAY</option>
+        <option value="TBB">TBB</option>
+      </select>
+    </div>
+    <div class="col-md-3 d-flex align-items-end gap-2">
+      <button type="button" class="btn btn-primary" onclick="generateStatements()">Search</button>
+      <button type="button" class="btn btn-secondary" onclick="resetStatements()">Reset</button>
+    </div>
+  </div>
+
+  <div id="statementsMessage" style="margin-top:10px; display:none; color:red;"></div>
+  <div id="statementsTableContainer" style="overflow-x:auto; margin-top:20px;"></div>
+
+  <div id="statementsActions" style="display:none; margin-top:15px;">
+    <button onclick="downloadStatementsPDF()">Download PDF</button>
+    <button onclick="downloadStatementsExcel()">Download Excel</button>
+    <button onclick="printStatements()">Print</button>
+  </div>
+
+  <div id="statementsSummaryContainer" class="mt-4"></div>
+</div>
+	
 	<!-- Custom Alert Box -->
 	<div id="customAlert" class="modal fade" tabindex="-1"
 		aria-hidden="true">

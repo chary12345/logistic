@@ -60,18 +60,16 @@ public interface BookRepository extends JpaRepository<Booking, String> {
 	List<String> getlistofBranchcodes(@Param("city") String city, @Param("state") String state,
 			@Param("branchCode") String branchCode);
 
-	@Query("SELECT b FROM Booking b " +
-		       "WHERE b.bookingDate BETWEEN :fromDate AND :toDate " +
-		       "AND b.BranchCode IN (:branchCodes) " +
-		       "AND (:status IS NULL OR b.consignStatus = :status) " +
-		       "AND (:lastId IS NULL OR b.loadingReciept < :lastId) " +
-		       "ORDER BY b.bookingDate DESC")
-		List<Booking> searchBookings(
-		    @Param("fromDate") LocalDateTime fromDate,
-		    @Param("toDate") LocalDateTime toDate,
-		    @Param("status") String status,
-		    @Param("lastId") String lastId,
-		    @Param("branchCodes") List<String> branchCodes,
-		    Pageable pageable
-		);
+	@Query("SELECT b FROM Booking b " + "WHERE b.bookingDate BETWEEN :fromDate AND :toDate "
+			+ "AND b.BranchCode IN (:branchCodes) " + "AND (:status IS NULL OR b.consignStatus = :status) "
+			+ "AND (:lastId IS NULL OR b.loadingReciept < :lastId) " + "ORDER BY b.bookingDate DESC")
+	List<Booking> searchBookings(@Param("fromDate") LocalDateTime fromDate, @Param("toDate") LocalDateTime toDate,
+			@Param("status") String status, @Param("lastId") String lastId,
+			@Param("branchCodes") List<String> branchCodes, Pageable pageable);
+
+	@Query("SELECT b FROM Booking b " + "WHERE b.BranchCode = :branchCode "
+			+ "AND b.bookingDate BETWEEN :fromDate AND :toDate "
+			+ "AND (:paymentMode IS NULL OR b.billType = :paymentMode)")
+	List<Booking> findStatements(@Param("branchCode") String branchCode, @Param("fromDate") LocalDateTime fromDate,
+			@Param("toDate") LocalDateTime toDate, @Param("paymentMode") String paymentMode);
 }

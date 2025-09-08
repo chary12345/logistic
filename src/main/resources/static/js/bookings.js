@@ -3621,6 +3621,110 @@ document.addEventListener("DOMContentLoaded", () => {
 	}
 });
 
+//statement functions
+function showStatementsForm() {
+  hideAllForms();
+  document.getElementById("statementsFormContainer").style.display = "block";
+  resetStatements();
+}
+
+let statementsData = [];
+
+function generateStatements() {
+  const fromDate = document.getElementById("sFromDate").value;
+  const toDate = document.getElementById("sToDate").value;
+  const payMode = document.getElementById("sPaymentMode").value;
+
+  if (!fromDate || !toDate) {
+    showCustomAlert("From Date and To Date are mandatory!");
+    return;
+  }
+
+  const branchCode = userData.companyAndBranchDeatils.branchCode;
+  let apiUrl = `/statement/report?fromDate=${fromDate}T00:00:00&toDate=${toDate}T23:59:59&branchCode=${branchCode}`;
+  if (payMode) apiUrl += `&paymentMode=${payMode}`;
+
+  fetch(apiUrl)
+    .then(resp => resp.json())
+    .then(data => {
+      if (data && data.length > 0) {
+        statementsData = data;
+        renderStatementsTable(data);
+        renderStatementsSummary(data);
+        document.getElementById("statementsActions").style.display = "block";
+        document.getElementById("statementsMessage").style.display = "none";
+      } else {
+        document.getElementById("statementsTableContainer").innerHTML = "";
+        document.getElementById("statementsSummaryContainer").innerHTML = "";
+        document.getElementById("statementsActions").style.display = "none";
+        document.getElementById("statementsMessage").textContent = "No Records Found";
+        document.getElementById("statementsMessage").style.display = "block";
+      }
+    })
+    .catch(err => {
+      console.error("Error fetching statements:", err);
+      showCustomAlert("Error fetching statements");
+    });
+}
+
+function renderStatementsTable(data) {
+  let html = `<table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>S.No</th><th>LR No</th><th>Date</th><th>Consignor</th><th>Consignee</th>
+        <th>Payment Mode</th><th>Freight</th><th>GST</th><th>Total</th>
+      </tr>
+    </thead><tbody>`;
+
+  data.forEach((row, i) => {
+    const gst = (row.sgst || 0) + (row.cgst || 0) + (row.igst || 0);
+    const total = (row.freight || 0) + gst + (row.loading || 0) + (row.loadingCharge || 0);
+
+    html += `<tr>
+      <td>${i+1}</td><td>${row.loadingReciept}</td>
+      <td>${new Date(row.bookingDate).toLocaleDateString()}</td>
+      <td>${row.consignorName}</td><td>${row.consigneeName}</td>
+      <td>${row.billType}</td><td>${row.freight}</td>
+      <td>${gst}</td><td>${total.toFixed(2)}</td>
+    </tr>`;
+  });
+
+  html += "</tbody></table>";
+  document.getElementById("statementsTableContainer").innerHTML = html;
+}
+
+function renderStatementsSummary(data) {
+  let totalFreight = 0, totalGST = 0, grandTotal = 0;
+  data.forEach(r => {
+    const gst = (r.sgst||0) + (r.cgst||0) + (r.igst||0);
+    totalFreight += (r.freight||0);
+    totalGST += gst;
+    grandTotal += (r.freight||0) + gst + (r.loading||0) + (r.loadingCharge||0);
+  });
+
+  document.getElementById("statementsSummaryContainer").innerHTML = `
+    <h5 class="text-center text-success">STATEMENT SUMMARY</h5>
+    <table class="table table-bordered text-center">
+      <tr><th>Total Freight</th><th>Total GST</th><th>Grand Total</th></tr>
+      <tr><td>${totalFreight.toFixed(2)}</td><td>${totalGST.toFixed(2)}</td><td>${grandTotal.toFixed(2)}</td></tr>
+    </table>`;
+}
+
+function resetStatements() {
+  document.getElementById("sFromDate").value = "";
+  document.getElementById("sToDate").value = "";
+  document.getElementById("sPaymentMode").value = "";
+  document.getElementById("statementsTableContainer").innerHTML = "";
+  document.getElementById("statementsSummaryContainer").innerHTML = "";
+  document.getElementById("statementsActions").style.display = "none";
+  document.getElementById("statementsMessage").style.display = "none";
+  statementsData = [];
+}
+
+// PDF, Excel, Print
+function downloadStatementsPDF() { /* similar to booking report PDF */ }
+function downloadStatementsExcel() { /* similar to booking report Excel */ }
+function printStatements() { window.print(); }
 
 
 
