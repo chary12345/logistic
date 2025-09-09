@@ -179,6 +179,11 @@ public class CompanyRegisterServiceImpl implements CompanyRegisterService {
 
 	@Override
 	public String getNextLrNumber(String branchCode) {
+		try {
+	        if (branchCode == null || branchCode.trim().isEmpty()) {
+	            throw new IllegalArgumentException("Branch code is missing");
+	        }
+
         BookingReceiptSequence sequence = sequenceRepo.findById(branchCode)
             .orElseGet(() -> {
                 BookingReceiptSequence s = new BookingReceiptSequence();
@@ -190,6 +195,15 @@ public class CompanyRegisterServiceImpl implements CompanyRegisterService {
         int nextSerial = sequence.getLastNumber() + 1;
         return branchCode + "/" + String.format("%03d", nextSerial);
 		
+	} catch (IllegalArgumentException e) {
+       
+        System.out.println("LR Generation Error: " + e.getMessage());
+        return "Error: " + e.getMessage();
+    } catch (Exception e) {
+        // other errors
+        System.out.println("Unexpected Error in getNextLrNumber: " + e.getMessage());
+        return " ";
+    }
 	}
 
 	@SuppressWarnings("deprecation")
