@@ -18,6 +18,7 @@ function hideAllForms() {
 	safeHide("operationSearchForm");
 	safeHide("bookingopsSummaryContainer");
 	safeHide('vehicleManageContainer');
+	safeHide('statementsFormContainer'); 
 	const summary1 = document.getElementById("bookingSummaryContainer");
 	const summary2 = document.getElementById("bookingopsSummaryContainer");
 	if (summary1) summary1.innerHTML = "";

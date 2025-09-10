@@ -1,6 +1,5 @@
 package com.logic.logistic.service;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -19,12 +18,11 @@ public class StatementServicImpl implements StatementService{
 	private BookRepository bookingRepository;
 
 	@Override
-	public List<StatementDto> getStatements(String branchCode, LocalDate from, LocalDate to, String paymentMode) {
-	    LocalDateTime fromDateTime = from.atStartOfDay();
-	    LocalDateTime toDateTime = to.atTime(23, 59, 59);
+	public List<StatementDto> getStatements(String branchCode, LocalDateTime from, LocalDateTime to, String paymentMode) {
+
 
 	    List<Booking> bookings = bookingRepository.findStatements(
-	            branchCode, fromDateTime, toDateTime,
+	            branchCode, from, to,
 	            (paymentMode == null || paymentMode.isEmpty()) ? null : paymentMode
 	    );
 
