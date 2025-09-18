@@ -1,32 +1,31 @@
 package com.logic.logistic.dto;
 
 import java.sql.Date;
-import java.util.List;
 
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "company_dto")
 public class CompanyDto {
 	@Id
-	@Column(name = "companyCode")
 	private String companyCode;
 	private String companyFullName;
-	@OneToMany(cascade = CascadeType.ALL)
-	@JoinColumn(name = "companyCode", referencedColumnName = "companyCode") // Use the 'companyCode' from CompanyDto as
-																			// the FK
-	private List<AddressDto> address;
 	private String groupName;
+	private String plan;
+	@Lob
+	private byte[] logo;
 	private Date createdate;
 	private Date updateDate;
 	private Date expiryDate;
 	private Date startDate;
+	private boolean isCompanyBlock;
+	private String companyBlockedBy;
+	@Column(name = "company_blocked_reason")
+	private String companyBlockReason;
 
 	public String getCompanyCode() {
 		return companyCode;
@@ -44,13 +43,7 @@ public class CompanyDto {
 		this.companyFullName = companyFullName;
 	}
 
-	public List<AddressDto> getAddress() {
-		return address;
-	}
-
-	public void setAddress(List<AddressDto> address) {
-		this.address = address;
-	}
+	
 
 	public String getGroupName() {
 		return groupName;
@@ -92,6 +85,46 @@ public class CompanyDto {
 
 	public void setStartDate(Date startDate) {
 		this.startDate = startDate;
+	}
+
+	public byte[] getLogo() {
+		return logo;
+	}
+
+	public void setLogo(byte[] logo) {
+		this.logo = logo;
+	}
+
+	public String getPlan() {
+		return plan;
+	}
+
+	public void setPlan(String plan) {
+		this.plan = plan;
+	}
+
+	public boolean isCompanyBlock() {
+		return isCompanyBlock;
+	}
+
+	public void setCompanyBlock(boolean isCompanyBlock) {
+		this.isCompanyBlock = isCompanyBlock;
+	}
+
+	public String getCompanyBlockedBy() {
+		return companyBlockedBy;
+	}
+
+	public void setCompanyBlockedBy(String companyBlockedBy) {
+		this.companyBlockedBy = companyBlockedBy;
+	}
+
+	public String getCompanyBlockReason() {
+		return companyBlockReason;
+	}
+
+	public void setCompanyBlockReason(String companyBlockReason) {
+		this.companyBlockReason = companyBlockReason;
 	}
 
 	
