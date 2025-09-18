@@ -1697,7 +1697,7 @@ function populateUserData() {
 	   }
 	document.getElementById('userFirstName').textContent = userData.firstName;
 	document.getElementById('userLastName').textContent = userData.lastName;
-	document.getElementById('branchresult').textContent = userData.companyAndBranchDeatils.branchName + "-[" + userData.companyAndBranchDeatils.branchType + "]";
+	document.getElementById('branchresult').textContent = userData.companyAndBranchDeatils.branchName /*+ "-[" + userData.companyAndBranchDeatils.branchType + "]"*/;
 
 	const logoImg = document.getElementById("companyLogo");
 	const companyCode = userData.companyAndBranchDeatils.companyCode; // get company code from session
@@ -3664,7 +3664,7 @@ function generateStatements() {
     })
     .catch(err => {
       console.error("Error fetching statements:", err);
-      showCustomAlert("Error fetching statements");
+      //showCustomAlert("Error fetching statements");
     });
 }
 
