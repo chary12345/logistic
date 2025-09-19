@@ -1,5 +1,20 @@
 let currentOperationStatus = ""; // holds DISPATCHED / RECEIVED / DELIVERED
 
+function toggleSidebar(){
+  document.getElementById("sidebar").classList.toggle("active");
+}
+function toggleSubmenu(id){
+  // First close all open submenus
+  document.querySelectorAll(".sub-list").forEach(el => {
+    if(el.id !== id){
+      el.classList.remove("show");
+    }
+  });
+
+  // Toggle the clicked submenu
+  const el = document.getElementById(id);
+  el.classList.toggle("show");
+}
 
 function safeHide(id) {
 	const el = document.getElementById(id);
