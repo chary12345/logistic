@@ -159,6 +159,28 @@ body{font-family:'Poppins',sans-serif;background:var(--bg);margin:0}
 .sidebar.active ~ .content > div{
   width:calc(100% - 40px);  /* adjust with padding */
 }
+.form-window{
+  position:relative;
+  background:#fff;
+  padding:20px;
+  border-radius:12px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.1);
+  margin-top:15px;
+}
+
+.form-window .close-btn{
+  position:absolute;
+  top:10px;
+  right:12px;
+  background:none;
+  border:none;
+  font-size:18px;
+  cursor:pointer;
+  color:#666;
+}
+.form-window .close-btn:hover{
+  color:#d9534f; /* red highlight on hover */
+}
 
 </style>
 
@@ -493,6 +515,7 @@ body{font-family:'Poppins',sans-serif;background:var(--bg);margin:0}
 	<!-- rest of your original content (reports, modals, forms) kept as-is -->
 	<div id="bookingReportForm" class="report-form"
 		style="padding-bottom: 100px; overflow-y: auto; max-height: calc(100vh - 120px);">
+		<button class="close-btn" onclick="hideForm('bookingReportForm')">&times;</button>
 		<h3>Booking Report</h3>
 		<input type="hidden" id="reportStatusHidden" /> <label for="fromDate">From
 			Date:</label> <input type="date" id="fromDate"> <label for="toDate">To
@@ -531,7 +554,7 @@ body{font-family:'Poppins',sans-serif;background:var(--bg);margin:0}
 	<!-- GLOBAL SEARCH FORM SECTION (kept as before) -->
 	<div id="globalSearchFormContainer" class="report-form"
 		style="display: block; padding-bottom: 100px; max-height: calc(100vh - 120px); border: 1px solid #ccc;">
-
+<button class="close-btn" onclick="hideForm('globalSearchFormContainer')">&times;</button>
 		<h3>Global Search Report</h3>
 
 		<div class="row g-3 align-items-center">

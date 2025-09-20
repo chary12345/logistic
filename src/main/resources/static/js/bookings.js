@@ -16,6 +16,12 @@ function toggleSubmenu(id){
   el.classList.toggle("show");
 }
 
+function hideForm(id){
+  const el = document.getElementById(id);
+  if(el) el.style.display="none";
+}
+
+
 function safeHide(id) {
 	const el = document.getElementById(id);
 	if (el) el.style.display = 'none';
