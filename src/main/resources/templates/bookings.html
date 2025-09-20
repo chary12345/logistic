@@ -144,6 +144,21 @@ body{font-family:'Poppins',sans-serif;background:var(--bg);margin:0}
   background:rgba(255,255,255,0.08);
   color:#fff;
 }
+/* All dynamic forms inside content */
+.content > div{
+  background:#fff;
+  padding:20px;
+  border-radius:12px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.05);
+  margin-top:15px;
+  max-width:100%;
+  box-sizing:border-box;
+}
+
+/* Fix width when sidebar open */
+.sidebar.active ~ .content > div{
+  width:calc(100% - 40px);  /* adjust with padding */
+}
 
 </style>
 
@@ -1005,7 +1020,7 @@ body{font-family:'Poppins',sans-serif;background:var(--bg);margin:0}
 			</div>
 		</div>
 	</div>
-
+</main>
 <!-- ========== Helper script patch (keeps search and shortcuts working) ========== -->
 <script>
   (function initPatch(){
@@ -1073,8 +1088,7 @@ body{font-family:'Poppins',sans-serif;background:var(--bg);margin:0}
   }, true);
 </script>
 
-<script2
-		src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 	<script src="/js/bookings.js"></script>
 
