@@ -1,24 +1,24 @@
 let currentOperationStatus = ""; // holds DISPATCHED / RECEIVED / DELIVERED
 
-function toggleSidebar(){
-  document.getElementById("sidebar").classList.toggle("active");
+function toggleSidebar() {
+	document.getElementById("sidebar").classList.toggle("active");
 }
-function toggleSubmenu(id){
-  // First close all open submenus
-  document.querySelectorAll(".sub-list").forEach(el => {
-    if(el.id !== id){
-      el.classList.remove("show");
-    }
-  });
+function toggleSubmenu(id) {
+	// First close all open submenus
+	document.querySelectorAll(".sub-list").forEach(el => {
+		if (el.id !== id) {
+			el.classList.remove("show");
+		}
+	});
 
-  // Toggle the clicked submenu
-  const el = document.getElementById(id);
-  el.classList.toggle("show");
+	// Toggle the clicked submenu
+	const el = document.getElementById(id);
+	el.classList.toggle("show");
 }
 
-function hideForm(id){
-  const el = document.getElementById(id);
-  if(el) el.style.display="none";
+function hideForm(id) {
+	const el = document.getElementById(id);
+	if (el) el.style.display = "none";
 }
 
 
@@ -39,7 +39,7 @@ function hideAllForms() {
 	safeHide("operationSearchForm");
 	safeHide("bookingopsSummaryContainer");
 	safeHide('vehicleManageContainer');
-	safeHide('statementsFormContainer'); 
+	safeHide('statementsFormContainer');
 	const summary1 = document.getElementById("bookingSummaryContainer");
 	const summary2 = document.getElementById("bookingopsSummaryContainer");
 	if (summary1) summary1.innerHTML = "";
@@ -1552,12 +1552,12 @@ document.addEventListener('DOMContentLoaded', function() {
 function logout() {
 	sessionStorage.removeItem('user');  // Remove the stored user object from sessionStorage
 
-	window.location.replace("/");  
+	window.location.replace("/");
 }
 // Prevent going back after logout
 window.history.pushState(null, "", window.location.href);
-window.onpopstate = function () {
-    window.history.pushState(null, "", window.location.href);
+window.onpopstate = function() {
+	window.history.pushState(null, "", window.location.href);
 };
 
 document.addEventListener("DOMContentLoaded", function() {
@@ -1712,10 +1712,10 @@ let userData = {};
 function populateUserData() {
 	userData = JSON.parse(sessionStorage.getItem('user'));
 	if (!userData) {
-	       // No session → force logout
-	       window.location.href = "/";
-	       return;
-	   }
+		// No session → force logout
+		window.location.href = "/";
+		return;
+	}
 	document.getElementById('userFirstName').textContent = userData.firstName;
 	document.getElementById('userLastName').textContent = userData.lastName;
 	document.getElementById('branchresult').textContent = userData.companyAndBranchDeatils.branchName /*+ "-[" + userData.companyAndBranchDeatils.branchType + "]"*/;
@@ -1737,15 +1737,8 @@ function populateUserData() {
 		})
 		.catch(error => {
 			console.warn("Logo not available:", error);
-			// Replace image with red company name
-			logoContainer.innerHTML = `
-  <span style="
-    color: white;
-    font-weight: 600;
-    font-size: 14px;
-    line-height: 40px;
-    display: inline-block;
-  ">${companyName}</span>`;
+			// Set default logo
+			logoImg.src = "/favicon.png";
 
 
 		});
@@ -3645,52 +3638,52 @@ document.addEventListener("DOMContentLoaded", () => {
 
 //statement functions
 function showStatementsForm() {
-  hideAllForms();
-  document.getElementById("statementsFormContainer").style.display = "block";
-  resetStatements();
+	hideAllForms();
+	document.getElementById("statementsFormContainer").style.display = "block";
+	resetStatements();
 }
 
 let statementsData = [];
 
 function generateStatements() {
-  const fromDate = document.getElementById("sFromDate").value;
-  const toDate = document.getElementById("sToDate").value;
-  const payMode = document.getElementById("sPaymentMode").value;
+	const fromDate = document.getElementById("sFromDate").value;
+	const toDate = document.getElementById("sToDate").value;
+	const payMode = document.getElementById("sPaymentMode").value;
 
-  if (!fromDate || !toDate) {
-    showCustomAlert("From Date and To Date are mandatory!");
-    return;
-  }
+	if (!fromDate || !toDate) {
+		showCustomAlert("From Date and To Date are mandatory!");
+		return;
+	}
 
-  const branchCode = userData.companyAndBranchDeatils.branchCode;
-  let apiUrl = `/statement/report?fromDate=${fromDate}T00:00:00&toDate=${toDate}T23:59:59&branchCode=${branchCode}`;
-  if (payMode) apiUrl += `&paymentMode=${payMode}`;
+	const branchCode = userData.companyAndBranchDeatils.branchCode;
+	let apiUrl = `/statement/report?fromDate=${fromDate}T00:00:00&toDate=${toDate}T23:59:59&branchCode=${branchCode}`;
+	if (payMode) apiUrl += `&paymentMode=${payMode}`;
 
-  fetch(apiUrl)
-    .then(resp => resp.json())
-    .then(data => {
-      if (data && data.length > 0) {
-        statementsData = data;
-        renderStatementsTable(data);
-        renderStatementsSummary(data);
-        document.getElementById("statementsActions").style.display = "block";
-        document.getElementById("statementsMessage").style.display = "none";
-      } else {
-        document.getElementById("statementsTableContainer").innerHTML = "";
-        document.getElementById("statementsSummaryContainer").innerHTML = "";
-        document.getElementById("statementsActions").style.display = "none";
-        document.getElementById("statementsMessage").textContent = "No Records Found";
-        document.getElementById("statementsMessage").style.display = "block";
-      }
-    })
-    .catch(err => {
-      console.error("Error fetching statements:", err);
-      //showCustomAlert("Error fetching statements");
-    });
+	fetch(apiUrl)
+		.then(resp => resp.json())
+		.then(data => {
+			if (data && data.length > 0) {
+				statementsData = data;
+				renderStatementsTable(data);
+				renderStatementsSummary(data);
+				document.getElementById("statementsActions").style.display = "block";
+				document.getElementById("statementsMessage").style.display = "none";
+			} else {
+				document.getElementById("statementsTableContainer").innerHTML = "";
+				document.getElementById("statementsSummaryContainer").innerHTML = "";
+				document.getElementById("statementsActions").style.display = "none";
+				document.getElementById("statementsMessage").textContent = "No Records Found";
+				document.getElementById("statementsMessage").style.display = "block";
+			}
+		})
+		.catch(err => {
+			console.error("Error fetching statements:", err);
+			//showCustomAlert("Error fetching statements");
+		});
 }
 
 function renderStatementsTable(data) {
-  let html = `<table class="table table-bordered">
+	let html = `<table class="table table-bordered">
     <thead>
       <tr>
         <th>S.No</th><th>LR No</th><th>Date</th><th>Consignor</th><th>Consignee</th>
@@ -3698,33 +3691,33 @@ function renderStatementsTable(data) {
       </tr>
     </thead><tbody>`;
 
-  data.forEach((row, i) => {
-    const gst = (row.sgst || 0) + (row.cgst || 0) + (row.igst || 0);
-    const total = (row.freight || 0) + gst + (row.loading || 0) + (row.loadingCharge || 0);
+	data.forEach((row, i) => {
+		const gst = (row.sgst || 0) + (row.cgst || 0) + (row.igst || 0);
+		const total = (row.freight || 0) + gst + (row.loading || 0) + (row.loadingCharge || 0);
 
-    html += `<tr>
-      <td>${i+1}</td><td>${row.loadingReciept}</td>
+		html += `<tr>
+      <td>${i + 1}</td><td>${row.loadingReciept}</td>
       <td>${new Date(row.bookingDate).toLocaleDateString()}</td>
       <td>${row.consignorName}</td><td>${row.consigneeName}</td>
       <td>${row.billType}</td><td>${row.freight}</td>
       <td>${gst}</td><td>${total.toFixed(2)}</td>
     </tr>`;
-  });
+	});
 
-  html += "</tbody></table>";
-  document.getElementById("statementsTableContainer").innerHTML = html;
+	html += "</tbody></table>";
+	document.getElementById("statementsTableContainer").innerHTML = html;
 }
 
 function renderStatementsSummary(data) {
-  let totalFreight = 0, totalGST = 0, grandTotal = 0;
-  data.forEach(r => {
-    const gst = (r.sgst||0) + (r.cgst||0) + (r.igst||0);
-    totalFreight += (r.freight||0);
-    totalGST += gst;
-    grandTotal += (r.freight||0) + gst + (r.loading||0) + (r.loadingCharge||0);
-  });
+	let totalFreight = 0, totalGST = 0, grandTotal = 0;
+	data.forEach(r => {
+		const gst = (r.sgst || 0) + (r.cgst || 0) + (r.igst || 0);
+		totalFreight += (r.freight || 0);
+		totalGST += gst;
+		grandTotal += (r.freight || 0) + gst + (r.loading || 0) + (r.loadingCharge || 0);
+	});
 
-  document.getElementById("statementsSummaryContainer").innerHTML = `
+	document.getElementById("statementsSummaryContainer").innerHTML = `
     <h5 class="text-center text-success">STATEMENT SUMMARY</h5>
     <table class="table table-bordered text-center">
       <tr><th>Total Freight</th><th>Total GST</th><th>Grand Total</th></tr>
@@ -3733,14 +3726,14 @@ function renderStatementsSummary(data) {
 }
 
 function resetStatements() {
-  document.getElementById("sFromDate").value = "";
-  document.getElementById("sToDate").value = "";
-  document.getElementById("sPaymentMode").value = "";
-  document.getElementById("statementsTableContainer").innerHTML = "";
-  document.getElementById("statementsSummaryContainer").innerHTML = "";
-  document.getElementById("statementsActions").style.display = "none";
-  document.getElementById("statementsMessage").style.display = "none";
-  statementsData = [];
+	document.getElementById("sFromDate").value = "";
+	document.getElementById("sToDate").value = "";
+	document.getElementById("sPaymentMode").value = "";
+	document.getElementById("statementsTableContainer").innerHTML = "";
+	document.getElementById("statementsSummaryContainer").innerHTML = "";
+	document.getElementById("statementsActions").style.display = "none";
+	document.getElementById("statementsMessage").style.display = "none";
+	statementsData = [];
 }
 
 // PDF, Excel, Print
@@ -3752,21 +3745,26 @@ function printStatements() { window.print(); }
 
 //custom alert form
 function showCustomAlert(message) {
-	return new Promise((resolve) => {
-		const modal = document.getElementById("customAlert");
-		document.getElementById("customAlertMessage").textContent = message;
+  const alertBox = document.getElementById("customAlert");
+  const alertMsg = document.getElementById("customAlertMsg");
 
-		modal.querySelector(".btn-ok").onclick = function() {
-			bootstrap.Modal.getInstance(modal).hide();
-			resolve();
-		};
-
-		new bootstrap.Modal(modal).show();
-	});
+  if (alertBox && alertMsg) {
+    alertMsg.textContent = message || "Something went wrong!";
+   alertBox.style.display = "block";
+  }
 }
 
+function hideCustomAlert() {
+  const alertBox = document.getElementById("customAlert");
+  if (alertBox) {
+    alertBox.style.display = "none";
+  }
+}
+
+
+
 function comingSoon() {
-    showCustomAlert("Coming Soon!");
+	showCustomAlert("Coming Soon!");
 }
 
 function checkManageAccess(action) {
@@ -3799,6 +3797,30 @@ function closeCustomAlert() {
 	document.getElementById("customAlert").style.display = "none";
 }
 
+document.addEventListener("DOMContentLoaded", function() {
+	try {
+		// 1. get userData string from sessionStorage
+		const raw = sessionStorage.getItem("user");
+		if (!raw) {
+			console.warn("⚠️ userData not found in sessionStorage");
+			return;
+		}
+
+		// 2. parse JSON to object
+		const userData = JSON.parse(raw);
+
+		// 3. safely fetch companyName
+		const companyName = userData?.companyAndBranchDeatils?.companyName;
+
+		// 4. set into topbar span
+		const el = document.getElementById("companyName");
+		if (el) {
+			el.textContent = companyName || "Company";
+		}
+	} catch (e) {
+		console.error("Error while setting company name:", e);
+	}
+});
 
 //get populatestates
 function populateStates() {
@@ -3894,98 +3916,98 @@ document.addEventListener("DOMContentLoaded", () => {
 //cache consignor consignee
 // ✅ Save consignor profile
 function saveConsignorProfile() {
-    const profile = {
-        name: document.getElementById("consignorName").value,
-        mobile: document.getElementById("consignorMobile").value,
-        gst: document.getElementById("consignorGST").value,
-        address: document.getElementById("consignorAddress").value
-    };
+	const profile = {
+		name: document.getElementById("consignorName").value,
+		mobile: document.getElementById("consignorMobile").value,
+		gst: document.getElementById("consignorGST").value,
+		address: document.getElementById("consignorAddress").value
+	};
 
-    if (!profile.name) return;
+	if (!profile.name) return;
 
-    let consignors = JSON.parse(localStorage.getItem("consignors") || "[]");
-    const existing = consignors.findIndex(c => c.name.toLowerCase() === profile.name.toLowerCase());
-    if (existing >= 0) {
-        consignors[existing] = profile;
-    } else {
-        consignors.push(profile);
-    }
-    localStorage.setItem("consignors", JSON.stringify(consignors));
-    loadConsignorSuggestions();
+	let consignors = JSON.parse(localStorage.getItem("consignors") || "[]");
+	const existing = consignors.findIndex(c => c.name.toLowerCase() === profile.name.toLowerCase());
+	if (existing >= 0) {
+		consignors[existing] = profile;
+	} else {
+		consignors.push(profile);
+	}
+	localStorage.setItem("consignors", JSON.stringify(consignors));
+	loadConsignorSuggestions();
 }
 
 // ✅ Save consignee profile
 function saveConsigneeProfile() {
-    const profile = {
-        name: document.getElementById("consigneeName").value,
-        mobile: document.getElementById("consigneeMobile").value,
-        gst: document.getElementById("consigneeGST").value,
-        address: document.getElementById("consigneeAddress").value
-    };
+	const profile = {
+		name: document.getElementById("consigneeName").value,
+		mobile: document.getElementById("consigneeMobile").value,
+		gst: document.getElementById("consigneeGST").value,
+		address: document.getElementById("consigneeAddress").value
+	};
 
-    if (!profile.name) return;
+	if (!profile.name) return;
 
-    let consignees = JSON.parse(localStorage.getItem("consignees") || "[]");
-    const existing = consignees.findIndex(c => c.name.toLowerCase() === profile.name.toLowerCase());
-    if (existing >= 0) {
-        consignees[existing] = profile;
-    } else {
-        consignees.push(profile);
-    }
-    localStorage.setItem("consignees", JSON.stringify(consignees));
-    loadConsigneeSuggestions();
+	let consignees = JSON.parse(localStorage.getItem("consignees") || "[]");
+	const existing = consignees.findIndex(c => c.name.toLowerCase() === profile.name.toLowerCase());
+	if (existing >= 0) {
+		consignees[existing] = profile;
+	} else {
+		consignees.push(profile);
+	}
+	localStorage.setItem("consignees", JSON.stringify(consignees));
+	loadConsigneeSuggestions();
 }
 
 // ✅ Load suggestions
 function loadConsignorSuggestions() {
-    const consignors = JSON.parse(localStorage.getItem("consignors") || "[]");
-    const list = document.getElementById("consignorList");
-    list.innerHTML = "";
-    consignors.forEach(c => {
-        const opt = document.createElement("option");
-        opt.value = c.name;
-        list.appendChild(opt);
-    });
+	const consignors = JSON.parse(localStorage.getItem("consignors") || "[]");
+	const list = document.getElementById("consignorList");
+	list.innerHTML = "";
+	consignors.forEach(c => {
+		const opt = document.createElement("option");
+		opt.value = c.name;
+		list.appendChild(opt);
+	});
 }
 
 function loadConsigneeSuggestions() {
-    const consignees = JSON.parse(localStorage.getItem("consignees") || "[]");
-    const list = document.getElementById("consigneeList");
-    list.innerHTML = "";
-    consignees.forEach(c => {
-        const opt = document.createElement("option");
-        opt.value = c.name;
-        list.appendChild(opt);
-    });
+	const consignees = JSON.parse(localStorage.getItem("consignees") || "[]");
+	const list = document.getElementById("consigneeList");
+	list.innerHTML = "";
+	consignees.forEach(c => {
+		const opt = document.createElement("option");
+		opt.value = c.name;
+		list.appendChild(opt);
+	});
 }
 
 // ✅ Auto-fill when selecting a name
 document.getElementById("consignorName").addEventListener("change", function() {
-    const name = this.value.toLowerCase();
-    const consignors = JSON.parse(localStorage.getItem("consignors") || "[]");
-    const found = consignors.find(c => c.name.toLowerCase() === name);
-    if (found) {
-        document.getElementById("consignorMobile").value = found.mobile;
-        document.getElementById("consignorGST").value = found.gst;
-        document.getElementById("consignorAddress").value = found.address;
-    }
+	const name = this.value.toLowerCase();
+	const consignors = JSON.parse(localStorage.getItem("consignors") || "[]");
+	const found = consignors.find(c => c.name.toLowerCase() === name);
+	if (found) {
+		document.getElementById("consignorMobile").value = found.mobile;
+		document.getElementById("consignorGST").value = found.gst;
+		document.getElementById("consignorAddress").value = found.address;
+	}
 });
 
 document.getElementById("consigneeName").addEventListener("change", function() {
-    const name = this.value.toLowerCase();
-    const consignees = JSON.parse(localStorage.getItem("consignees") || "[]");
-    const found = consignees.find(c => c.name.toLowerCase() === name);
-    if (found) {
-        document.getElementById("consigneeMobile").value = found.mobile;
-        document.getElementById("consigneeGST").value = found.gst;
-        document.getElementById("consigneeAddress").value = found.address;
-    }
+	const name = this.value.toLowerCase();
+	const consignees = JSON.parse(localStorage.getItem("consignees") || "[]");
+	const found = consignees.find(c => c.name.toLowerCase() === name);
+	if (found) {
+		document.getElementById("consigneeMobile").value = found.mobile;
+		document.getElementById("consigneeGST").value = found.gst;
+		document.getElementById("consigneeAddress").value = found.address;
+	}
 });
 
 // ✅ Load suggestions on page load
 document.addEventListener("DOMContentLoaded", function() {
-    loadConsignorSuggestions();
-    loadConsigneeSuggestions();
+	loadConsignorSuggestions();
+	loadConsigneeSuggestions();
 });
 
 // Disable F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
