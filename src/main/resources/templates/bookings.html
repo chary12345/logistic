@@ -206,14 +206,15 @@ body {
 .sidebar.active ~ .content>div {
 	width: calc(100% - 40px); /* adjust with padding */
 }
-
+/* Limit width of report windows like Booking / Dispatch */
 .form-window {
-	position: relative;
-	background: #fff;
-	padding: 20px;
-	border-radius: 12px;
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-	margin-top: 15px;
+  max-width: 700px;          /* adjust to your liking (600–800px works best) */
+  width: 90%;                /* keeps responsive look */
+  margin: 40px auto;         /* centers the form horizontally */
+  background: #fff;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .form-window .close-btn {
@@ -241,6 +242,42 @@ body {
   box-shadow: 0 2px 8px rgba(0,0,0,0.2);
   display: none;
   z-index: 3000;
+}
+/* === Booking & Dispatch Report width and position === */
+.report-form {
+  background: #fff;
+  border-radius: 12px;
+  padding: 25px;
+  max-width: 900px;              /* Decrease width (try 700–900px) */
+  width: 90%;                    /* Responsive scaling */
+  margin: 40px auto 60px 280px;  /* Push away from sidebar */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+/* When sidebar is active */
+.sidebar.active ~ .content .report-form {
+  margin-left: 280px; /* same as sidebar width */
+}
+
+/* Responsive fix for smaller screens */
+@media (max-width: 992px) {
+  .report-form {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 95%;
+  }
+}
+/* === Adjust vertical spacing for report forms === */
+.report-form {
+  margin-top: 100px !important;   /* pushes form lower below topbar */
+}
+
+/* Optional: reduce on small screens */
+@media (max-width: 768px) {
+  .report-form {
+    margin-top: 80px !important;
+  }
 }
 
 </style>
@@ -294,6 +331,7 @@ body {
 							Report</a> <a href="#delivered" onclick="comingSoon()">Delivery
 							Report</a>
 					</div>
+				
 				</div>
 
 				<a href="javascript:void(0)" class="nav-link"
