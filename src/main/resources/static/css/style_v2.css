@@ -527,7 +527,7 @@ report-form {
 .modal-header, .modal-footer {
     border: none;
   }
-.custom-alert-overlay {
+/*.custom-alert {
     position: fixed;
     top: 0; left: 0;
     width: 100vw; height: 100vh;
@@ -536,15 +536,56 @@ report-form {
     align-items: center;
     justify-content: center;
     z-index: 9999;
-  }
-  .custom-alert-box {
-    background: #fff;
-    padding: 20px 30px;
-    border-radius: 8px;
-    width: 320px;
-    text-align: center;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-  }
+}
+.custom-alert-box {
+   background: #fff;
+   padding: 20px 30px;
+   border-radius: 8px;
+   width: 320px;
+   text-align: center;
+   box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}*/
+.custom-alert-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5); /* dark background */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  transition: opacity 0.3s ease;
+}
+
+/* Alert box */
+.custom-alert-box {
+  padding: 25px 35px;
+  border-radius: 10px;
+  width: 320px;
+  text-align: center;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+  animation: popIn 0.3s ease;
+}
+
+/* Button styling */
+.custom-alert-btn {
+  margin-top: 15px;
+  padding: 8px 20px;
+  background-color: #007bff;
+  border: none;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.custom-alert-btn:hover {
+  background-color: #0056b3;
+}
+
   
 span.badge {
   cursor: pointer;

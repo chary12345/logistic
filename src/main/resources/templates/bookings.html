@@ -193,10 +193,8 @@ body {
 }
 /* All dynamic forms inside content */
 .content>div {
-	background: #fff;
 	padding: 20px;
 	border-radius: 12px;
-	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
 	margin-top: 15px;
 	max-width: 100%;
 	box-sizing: border-box;
@@ -1173,12 +1171,22 @@ body {
 			</div>
 
 			<!-- Custom Alert -->
-<div id="customAlert" class="custom-alert" style="display:none;">
-  <div class="custom-alert-box">
-    <p id="customAlertMsg"></p>
-    <button onclick="hideCustomAlert()" class="btn btn-primary">OK</button>
-  </div>
-</div>
+<!--<div id="customAlert" class="custom-alert" style="display:none;">-->
+<!--	<div>-->
+<!--		<div class="custom-alert-box">-->
+<!--			<p id="customAlertMsg"></p>-->
+<!--			<button onclick="hideCustomAlert()" class="btn btn-primary">OK</button>-->
+<!--		</div>-->
+<!--	</div>-->
+<!--</div>-->
+			<div id="customAlert" class="custom-alert-overlay" style="display: none;">
+				<div style="display: flex; justify-content:center;align-items:center; height: 100vh">
+					<div class="custom-alert-box">
+						<p id="customAlertMsg">This is a custom alert message!</p>
+						<button class="custom-alert-btn" onclick="hideCustomAlert()">OK</button>
+					</div>
+				</div>
+			</div>
 
 		</main>
 		<!-- ========== Helper script patch (keeps search and shortcuts working) ========== -->
