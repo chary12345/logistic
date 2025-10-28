@@ -3750,7 +3750,7 @@ function showCustomAlert(message) {
 
   if (alertBox && alertMsg) {
     alertMsg.textContent = message || "Something went wrong!";
-   alertBox.style.display = "block";
+   alertBox.style.display = "flex";
   }
 }
 
