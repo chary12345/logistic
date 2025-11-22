@@ -4021,3 +4021,211 @@ document.addEventListener("keydown", function(e) {
 });
 
 
+
+// debounce helper
+function debounce(fn, delay) {
+    let t;
+    return function (...args) {
+        clearTimeout(t);
+        t = setTimeout(() => fn.apply(this, args), delay);
+    };
+}
+
+// Auto-fill from server
+function attachAutoFill(kind) {
+
+    const nameEl = document.getElementById(kind + "Name");
+    const mobileEl = document.getElementById(kind + "Mobile");
+    const gstEl = document.getElementById(kind + "GST");
+    const addrEl = document.getElementById(kind + "Address");
+
+    if (!nameEl) return;
+
+    const doSearch = debounce(function () {
+        const q = nameEl.value.trim();
+        if (!q) return;
+
+        fetch(`/contacts/search?type=${kind}&q=${encodeURIComponent(q)}`)
+            .then(r => r.json())
+            .then(list => {
+                if (!list || list.length === 0) return;
+
+                // exact match first
+                let match = list.find(c =>
+                    c.name.toLowerCase() === q.toLowerCase()
+                ) || list[0];
+
+                // fill only empty fields
+                if (mobileEl && !mobileEl.value) mobileEl.value = match.mobile || "";
+                if (gstEl && !gstEl.value) gstEl.value = match.gst || "";
+                if (addrEl && !addrEl.value) addrEl.value = match.address || "";
+            });
+    }, 300);
+
+    nameEl.addEventListener("input", doSearch);
+    nameEl.addEventListener("blur", doSearch);
+}
+
+// Save consignor/consignee automatically on booking submit
+function attachSaveOnSubmit(formId) {
+
+    const form = document.getElementById(formId);
+    if (!form) return;
+
+    form.addEventListener("submit", function () {
+
+        ["consignor", "consignee"].forEach(kind => {
+
+            const payload = {
+                type: kind,
+                name: document.getElementById(kind + "Name").value.trim(),
+                mobile: document.getElementById(kind + "Mobile").value.trim(),
+                gst: document.getElementById(kind + "GST").value.trim(),
+                address: document.getElementById(kind + "Address").value.trim()
+            };
+
+            if (!payload.name) return;
+
+            fetch("/contacts", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+        });
+
+    });
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    attachAutoFill("consignor");
+    attachAutoFill("consignee");
+    attachSaveOnSubmit("bookingForm");   // change ID if needed
+});
+// === Exact-match only autofill (works with datalist + blur + Enter) ===
+// This full block replaces your old autofill code.
+
+(function(){
+
+  const SEARCH_URL = '/contacts/search';
+  const LOCAL_KEY_CONSIGNOR = 'consignors_cache_v1';
+  const LOCAL_KEY_CONSIGNEE = 'consignees_cache_v1';
+
+  function debounce(fn, ms){ let t; return function(...args){ clearTimeout(t); t = setTimeout(()=>fn.apply(this,args), ms); }; }
+  function norm(s){ return (s||'').trim(); }
+  function normLower(s){ return norm(s).toLowerCase(); }
+
+  function applyContact(kind, contact){
+    if(!contact) return;
+    const mobileEl = document.getElementById(kind + 'Mobile');
+    const gstEl = document.getElementById(kind + 'GST');
+    const addrEl = document.getElementById(kind + 'Address');
+    if(mobileEl) mobileEl.value = contact.mobile || '';
+    if(gstEl) gstEl.value = contact.gst || '';
+    if(addrEl) addrEl.value = contact.address || '';
+  }
+
+  function serverSearch(kind, q){
+    if(!q) return Promise.resolve([]);
+    const url = `${SEARCH_URL}?type=${encodeURIComponent(kind)}&q=${encodeURIComponent(q)}`;
+    return fetch(url)
+      .then(r => r.ok ? r.json() : [])
+      .catch(err => {
+        console.warn('server search failed', err);
+        return [];
+      });
+  }
+
+  function loadLocal(kind){
+    try{
+      const key = kind === 'consignor' ? LOCAL_KEY_CONSIGNOR : LOCAL_KEY_CONSIGNEE;
+      return JSON.parse(localStorage.getItem(key) || '[]');
+    }catch(e){ return []; }
+  }
+
+  function saveLocal(kind, arr){
+    try{
+      const key = kind === 'consignor' ? LOCAL_KEY_CONSIGNOR : LOCAL_KEY_CONSIGNEE;
+      localStorage.setItem(key, JSON.stringify(arr || []));
+    }catch(e){}
+  }
+
+  function forceRefreshContacts(kind){
+    return serverSearch(kind, '')
+      .then(list => {
+        if(Array.isArray(list)) saveLocal(kind, list);
+        return list;
+      });
+  }
+  window.forceRefreshContacts = forceRefreshContacts;
+
+  function findExactContact(kind, name){
+    const q = norm(name);
+    if(!q) return Promise.resolve(null);
+
+    return serverSearch(kind, q).then(list => {
+      if(Array.isArray(list) && list.length){
+        const exact = list.find(c => c.name && c.name.trim().toLowerCase() === q.toLowerCase());
+        if(exact) return exact;
+      }
+      const localList = loadLocal(kind);
+      const exactLocal = (localList || []).find(c => c.name && c.name.trim().toLowerCase() === q.toLowerCase());
+      if(exactLocal) return exactLocal;
+
+      return null;
+    }).catch(()=> {
+      const localList = loadLocal(kind);
+      const exactLocal = (localList || []).find(c => c.name && c.name.trim().toLowerCase() === q.toLowerCase());
+      return exactLocal || null;
+    });
+  }
+
+  function attachExactAutofill(kind){
+    const nameEl = document.getElementById(kind + 'Name');
+    if(!nameEl) return;
+
+    function checkAndApply(){
+      const nameVal = norm(nameEl.value);
+      if(!nameVal) return;
+      findExactContact(kind, nameVal).then(contact => {
+        if(contact) applyContact(kind, contact);
+      });
+    }
+
+    nameEl.addEventListener('blur', checkAndApply);
+
+    nameEl.addEventListener('keydown', function(ev){
+      if(ev.key === 'Enter'){
+        setTimeout(checkAndApply, 0);
+      }
+    });
+
+    nameEl.addEventListener('input', function(){
+      const listId = nameEl.getAttribute('list');
+      if(!listId) return;
+      const dl = document.getElementById(listId);
+      if(!dl) return;
+      const val = nameEl.value.trim();
+      for(let i=0;i<dl.options.length;i++){
+        if(dl.options[i].value && dl.options[i].value.trim().toLowerCase() === val.toLowerCase()){
+          checkAndApply();
+          return;
+        }
+      }
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    attachExactAutofill('consignor');
+    attachExactAutofill('consignee');
+  });
+
+  window.__contacts_helpers = {
+    findExactContact,
+    forceRefreshContacts,
+    loadLocal,
+    saveLocal
+  };
+
+})(); // END
+
+
