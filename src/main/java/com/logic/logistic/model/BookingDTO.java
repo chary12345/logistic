@@ -29,7 +29,7 @@ public class BookingDTO {
     private LocalDateTime deliveryDate;
 
     private String companyCode;
-    private String branchCode;
+    private String branchCode;  //sending branch
     private String destinationBranchCode;
     private String consignStatus;
     private String billType;

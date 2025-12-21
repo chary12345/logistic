@@ -562,8 +562,11 @@ report-form {
 .custom-alert-btn:hover {
   background-color: #0056b3;
 }
+/* Hide the dropdown search box */
+.select2-search--dropdown {
+    display: none !important;
+}
 
-  
 span.badge {
   cursor: pointer;
 }
