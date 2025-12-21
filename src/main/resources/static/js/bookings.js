@@ -3055,19 +3055,36 @@ let isResetting = false;
 
 async function loadOperationDropdowns() {
 	const companyCode = userData?.companyAndBranchDeatils?.companyCode;
-	if (!companyCode) return;
-
-	try {
-		const regionsRes = await fetch(`/region/regions?companyCode=${companyCode}`);
-		const regions = await regionsRes.json();
-
-		fillSelect("opRegion", regions);
-		fillSelect("opSubregion", []);
-		fillSelect("opBranch", []);
-
-	} catch (e) {
-		console.error("Dropdowns load error:", e);
+	const branchCode=userData?.companyAndBranchDeatils?.branchCode;
+	if (!companyCode || !branchCode) {
+	    console.error("Missing companyCode or branchCode");
+	    return;
 	}
+	const body = {
+            companyCode: companyCode,
+            branchCode: branchCode
+    };
+	try {
+		const response = await fetch("/operation/bookingList", {
+		method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+        });
+        if (!response.ok) {
+            throw new Error("Failed to fetch booking list");
+        }
+        const data= await response.json();
+        console.log("Dispatch data: ", data);
+        fillSelect("opBranch", [{
+            value: branchCode,
+            text : branchCode
+        }]);
+        document.getElementById("opBranch").value = branchCode;
+        displayopsBookingSummary(data);
+        submitOperationReport();
+    } catch (e) {
+        console.error("Dropdowns load error:", e);
+    }
 }
 
 document.getElementById("opRegion").addEventListener("change", async (e) => {
@@ -3312,7 +3329,7 @@ function toggleAllCheckboxes(source) {
 
 
 function displayopsBookingSummary(bookings) {
-	if (isResetting || !bookings || bookings.length === 0) return;
+	if (!bookings || bookings.length === 0) return;
 
 	const container = document.getElementById("bookingopsSummaryContainer");
 	if (!container) return;
@@ -3508,7 +3525,6 @@ function submitDispatchAlongWithVehicleDetails() {
 			openPrintWindow(data); // includes bookings + loadingSheet
 			bootstrap.Modal.getInstance(document.getElementById("associateVehicleModal")).hide();
 			document.getElementById("associateVehicleForm").reset();
-			submitOperationReport();
 		})
 
 		.catch(err => {
