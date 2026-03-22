@@ -2279,11 +2279,14 @@ function searchLRByNumber(lrNumber) {
 					</div>`;
 			}
 
-			// 🔽 Main HTML
+			//  Main HTML
 			const html = `
 				<div class="lr-search-card">
 					<h5 class="text-primary mb-3">🔍 Loading Receipt: ${data.loadingReciept}</h5>
 
+<div class="text-end mb-3">
+    <button class="btn btn-warning btn-sm" onclick='enableInlineEditMode(${JSON.stringify(data)})'>✏ Edit</button>
+</div>
 
 
 					<div class="row mb-2">
@@ -2797,82 +2800,193 @@ function resetGlobalSearch() {
 
 // View-Only Mode Upgrade: In-place editing of LR
 
-
 function enableInlineEditMode(data) {
+	document.getElementById("bookingFormContainer").style.display = "none";
+
 	const container = document.getElementById("lrSearchResultContainer");
+	container.style.display = "block";
+
+	container.innerHTML = `...`;
 	if (!container) return;
 
-	container.innerHTML = `
-   
+    const gst = (data.sgst || 0) + (data.cgst || 0) + (data.igst || 0);
+    const grandTotal = (data.freight || 0) + gst;
 
-    <div class="row">
-      <div class="col-md-6">
-        <label><strong>Consignor Name</strong></label>
-        <input class="form-control form-control-sm" id="consignorName" value="${data.consignorName || ''}">
-        <label><strong>Mobile</strong></label>
-        <input class="form-control form-control-sm" id="consignorMobile" value="${data.consignorMobile || ''}">
-        <label><strong>Address</strong></label>
-        <input class="form-control form-control-sm" id="consignorAddress" value="${data.consignorAddress || ''}">
-      </div>
-      <div class="col-md-6">
-        <label><strong>Consignee Name</strong></label>
-        <input class="form-control form-control-sm" id="consigneeName" value="${data.consigneeName || ''}">
-        <label><strong>Mobile</strong></label>
-        <input class="form-control form-control-sm" id="consigneeMobile" value="${data.consigneeMobile || ''}">
-        <label><strong>Address</strong></label>
-        <input class="form-control form-control-sm" id="consigneeAddress" value="${data.consigneeAddress || ''}">
+    container.innerHTML = `
+    <div class="lr-shell">
+      <div class="card lr-card">
+
+        <!-- HEADER BAND -->
+        <div class="lr-header-band">
+          <div>
+            <div class="lr-title">
+              <span class="lr-title-icon">LR</span>
+              <span>Loading Receipt: <a href="#" class="lr-number">${data.loadingReciept}</a></span>
+            </div>
+            <div class="lr-subtitle">LR No cannot be edited.</div>
+          </div>
+
+          <div class="lr-header-right">
+  			<div class="lr-status-pill">${data?.consignStatus || "BOOKED"}</div>
+		</div>
+           
+          </div>
+        </div>
+
+        <!-- BODY -->
+        <div class="card-body lr-card-body">
+          <form>
+
+            <!-- LR INFO -->
+            <div class="lr-section-title">LR Information</div>
+            <div class="row g-2">
+             
+
+              <div class="col-md-4">
+                <label class="form-label">Booked On</label>
+                <input id="bookingDate" type="datetime-local" class="form-control form-control-sm"
+                       value="${formatDateInput(data?.bookingDate)}">
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">To Branch</label>
+                <input id="toBranch" type="text" class="form-control form-control-sm"
+                       value="${data.destinationBranchCode}">
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">From Branch</label>
+                <input id="fromBranch" type="text" class="form-control form-control-sm"
+                       value="${data.branchCode}">
+              </div>
+            </div>
+
+            <div class="lr-section-divider"></div>
+
+            <!-- PARTIES -->
+            <div class="lr-section-title">Parties</div>
+            <div class="row g-2">
+
+              <div class="col-md-6">
+                <label class="form-label">Consignor</label>
+                <input id="consignorName" type="text" class="form-control form-control-sm"
+                       value="${data.consignorName}">
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Consignee</label>
+                <input id="consigneeName" type="text" class="form-control form-control-sm"
+                       value="${data.consigneeName}">
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">Consignor Mobile</label>
+                <input id="consignorMobile" type="text" class="form-control form-control-sm"
+                       value="${data.consignorMobile}">
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">Consignee Mobile</label>
+                <input id="consigneeMobile" type="text" class="form-control form-control-sm"
+                       value="${data.consigneeMobile}">
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">Invoice Number</label>
+                <input id="invoiceNumber" type="text" class="form-control form-control-sm"
+                       value="${data.invoiceNumber || ''}">
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">E-WayBill</label>
+                <input id="eWayBillNumber" type="text" class="form-control form-control-sm"
+                       value="${data.eWayBillNumber || ''}">
+              </div>
+            </div>
+
+            <div class="lr-section-divider"></div>
+
+            <!-- CHARGES -->
+            <div class="lr-section-title">Charges & Weight</div>
+            <div class="row g-2">
+
+              <div class="col-md-4">
+                <label class="form-label">Article Type</label>
+                <input id="articleType" type="text" class="form-control form-control-sm"
+                       value="${data.articleType || ''}">
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">Weight (kg)</label>
+                <input id="articleWeight" type="number" class="form-control form-control-sm"
+                       value="${data.articleWeight || 0}">
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">Freight (₹)</label>
+                <input id="freight" type="number" class="form-control form-control-sm"
+                       value="${data.freight || 0}">
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">SGST (₹)</label>
+                <input id="sgst" type="number" class="form-control form-control-sm"
+                       value="${data.sgst || 0}">
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">CGST (₹)</label>
+                <input id="cgst" type="number" class="form-control form-control-sm"
+                       value="${data.cgst || 0}">
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">IGST (₹)</label>
+                <input id="igst" type="number" class="form-control form-control-sm"
+                       value="${data.igst || 0}">
+              </div>
+
+              <div class="col-md-4 offset-md-8">
+                <label class="form-label">Grand Total</label>
+                <input id="grandTotal" type="number" class="form-control form-control-sm text-success fw-bold"
+                       value="${grandTotal.toFixed(2)}">
+              </div>
+            </div>
+
+            <div class="lr-section-divider"></div>
+
+            <!-- ARTICLE DETAILS -->
+            <div class="lr-section-title">Articles</div>
+
+            <div class="lr-article-header">📄 Article Details</div>
+
+            <div class="table-responsive mt-2">
+              <table class="table table-sm table-bordered align-middle table-articles mb-0">
+                <thead>
+                  <tr class="text-center">
+                    <th>Article</th>
+                    <th style="width:70px;">Qty</th>
+                    <th>Type</th>
+                    <th>Said To Contain</th>
+                    <th style="width:90px;">Amount</th>
+                    <th style="width:100px;">Total</th>
+                  </tr>
+                </thead>
+                <tbody id="editArticleTableBody"></tbody>
+              </table>
+            </div>
+
+          </form>
+        </div>
       </div>
     </div>
+    `;
 
-    <hr>
-    <h6 class="text-success mt-2">🧾 Article Details</h6>
-    <table class="table table-bordered table-sm">
-      <thead>
-        <tr>
-          <th>Article</th><th>Qty</th><th>Type</th><th>Said To Contain</th><th>Amount</th><th>Total</th><th>❌</th>
-        </tr>
-      </thead>
-      <tbody id="editArticleTableBody"></tbody>
-    </table>
-    <div class="mb-3">
-      <button class="btn btn-sm btn-success" onclick="addInlineArticleRow()">➕ Add Article</button>
-    </div>
-
-    <hr>
-    <h6 class="text-success">💰 Charges</h6>
-    <div class="row">
-      <div class="col-md-3">
-        <label>Freight</label>
-        <input class="form-control form-control-sm" id="freight" value="${data.freight || 0}" readonly>
-      </div>
-      <div class="col-md-3">
-        <label>SGST</label>
-        <input class="form-control form-control-sm" id="sgst" value="${data.sgst || 0}" readonly>
-      </div>
-      <div class="col-md-3">
-        <label>CGST</label>
-        <input class="form-control form-control-sm" id="cgst" value="${data.cgst || 0}" readonly>
-      </div>
-      <div class="col-md-3">
-        <label>IGST</label>
-        <input class="form-control form-control-sm" id="igst" value="${data.igst || 0}" readonly>
-      </div>
-    </div>
-    <div class="row mt-2">
-      <div class="col-md-4 offset-md-8">
-        <label>Grand Total</label>
-        <input class="form-control form-control-sm text-success fw-bold" id="grandTotal" value="${(data.freight + data.sgst + data.cgst + data.igst).toFixed(2)}" readonly>
-      </div>
-    </div>
-
-    <div class="text-end mt-3">
-      <button class="btn btn-primary" onclick="submitInlineEdit('${data.loadingReciept}')">🔄 Update Booking</button>
-    </div>
-  `;
-
-	(data.articleDetails || []).forEach(a => addInlineArticleRow(a));
-	recalculateInlineCharges();
+    // Load article rows
+    (data.articleDetails || []).forEach(a => addInlineArticleRow(a));
+    recalculateInlineCharges();
 }
+
 // Function to update charges panel based on articles table
 function updateChargesPanelFromArticles() {
 	let totalFreight = 0;
@@ -3745,20 +3859,20 @@ function printStatements() { window.print(); }
 
 //custom alert form
 function showCustomAlert(message) {
-  const alertBox = document.getElementById("customAlert");
-  const alertMsg = document.getElementById("customAlertMsg");
+	const alertBox = document.getElementById("customAlert");
+	const alertMsg = document.getElementById("customAlertMsg");
 
-  if (alertBox && alertMsg) {
-    alertMsg.textContent = message || "Something went wrong!";
-   alertBox.style.display = "flex";
-  }
+	if (alertBox && alertMsg) {
+		alertMsg.textContent = message || "Something went wrong!";
+		alertBox.style.display = "flex";
+	}
 }
 
 function hideCustomAlert() {
-  const alertBox = document.getElementById("customAlert");
-  if (alertBox) {
-    alertBox.style.display = "none";
-  }
+	const alertBox = document.getElementById("customAlert");
+	if (alertBox) {
+		alertBox.style.display = "none";
+	}
 }
 
 
@@ -4020,53 +4134,145 @@ document.addEventListener("keydown", function(e) {
 	}
 });
 
+function formatDateInput(date) {
+	if (!date) return "";
+	const d = new Date(date);
+	return d.toISOString().slice(0, 16);
+}
 
-
-// debounce helper
-function debounce(fn, delay) {
+// --- Debounce ---
+function debounce(fn, ms) {
     let t;
     return function (...args) {
         clearTimeout(t);
-        t = setTimeout(() => fn.apply(this, args), delay);
+        t = setTimeout(() => fn.apply(this, args), ms);
     };
 }
 
-// Auto-fill from server
+// ---------------------------------------
+// GLOBAL BRANCH CODE
+// ---------------------------------------
+function getBranchCode() {
+    return userData?.companyAndBranchDeatils?.branchCode || "";
+}
+
+
+// ---------------------------------------
+// LOCAL STORAGE KEYS
+// ---------------------------------------
+const CACHE_KEYS = {
+    consignor: "consignors_cache",
+    consignee: "consignees_cache"
+};
+
+// ---------------------------------------
+// SAVE CONTACT TO LOCAL CACHE
+// ---------------------------------------
+function saveToCache(kind, contact) {
+    if (!contact.name) return;
+
+    const key = CACHE_KEYS[kind];
+    let list = JSON.parse(localStorage.getItem(key) || "[]");
+
+    const idx = list.findIndex(c => c.name.toLowerCase() === contact.name.toLowerCase());
+
+    if (idx >= 0) list[idx] = contact;
+    else list.push(contact);
+
+    localStorage.setItem(key, JSON.stringify(list));
+}
+
+// ---------------------------------------
+// LOAD LOCAL CACHE LIST
+// ---------------------------------------
+function loadCache(kind) {
+    const key = CACHE_KEYS[kind];
+    return JSON.parse(localStorage.getItem(key) || "[]");
+}
+
+// ---------------------------------------
+// POPULATE DATALIST
+// ---------------------------------------
+function refreshDatalist(kind) {
+    const list = loadCache(kind);
+    const dl = document.getElementById(kind + "List");
+    if (!dl) return;
+
+    dl.innerHTML = "";
+    list.forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = c.name;
+        dl.appendChild(opt);
+    });
+}
+
+// ---------------------------------------
+// CALL SERVER SEARCH
+// ---------------------------------------
+function serverSearch(kind, name) {
+    if (!name) return Promise.resolve([]);
+
+    const url =
+        `/contacts/search?type=${encodeURIComponent(kind)}` +
+        `&q=${encodeURIComponent(name)}` +
+        `&branchCode=${encodeURIComponent(getBranchCode())}`;
+
+    return fetch(url)
+        .then(r => r.ok ? r.json() : [])
+        .catch(() => []);
+}
+
+// ---------------------------------------
+// APPLY CONTACT TO FORM FIELDS
+// ---------------------------------------
+function applyContact(kind, c) {
+    document.getElementById(kind + "Mobile").value = c.mobile || "";
+    document.getElementById(kind + "GST").value = c.gst || "";
+    document.getElementById(kind + "Address").value = c.address || "";
+}
+
+// ---------------------------------------
+// AUTOFILL LOGIC (LOCAL + SERVER)
+// ---------------------------------------
 function attachAutoFill(kind) {
 
     const nameEl = document.getElementById(kind + "Name");
-    const mobileEl = document.getElementById(kind + "Mobile");
-    const gstEl = document.getElementById(kind + "GST");
-    const addrEl = document.getElementById(kind + "Address");
-
     if (!nameEl) return;
 
     const doSearch = debounce(function () {
         const q = nameEl.value.trim();
         if (!q) return;
 
-        fetch(`/contacts/search?type=${kind}&q=${encodeURIComponent(q)}`)
-            .then(r => r.json())
-            .then(list => {
-                if (!list || list.length === 0) return;
+        const localList = loadCache(kind);
+        const localMatch = localList.find(c => c.name.toLowerCase() === q.toLowerCase());
 
-                // exact match first
-                let match = list.find(c =>
-                    c.name.toLowerCase() === q.toLowerCase()
-                ) || list[0];
+        if (localMatch) {
+            applyContact(kind, localMatch);
+            return;
+        }
 
-                // fill only empty fields
-                if (mobileEl && !mobileEl.value) mobileEl.value = match.mobile || "";
-                if (gstEl && !gstEl.value) gstEl.value = match.gst || "";
-                if (addrEl && !addrEl.value) addrEl.value = match.address || "";
-            });
+        serverSearch(kind, q).then(list => {
+            if (!Array.isArray(list) || list.length === 0) return;
+
+            const exact = list.find(c => c.name.toLowerCase() === q.toLowerCase());
+            const result = exact || list[0];
+
+            applyContact(kind, result);
+
+            // save server result to cache
+            saveToCache(kind, result);
+            refreshDatalist(kind);
+        });
+
     }, 300);
 
-    nameEl.addEventListener("input", doSearch);
+    //nameEl.addEventListener("input", doSearch);
     nameEl.addEventListener("blur", doSearch);
 }
 
-// Save consignor/consignee automatically on booking submit
+// ---------------------------------------
+// SAVE TO SERVER ON BOOKING SUBMIT
+// ---------------------------------------
 function attachSaveOnSubmit(formId) {
 
     const form = document.getElementById(formId);
@@ -4081,11 +4287,17 @@ function attachSaveOnSubmit(formId) {
                 name: document.getElementById(kind + "Name").value.trim(),
                 mobile: document.getElementById(kind + "Mobile").value.trim(),
                 gst: document.getElementById(kind + "GST").value.trim(),
-                address: document.getElementById(kind + "Address").value.trim()
+                address: document.getElementById(kind + "Address").value.trim(),
+                branchCode: getBranchCode()
             };
 
             if (!payload.name) return;
 
+            // save to local cache
+            saveToCache(kind, payload);
+            refreshDatalist(kind);
+
+            // save to server
             fetch("/contacts", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -4096,136 +4308,16 @@ function attachSaveOnSubmit(formId) {
     });
 }
 
+// ---------------------------------------
+// INIT
+// ---------------------------------------
 document.addEventListener("DOMContentLoaded", function () {
+    refreshDatalist("consignor");
+    refreshDatalist("consignee");
+
     attachAutoFill("consignor");
     attachAutoFill("consignee");
-    attachSaveOnSubmit("bookingForm");   // change ID if needed
+
+    attachSaveOnSubmit("bookingForm");
 });
-// === Exact-match only autofill (works with datalist + blur + Enter) ===
-// This full block replaces your old autofill code.
-
-(function(){
-
-  const SEARCH_URL = '/contacts/search';
-  const LOCAL_KEY_CONSIGNOR = 'consignors_cache_v1';
-  const LOCAL_KEY_CONSIGNEE = 'consignees_cache_v1';
-
-  function debounce(fn, ms){ let t; return function(...args){ clearTimeout(t); t = setTimeout(()=>fn.apply(this,args), ms); }; }
-  function norm(s){ return (s||'').trim(); }
-  function normLower(s){ return norm(s).toLowerCase(); }
-
-  function applyContact(kind, contact){
-    if(!contact) return;
-    const mobileEl = document.getElementById(kind + 'Mobile');
-    const gstEl = document.getElementById(kind + 'GST');
-    const addrEl = document.getElementById(kind + 'Address');
-    if(mobileEl) mobileEl.value = contact.mobile || '';
-    if(gstEl) gstEl.value = contact.gst || '';
-    if(addrEl) addrEl.value = contact.address || '';
-  }
-
-  function serverSearch(kind, q){
-    if(!q) return Promise.resolve([]);
-    const url = `${SEARCH_URL}?type=${encodeURIComponent(kind)}&q=${encodeURIComponent(q)}`;
-    return fetch(url)
-      .then(r => r.ok ? r.json() : [])
-      .catch(err => {
-        console.warn('server search failed', err);
-        return [];
-      });
-  }
-
-  function loadLocal(kind){
-    try{
-      const key = kind === 'consignor' ? LOCAL_KEY_CONSIGNOR : LOCAL_KEY_CONSIGNEE;
-      return JSON.parse(localStorage.getItem(key) || '[]');
-    }catch(e){ return []; }
-  }
-
-  function saveLocal(kind, arr){
-    try{
-      const key = kind === 'consignor' ? LOCAL_KEY_CONSIGNOR : LOCAL_KEY_CONSIGNEE;
-      localStorage.setItem(key, JSON.stringify(arr || []));
-    }catch(e){}
-  }
-
-  function forceRefreshContacts(kind){
-    return serverSearch(kind, '')
-      .then(list => {
-        if(Array.isArray(list)) saveLocal(kind, list);
-        return list;
-      });
-  }
-  window.forceRefreshContacts = forceRefreshContacts;
-
-  function findExactContact(kind, name){
-    const q = norm(name);
-    if(!q) return Promise.resolve(null);
-
-    return serverSearch(kind, q).then(list => {
-      if(Array.isArray(list) && list.length){
-        const exact = list.find(c => c.name && c.name.trim().toLowerCase() === q.toLowerCase());
-        if(exact) return exact;
-      }
-      const localList = loadLocal(kind);
-      const exactLocal = (localList || []).find(c => c.name && c.name.trim().toLowerCase() === q.toLowerCase());
-      if(exactLocal) return exactLocal;
-
-      return null;
-    }).catch(()=> {
-      const localList = loadLocal(kind);
-      const exactLocal = (localList || []).find(c => c.name && c.name.trim().toLowerCase() === q.toLowerCase());
-      return exactLocal || null;
-    });
-  }
-
-  function attachExactAutofill(kind){
-    const nameEl = document.getElementById(kind + 'Name');
-    if(!nameEl) return;
-
-    function checkAndApply(){
-      const nameVal = norm(nameEl.value);
-      if(!nameVal) return;
-      findExactContact(kind, nameVal).then(contact => {
-        if(contact) applyContact(kind, contact);
-      });
-    }
-
-    nameEl.addEventListener('blur', checkAndApply);
-
-    nameEl.addEventListener('keydown', function(ev){
-      if(ev.key === 'Enter'){
-        setTimeout(checkAndApply, 0);
-      }
-    });
-
-    nameEl.addEventListener('input', function(){
-      const listId = nameEl.getAttribute('list');
-      if(!listId) return;
-      const dl = document.getElementById(listId);
-      if(!dl) return;
-      const val = nameEl.value.trim();
-      for(let i=0;i<dl.options.length;i++){
-        if(dl.options[i].value && dl.options[i].value.trim().toLowerCase() === val.toLowerCase()){
-          checkAndApply();
-          return;
-        }
-      }
-    });
-  }
-
-  document.addEventListener('DOMContentLoaded', function(){
-    attachExactAutofill('consignor');
-    attachExactAutofill('consignee');
-  });
-
-  window.__contacts_helpers = {
-    findExactContact,
-    forceRefreshContacts,
-    loadLocal,
-    saveLocal
-  };
-
-})(); // END
-
 
