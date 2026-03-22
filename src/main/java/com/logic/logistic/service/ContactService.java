@@ -21,9 +21,13 @@ public class ContactService {
     }
 
     // ---- SEARCH with REDIS CACHE ----
-    @Cacheable(cacheNames = "contacts", key = "#type + ':' + #q")
-    public List<Contact> search(String type, String q) {
-        return repo.findTop10ByTypeAndNameContainingIgnoreCaseOrderByNameAsc(type, q);
+    @Cacheable(cacheNames = "contacts", key = "#type + ':' + #branchCode + ':' + #q") 
+    public List<Contact> search(String type, String q,String branchCode) {
+    	return repo.findTop10ByTypeAndBranchCodeAndNameContainingIgnoreCaseOrderByNameAsc(
+                type,
+                branchCode,
+                q
+        );
     }
 
     // ---- SMART SAVE : same name + diff fields => NEW RECORD ----
@@ -33,9 +37,12 @@ public class ContactService {
 
         String name = input.getName().trim();
         String type = input.getType();
-
-        List<Contact> matches = repo.findTop10ByTypeAndNameContainingIgnoreCaseOrderByNameAsc(type, name);
-
+        String branchCode = safe(input.getBranchCode());
+        
+        List<Contact> matches =
+                repo.findTop10ByTypeAndBranchCodeAndNameContainingIgnoreCaseOrderByNameAsc(
+                        type, branchCode, name
+                );
         // If same name + exact same details => update
         for (Contact c : matches) {
             if (c.getName().equalsIgnoreCase(name)
@@ -57,6 +64,7 @@ public class ContactService {
         newC.setMobile(input.getMobile());
         newC.setGst(input.getGst());
         newC.setAddress(input.getAddress());
+        newC.setBranchCode(branchCode);
         return repo.save(newC);
     }
 

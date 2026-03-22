@@ -29,8 +29,8 @@ public class ContactController {
     @GetMapping("/search")
     public List<Contact> search(
             @RequestParam String type,
-            @RequestParam String q) {
-        return svc.search(type, q);
+            @RequestParam String q, @RequestParam String branchCode) {
+        return svc.search(type, q,branchCode);
     }
 
     @PostMapping
