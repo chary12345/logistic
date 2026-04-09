@@ -1003,51 +1003,57 @@ function updateFreight() {
 
 // ----------------- Calculate Charges for Booking Form -----------------
 function calculateChargesBooking() {
-	const freight = parseFloat(document.getElementById("freight").value) || 0;
-	const loadingCharge = parseFloat(document.getElementById("loadingCharge").value) || 0;
-	const lrCharge = parseFloat(document.getElementById("lrCharge").value) || 0;
+
+	const freight = parseFloat(document.getElementById("freight")?.value) || 0;
+	const loadingCharge = parseFloat(document.getElementById("loadingCharge")?.value) || 0;
+	const lrCharge = parseFloat(document.getElementById("lrCharge")?.value) || 0;
 
 	const consignorGST = (document.getElementById("consignorGST")?.value || "").trim();
 	const consigneeGST = (document.getElementById("consigneeGST")?.value || "").trim();
 
 	let sgst = 0, cgst = 0, igst = 0;
+
 	if (freight > 0) {
 
-		// GST calculation only based on GST inputs
 		if (consignorGST && consigneeGST) {
+
 			const consignorState = consignorGST.substring(0, 2);
 			const consigneeState = consigneeGST.substring(0, 2);
 
 			if (consignorState === consigneeState) {
-				// Same state → SGST + CGST
 				sgst = +(freight * 0.025).toFixed(2);
 				cgst = +(freight * 0.025).toFixed(2);
-				igst = 0; // 🚨 explicitly reset IGST
+				igst = 0;
 			} else {
-				// Different state → IGST
 				igst = +(freight * 0.05).toFixed(2);
-				sgst = 0; // 🚨 reset SGST
-				cgst = 0; // 🚨 reset CGST
+				sgst = 0;
+				cgst = 0;
 			}
+
 		} else if (consignorGST || consigneeGST) {
-			// Only one GST → IGST
+
 			igst = +(freight * 0.05).toFixed(2);
-			sgst = 0; // 🚨 reset SGST
-			cgst = 0; // 🚨 reset CGST
+			sgst = 0;
+			cgst = 0;
+
 		} else {
-			// No GST → all 0
+
 			sgst = 0;
 			cgst = 0;
 			igst = 0;
 		}
 	}
-	const grandTotal = (freight + loadingCharge + lrCharge + sgst + cgst + igst).toFixed(2);
 
+	// 🔥 FINAL GRAND TOTAL
+	const grandTotal = freight + loadingCharge + lrCharge + sgst + cgst + igst;
 
-	safeAssign("sgst", sgst);
-	safeAssign("cgst", cgst);
-	safeAssign("igst", igst);
-	safeAssign("grandTotal", parseFloat(grandTotal));
+	// 🔥 DIRECT SET (safeAssign avoid cheyyi ippudu)
+	document.getElementById("sgst").value = sgst.toFixed(2);
+	document.getElementById("cgst").value = cgst.toFixed(2);
+	document.getElementById("igst").value = igst.toFixed(2);
+
+	document.getElementById("grandTotal").value = grandTotal.toFixed(2);
+
 	document.getElementById("chargesPanel").style.display = "block";
 }
 
@@ -2227,8 +2233,9 @@ function setPaymentMode(mode) {
 }
 
 function searchLRByNumber(lrNumber) {
+
 	const container = document.getElementById("lrSearchResultContainer");
-	container.innerHTML = ""; // Clear previous
+	container.innerHTML = "";
 
 	fetch(`/api/bookings/searchBylr?lr=${encodeURIComponent(lrNumber)}`)
 		.then(res => {
@@ -2236,112 +2243,361 @@ function searchLRByNumber(lrNumber) {
 			return res.json();
 		})
 		.then(data => {
-			window.lastSearchResult = data;
+
+			// ✅ STORE DATA PROPERLY
+			window.editData = data;
 
 			const gst = (data.sgst || 0) + (data.cgst || 0) + (data.igst || 0);
 			const grandTotal = (data.freight || 0) + gst;
 
-			// 🔽 Start article table generation
+			// Articles table
 			let articlesHtml = "";
+
 			if (Array.isArray(data.articleDetails) && data.articleDetails.length > 0) {
+
 				articlesHtml = `
-					<hr>
-					<h6 class="text-center text-success mt-3">🧾 Article Details</h6>
-					<div class="table-responsive">
-						<table class="table table-sm table-bordered text-center">
-							<thead class="table-light">
-								<tr>
-									<th>Article</th>
-									<th>Qty</th>
-									<th>Type</th>
-									<th>Said To Contain</th>
-									<th>Amount</th>
-									<th>Total</th>
-								</tr>
-							</thead>
-							<tbody>`;
+                <hr>
+                <h6 class="text-center text-success mt-3">🧾 Article Details</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered text-center">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Article</th>
+                                <th>Qty</th>
+                                <th>Type</th>
+                                <th>Said To Contain</th>
+                                <th>Amount</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
 
 				data.articleDetails.forEach(a => {
 					articlesHtml += `
-						<tr>
-							<td>${a.article || '-'}</td>
-							<td>${a.artQty || '-'}</td>
-							<td>${a.artType || '-'}</td>
-							<td>${a.saidToContain || '-'}</td>
-							<td>${a.artAmt || '-'}</td>
-							<td>${a.total || '-'}</td>
-						</tr>`;
+                    <tr>
+                        <td>${a.article || '-'}</td>
+                        <td>${a.artQty || '-'}</td>
+                        <td>${a.artType || '-'}</td>
+                        <td>${a.saidToContain || '-'}</td>
+                        <td>${a.artAmt || '-'}</td>
+                        <td>${a.total || '-'}</td>
+                    </tr>`;
 				});
 
 				articlesHtml += `
-							</tbody>
-						</table>
-					</div>`;
+                        </tbody>
+                    </table>
+                </div>`;
 			}
 
-			//  Main HTML
+			// ✅ CLEAN HTML
 			const html = `
-				<div class="lr-search-card">
-					<h5 class="text-primary mb-3">🔍 Loading Receipt: ${data.loadingReciept}</h5>
+                <div class="lr-search-card">
 
-<div class="text-end mb-3">
-    <button class="btn btn-warning btn-sm" onclick='enableInlineEditMode(${JSON.stringify(data)})'>✏ Edit</button>
-</div>
+                    <h5 class="text-primary mb-3">
+                        🔍 Loading Receipt: ${data.loadingReciept}
+                    </h5>
 
+                    <div class="text-end mb-3">
+                        <button class="btn btn-warning btn-sm" onclick="enableInlineEditMode()">
+                            ✏ Edit
+                        </button>
+                    </div>
 
-					<div class="row mb-2">
-						<div class="col-md-6"><strong>Status:</strong> ${data.consignStatus || 'N/A'}</div>
-						<div class="col-md-6"><strong>Booked On:</strong> ${formatDate(data.bookingDate)}</div>
-					</div>
+                    <div class="row mb-2">
+                        <div class="col-md-6"><strong>Status:</strong> ${data.consignStatus || 'N/A'}</div>
+                        <div class="col-md-6"><strong>Booked On:</strong> ${formatDate(data.bookingDate)}</div>
+                    </div>
 
-					<div class="row mb-2">
-						<div class="col-md-6"><strong>From Branch:</strong> ${data.branchCode}</div>
-						<div class="col-md-6"><strong>To Branch:</strong> ${data.destinationBranchCode}</div>
-					</div>
+                    <div class="row mb-2">
+                        <div class="col-md-6"><strong>From Branch:</strong> ${data.branchCode}</div>
+                        <div class="col-md-6"><strong>To Branch:</strong> ${data.destinationBranchCode}</div>
+                    </div>
 
-					<hr>
+                    <hr>
 
-					<div class="row mb-2">
-						<div class="col-md-6"><strong>Consignor:</strong> ${data.consignorName} (${data.consignorMobile})</div>
-						<div class="col-md-6"><strong>Consignee:</strong> ${data.consigneeName} (${data.consigneeMobile})</div>
-					</div>
+                    <div class="row mb-2">
+                        <div class="col-md-6">
+                            <strong>Consignor:</strong> ${data.consignorName} (${data.consignorMobile})
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Consignee:</strong> ${data.consigneeName} (${data.consigneeMobile})
+                        </div>
+                    </div>
 
-					<div class="row mb-2">
-						<div class="col-md-6"><strong>Invoice:</strong> ${data.invoiceNumber || '-'} (₹${data.invoiceValue || 0})</div>
-						<div class="col-md-6"><strong>E-WayBill:</strong> ${data.eWayBillNumber || '-'}</div>
-					</div>
+                    <div class="row mb-2">
+                        <div class="col-md-6">
+                            <strong>Invoice:</strong> ${data.invoiceNumber || '-'} (₹${data.invoiceValue || 0})
+                        </div>
+                        <div class="col-md-6">
+                            <strong>E-WayBill:</strong> ${data.eWayBillNumber || '-'}
+                        </div>
+                    </div>
 
-					<hr>
+                    <hr>
 
-					<div class="row mb-2">
-						<div class="col-md-6"><strong>Article Type:</strong> ${data.articleType || 'N/A'}</div>
-						<div class="col-md-6"><strong>Weight:</strong> ${data.articleWeight || 0} kg</div>
-					</div>
+                    <div class="row mb-2">
+                        <div class="col-md-6">
+                            <strong>Article Type:</strong> ${data.articleType || 'N/A'}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Weight:</strong> ${data.articleWeight || 0} kg
+                        </div>
+                    </div>
 
-					<div class="row mb-2">
-						<div class="col-md-4"><strong>Freight:</strong> ₹${data.freight || 0}</div>
-						<div class="col-md-4"><strong>GST:</strong> ₹${gst.toFixed(2)}</div>
-						<div class="col-md-4"><strong>Grand Total:</strong> ₹${grandTotal.toFixed(2)}</div>
-					</div>
+                    <div class="row mb-2">
+                        <div class="col-md-4"><strong>Freight:</strong> ₹${data.freight || 0}</div>
+                        <div class="col-md-4"><strong>GST:</strong> ₹${gst.toFixed(2)}</div>
+                        <div class="col-md-4"><strong>Grand Total:</strong> ₹${grandTotal.toFixed(2)}</div>
+                    </div>
 
-					${articlesHtml}
-				</div>
-			`;
+                    ${articlesHtml}
 
-			hideAllForms(); // custom function to hide other forms
+                </div>
+            `;
+
+			hideAllForms();
 			container.innerHTML = html;
 			container.style.display = "block";
+
 			document.getElementById("lrSearchInput").value = "";
 			container.scrollIntoView({ behavior: "smooth" });
+
 		})
 		.catch(err => {
 			console.error(err);
-			container.innerHTML = `<div class="alert alert-danger mt-3">No record found for LR: <strong>${lrNumber}</strong></div>`;
+			container.innerHTML = `
+                <div class="alert alert-danger mt-3">
+                    No record found for LR: <strong>${lrNumber}</strong>
+                </div>`;
 			container.style.display = 'block';
 		});
 }
 
+function enableInlineEditMode() {
 
+	// ✅ FIRST LINE (VERY IMPORTANT)
+	const data = window.editData;
+
+	if (!data) {
+		console.error("No data found");
+		return;
+	}
+
+	// 🔥 Create LR field dynamically (no HTML change)
+	let lrDiv = document.getElementById("dynamicLR");
+
+	if (!lrDiv) {
+		lrDiv = document.createElement("div");
+		lrDiv.id = "dynamicLR";
+		lrDiv.style.marginBottom = "10px";
+
+		lrDiv.innerHTML = `
+            <label style="font-weight:bold;">LR Number</label>
+            <input type="text" class="form-control" readonly id="lrNumberDynamic">
+        `;
+
+		const form = document.getElementById("bookingForm");
+		form.parentNode.insertBefore(lrDiv, form);
+	}
+
+	// ✅ NOW SAFE
+	const lrInput = document.getElementById("lrNumberDynamic");
+	if (lrInput) lrInput.value = data.loadingReciept || "";
+
+	// Show form
+	document.getElementById("bookingFormContainer").style.display = "block";
+	document.getElementById("lrSearchResultContainer").style.display = "none";
+
+	// Populate
+	const destination = document.getElementById("deliveryDestination");
+	if (destination) {
+		destination.value = data.destinationBranchCode || "";
+		$('#deliveryDestination').trigger('change');
+	}
+
+	document.getElementById("consignorName").value = data.consignorName || "";
+	document.getElementById("consignorMobile").value = data.consignorMobile || "";
+	document.getElementById("consignorGST").value = data.consignorGST || "";
+	document.getElementById("consignorAddress").value = data.consignorAddress || "";
+
+	document.getElementById("consigneeName").value = data.consigneeName || "";
+	document.getElementById("consigneeMobile").value = data.consigneeMobile || "";
+	document.getElementById("consigneeGST").value = data.consigneeGST || "";
+	document.getElementById("consigneeAddress").value = data.consigneeAddress || "";
+
+	document.getElementById("invoiceNo").value = data.invoiceNumber || "";
+	document.getElementById("Invoicevalue").value = data.invoiceValue || "";
+	document.getElementById("ewayBill").value = data.eWayBillNumber || "";
+
+	// Charges
+	document.getElementById("freight").value = data.freight || 0;
+	document.getElementById("loadingCharge").value = data.loading || 0;
+	document.getElementById("lrCharge").value = data.loadingCharge || 0;
+
+	document.getElementById("sgst").value = data.sgst || 0;
+	document.getElementById("cgst").value = data.cgst || 0;
+	document.getElementById("igst").value = data.igst || 0;
+
+	// 🔥 IMPORTANT → calculate instead of trusting backend
+	setTimeout(() => {
+		calculateChargesBooking();
+	}, 100);
+
+	// Articles (ADD ROW PRESERVE)
+	const tbody = document.getElementById("editArticleTableBody");
+
+	if (data.articleDetails) {
+		data.articleDetails.forEach(a => {
+			let row = `
+            <tr>
+                <td>${a.article}</td>
+                <td>${a.artQty}</td>
+                <td>${a.artType}</td>
+                <td>${a.saidToContain}</td>
+                <td>${a.artAmt}</td>
+                <td>${a.total}</td>
+                <td>
+                    <button class="btn btn-danger btn-sm"
+                        onclick="this.closest('tr').remove(); calculateChargesBooking();">
+                        Delete
+                    </button>
+                </td>
+            </tr>`;
+			tbody.innerHTML += row;
+		});
+	}
+
+	// 🔒 LOCK AFTER EVERYTHING
+	setTimeout(() => {
+
+		hardLock("freight");
+		hardLock("lrCharge");
+		hardLock("sgst");
+		hardLock("cgst");
+		hardLock("igst");
+		hardLock("grandTotal");
+
+		hardLock("consignorGST");
+		hardLock("consigneeGST");
+
+		document.getElementById("deliveryDestination").disabled = true;
+
+		// only loading editable
+		const loading = document.getElementById("loadingCharge");
+		if (loading) {
+			loading.readOnly = false;
+			loading.style.backgroundColor = "";
+		}
+
+	}, 200);
+
+	// recalc on loading change
+	document.getElementById("loadingCharge").addEventListener("input", function () {
+		calculateChargesBooking();
+	});
+
+	document.getElementById("bookingForm").addEventListener("submit", function(e) {
+		e.preventDefault();
+		updateBookingAPI();
+	});
+}
+
+function updateBookingAPI() {
+
+	const data = window.editData;
+	if (!data) {
+		alert("No data found");
+		return;
+	}
+
+	const lr = data.loadingReciept;
+
+	// 🔥 PREPARE DTO (MATCHING BACKEND)
+	const payload = {
+		loadingReciept: lr,
+
+		consignorName: document.getElementById("consignorName").value,
+		consignorMobile: document.getElementById("consignorMobile").value,
+		consignorAddress: document.getElementById("consignorAddress").value,
+
+		consigneeName: document.getElementById("consigneeName").value,
+		consigneeMobile: document.getElementById("consigneeMobile").value,
+		consigneeAddress: document.getElementById("consigneeAddress").value,
+
+		destinationBranchCode: document.getElementById("deliveryDestination").value,
+
+		invoiceNumber: document.getElementById("invoiceNo").value,
+		invoiceValue: parseFloat(document.getElementById("Invoicevalue").value) || 0,
+		eWayBillNumber: document.getElementById("ewayBill").value,
+
+		freight: parseFloat(document.getElementById("freight").value) || 0,
+		loading: parseFloat(document.getElementById("loadingCharge").value) || 0,
+		loadingCharge: parseFloat(document.getElementById("lrCharge").value) || 0,
+
+		sgst: parseFloat(document.getElementById("sgst").value) || 0,
+		cgst: parseFloat(document.getElementById("cgst").value) || 0,
+		igst: parseFloat(document.getElementById("igst").value) || 0,
+
+		paidVia: document.getElementById("paidVia")?.value || null,
+
+		// 🔥 ARTICLES
+		articleDetails: getArticleTableData()
+	};
+
+	console.log("Sending payload:", payload);
+
+	// 🔥 API CALL
+	fetch(`/api/bookings/bookLoad/${lr}`, {
+		method: "PUT",
+		headers: {
+			"Content-Type": "application/json"
+		},
+		body: JSON.stringify(payload)
+	})
+		.then(res => {
+			if (!res.ok) throw new Error("Update failed");
+			return res.json();
+		})
+		.then(updated => {
+
+			alert("✅ Booking Updated Successfully");
+
+			console.log("Updated response:", updated);
+
+			// Optional: refresh UI
+			searchLRByNumber(lr);
+
+		})
+		.catch(err => {
+			console.error(err);
+			alert("❌ Update failed");
+		});
+}
+
+function getArticleTableData() {
+
+	const rows = document.querySelectorAll("#editArticleTableBody tr");
+	let articles = [];
+
+	rows.forEach(row => {
+
+		const cells = row.querySelectorAll("td");
+
+		if (cells.length < 6) return; // skip add row
+
+		articles.push({
+			article: cells[0].innerText,
+			artQty: cells[1].innerText,
+			artType: cells[2].innerText,
+			saidToContain: cells[3].innerText,
+			artAmt: cells[4].innerText,
+			total: cells[5].innerText
+		});
+	});
+
+	return articles;
+}
 function formatDate(dt) {
 	if (!dt) return '-';
 	const date = new Date(dt);
@@ -2798,194 +3054,7 @@ function resetGlobalSearch() {
 	globalIsLoading = false;
 }
 
-// View-Only Mode Upgrade: In-place editing of LR
 
-function enableInlineEditMode(data) {
-	document.getElementById("bookingFormContainer").style.display = "none";
-
-	const container = document.getElementById("lrSearchResultContainer");
-	container.style.display = "block";
-
-	container.innerHTML = `...`;
-	if (!container) return;
-
-    const gst = (data.sgst || 0) + (data.cgst || 0) + (data.igst || 0);
-    const grandTotal = (data.freight || 0) + gst;
-
-    container.innerHTML = `
-    <div class="lr-shell">
-      <div class="card lr-card">
-
-        <!-- HEADER BAND -->
-        <div class="lr-header-band">
-          <div>
-            <div class="lr-title">
-              <span class="lr-title-icon">LR</span>
-              <span>Loading Receipt: <a href="#" class="lr-number">${data.loadingReciept}</a></span>
-            </div>
-            <div class="lr-subtitle">LR No cannot be edited.</div>
-          </div>
-
-          <div class="lr-header-right">
-  			<div class="lr-status-pill">${data?.consignStatus || "BOOKED"}</div>
-		</div>
-           
-          </div>
-        </div>
-
-        <!-- BODY -->
-        <div class="card-body lr-card-body">
-          <form>
-
-            <!-- LR INFO -->
-            <div class="lr-section-title">LR Information</div>
-            <div class="row g-2">
-             
-
-              <div class="col-md-4">
-                <label class="form-label">Booked On</label>
-                <input id="bookingDate" type="datetime-local" class="form-control form-control-sm"
-                       value="${formatDateInput(data?.bookingDate)}">
-              </div>
-
-              <div class="col-md-4">
-                <label class="form-label">To Branch</label>
-                <input id="toBranch" type="text" class="form-control form-control-sm"
-                       value="${data.destinationBranchCode}">
-              </div>
-
-              <div class="col-md-4">
-                <label class="form-label">From Branch</label>
-                <input id="fromBranch" type="text" class="form-control form-control-sm"
-                       value="${data.branchCode}">
-              </div>
-            </div>
-
-            <div class="lr-section-divider"></div>
-
-            <!-- PARTIES -->
-            <div class="lr-section-title">Parties</div>
-            <div class="row g-2">
-
-              <div class="col-md-6">
-                <label class="form-label">Consignor</label>
-                <input id="consignorName" type="text" class="form-control form-control-sm"
-                       value="${data.consignorName}">
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label">Consignee</label>
-                <input id="consigneeName" type="text" class="form-control form-control-sm"
-                       value="${data.consigneeName}">
-              </div>
-
-              <div class="col-md-4">
-                <label class="form-label">Consignor Mobile</label>
-                <input id="consignorMobile" type="text" class="form-control form-control-sm"
-                       value="${data.consignorMobile}">
-              </div>
-
-              <div class="col-md-4">
-                <label class="form-label">Consignee Mobile</label>
-                <input id="consigneeMobile" type="text" class="form-control form-control-sm"
-                       value="${data.consigneeMobile}">
-              </div>
-
-              <div class="col-md-4">
-                <label class="form-label">Invoice Number</label>
-                <input id="invoiceNumber" type="text" class="form-control form-control-sm"
-                       value="${data.invoiceNumber || ''}">
-              </div>
-
-              <div class="col-md-4">
-                <label class="form-label">E-WayBill</label>
-                <input id="eWayBillNumber" type="text" class="form-control form-control-sm"
-                       value="${data.eWayBillNumber || ''}">
-              </div>
-            </div>
-
-            <div class="lr-section-divider"></div>
-
-            <!-- CHARGES -->
-            <div class="lr-section-title">Charges & Weight</div>
-            <div class="row g-2">
-
-              <div class="col-md-4">
-                <label class="form-label">Article Type</label>
-                <input id="articleType" type="text" class="form-control form-control-sm"
-                       value="${data.articleType || ''}">
-              </div>
-
-              <div class="col-md-4">
-                <label class="form-label">Weight (kg)</label>
-                <input id="articleWeight" type="number" class="form-control form-control-sm"
-                       value="${data.articleWeight || 0}">
-              </div>
-
-              <div class="col-md-4">
-                <label class="form-label">Freight (₹)</label>
-                <input id="freight" type="number" class="form-control form-control-sm"
-                       value="${data.freight || 0}">
-              </div>
-
-              <div class="col-md-4">
-                <label class="form-label">SGST (₹)</label>
-                <input id="sgst" type="number" class="form-control form-control-sm"
-                       value="${data.sgst || 0}">
-              </div>
-
-              <div class="col-md-4">
-                <label class="form-label">CGST (₹)</label>
-                <input id="cgst" type="number" class="form-control form-control-sm"
-                       value="${data.cgst || 0}">
-              </div>
-
-              <div class="col-md-4">
-                <label class="form-label">IGST (₹)</label>
-                <input id="igst" type="number" class="form-control form-control-sm"
-                       value="${data.igst || 0}">
-              </div>
-
-              <div class="col-md-4 offset-md-8">
-                <label class="form-label">Grand Total</label>
-                <input id="grandTotal" type="number" class="form-control form-control-sm text-success fw-bold"
-                       value="${grandTotal.toFixed(2)}">
-              </div>
-            </div>
-
-            <div class="lr-section-divider"></div>
-
-            <!-- ARTICLE DETAILS -->
-            <div class="lr-section-title">Articles</div>
-
-            <div class="lr-article-header">📄 Article Details</div>
-
-            <div class="table-responsive mt-2">
-              <table class="table table-sm table-bordered align-middle table-articles mb-0">
-                <thead>
-                  <tr class="text-center">
-                    <th>Article</th>
-                    <th style="width:70px;">Qty</th>
-                    <th>Type</th>
-                    <th>Said To Contain</th>
-                    <th style="width:90px;">Amount</th>
-                    <th style="width:100px;">Total</th>
-                  </tr>
-                </thead>
-                <tbody id="editArticleTableBody"></tbody>
-              </table>
-            </div>
-
-          </form>
-        </div>
-      </div>
-    </div>
-    `;
-
-    // Load article rows
-    (data.articleDetails || []).forEach(a => addInlineArticleRow(a));
-    recalculateInlineCharges();
-}
 
 // Function to update charges panel based on articles table
 function updateChargesPanelFromArticles() {
