@@ -1,3 +1,4 @@
+window.isEditMode = false;
 let currentOperationStatus = ""; // holds DISPATCHED / RECEIVED / DELIVERED
 
 function toggleSidebar() {
@@ -47,12 +48,67 @@ function hideAllForms() {
 		summary2.innerHTML = "";
 		summary2.style.display = "none";
 	}
+	const lrDiv = document.getElementById("dynamicLR");
+	if (lrDiv) {
+		lrDiv.remove();
+	}
+	removeDynamicLR();
+	// 🔥 RESET EVERYTHING
+	const form = document.getElementById("bookingForm");
+	if (form) form.reset();
 
+	document.getElementById("freight").value = 0;
+	document.getElementById("loadingCharge").value = 0;
+	document.getElementById("lrCharge").value = 0;
+	document.getElementById("sgst").value = 0;
+	document.getElementById("cgst").value = 0;
+	document.getElementById("igst").value = 0;
+	document.getElementById("grandTotal").value = 0;
+
+	$('#deliveryDestination').val(null).trigger('change');
+
+// reset article table
+	const tbody = document.getElementById("editArticleTableBody");
+	if (tbody) {
+		tbody.innerHTML = `
+    <tr>
+        <td>
+            <select id="article" class="form-select">
+                <option value="Article">Article</option>
+                <option value="Weight">Weight</option>
+                <option value="Fix">Fix</option>
+            </select>
+        </td>
+        <td><input type="number" id="artQuantity" value="0" class="form-control"></td>
+        <td>
+            <select id="artType" class="form-select">
+                <option value="Auto Parts">Auto Parts</option>
+                <option value="Electronics">Electronics</option>
+                <option value="Garments">Garments</option>
+            </select>
+        </td>
+        <td><input type="text" id="saidToContain" class="form-control"></td>
+        <td><input type="number" id="artAmount" value="0" class="form-control"></td>
+        <td><span id="totalAmount">0</span></td>
+        <td>
+            <button type="button" class="btn btn-success btn-sm" onclick="addArticlebooking()">Add</button>
+        </td>
+    </tr>`;
+	}
 }
-
+function removeDynamicLR() {
+	const lrDiv = document.getElementById("dynamicLR");
+	if (lrDiv) {
+		lrDiv.remove();
+		console.log("LR removed");
+	}
+}
 function showBookingForm() {
+	removeDynamicLR();
 	hideAllForms();
+	resetBookingForm();
 	document.getElementById('bookingFormContainer').style.display = 'block';
+	document.getElementById("chargesPanel").style.display = "block";
 	// first time or refresh case → fetch from API
 	const currentBranch = userData?.companyAndBranchDeatils?.branchCode || null;
 	if (!currentBranch) {
@@ -1057,32 +1113,6 @@ function calculateChargesBooking() {
 	document.getElementById("chargesPanel").style.display = "block";
 }
 
-// ----------------- Reset Booking Form must clear manual flags -----------------
-function resetBookingForm() {
-	// existing resets...
-	const form = document.getElementById("bookingForm");
-	if (form) form.reset();
-
-	// Reset specific fields
-	["freight", "loadingCharge", "lrCharge", "sgst", "cgst", "igst", "grandTotal"].forEach(id => {
-		const el = document.getElementById(id);
-		if (el) el.value = id === "freight" ? "0.00" : "0";
-		if (el && el.dataset) delete el.dataset.manual;
-	});
-
-	// Clear article rows, hide charges
-	const tableBody = document.getElementById("articleTableBody");
-	if (tableBody) tableBody.innerHTML = ""; // if you use this body id
-	const addedRows = document.querySelectorAll("#bookingForm table tbody tr[data-added='true']");
-	addedRows.forEach(r => r.remove());
-	document.getElementById("chargesPanel").style.display = "none";
-
-	// Scroll to top optionally
-	window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-
-
 function printBookingReceipt(booking) {
 	const printWindow = window.open('', '', 'width=900,height=700');
 
@@ -1270,7 +1300,16 @@ function printBookingReceipt(booking) {
 let globalNextLr = null;
 
 document.getElementById("bookingForm").addEventListener("submit", async function(event) {
+
 	event.preventDefault();
+
+	if (window.isEditMode) {
+		console.log("✅ UPDATE API");
+		updateBookingAPI();
+	} else {
+		console.log("✅ CREATE API");
+		createBookingAPI();
+	}
 
 	const deliveryInput = document.getElementById("deliveryDestination").value;
 	if (!deliveryInput) {
@@ -1516,13 +1555,6 @@ function resetBookingForm() {
 	// Clear article table rows
 	const tableBody = document.getElementById("articleTableBody");
 	if (tableBody) tableBody.innerHTML = "";
-
-	// Hide charges panel
-	const chargesPanel = document.getElementById("chargesPanel");
-	if (chargesPanel) chargesPanel.style.display = "none";
-
-	// Clear session info
-
 
 	// Optional: scroll to top
 	window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2375,7 +2407,7 @@ function searchLRByNumber(lrNumber) {
 }
 
 function enableInlineEditMode() {
-
+	window.isEditMode = true;
 	// ✅ FIRST LINE (VERY IMPORTANT)
 	const data = window.editData;
 
@@ -2450,7 +2482,7 @@ function enableInlineEditMode() {
 	if (data.articleDetails) {
 		data.articleDetails.forEach(a => {
 			let row = `
-            <tr>
+           <tr data-added="true">
                 <td>${a.article}</td>
                 <td>${a.artQty}</td>
                 <td>${a.artType}</td>
@@ -2496,11 +2528,9 @@ function enableInlineEditMode() {
 	document.getElementById("loadingCharge").addEventListener("input", function () {
 		calculateChargesBooking();
 	});
-
-	document.getElementById("bookingForm").addEventListener("submit", function(e) {
-		e.preventDefault();
-		updateBookingAPI();
-	});
+	document.querySelector("button[type='submit']").innerText = "Update Booking";
+	window.isEditMode = true;
+	updateFreight();
 }
 
 function updateBookingAPI() {
@@ -2562,7 +2592,7 @@ function updateBookingAPI() {
 		.then(updated => {
 
 			alert("✅ Booking Updated Successfully");
-
+			window.isEditMode = false;
 			console.log("Updated response:", updated);
 
 			// Optional: refresh UI
