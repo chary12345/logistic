@@ -29,10 +29,12 @@ public class Contact {
 
     @Column(columnDefinition="TEXT")
     private String address;
+    
 
     private Instant createdAt = Instant.now();
     private Instant updatedAt = Instant.now();
-
+    @Column(name="branch_code")
+    private String branchCode;
     
     
     public Long getId() {
@@ -97,6 +99,15 @@ public class Contact {
 
 	public void setUpdatedAt(Instant updatedAt) {
 		this.updatedAt = updatedAt;
+	}
+
+	
+	public String getBranchCode() {
+		return branchCode;
+	}
+
+	public void setBranchCode(String branchCode) {
+		this.branchCode = branchCode;
 	}
 
 	@PrePersist

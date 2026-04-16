@@ -8,7 +8,6 @@ import com.logic.logistic.dto.Contact;
 
 public interface ContactRepository extends JpaRepository<Contact, Long> {
 
-    List<Contact> findTop10ByTypeAndNameContainingIgnoreCaseOrderByNameAsc(
-            String type, String name);
-
+	List<Contact> findTop10ByTypeAndBranchCodeAndNameContainingIgnoreCaseOrderByNameAsc(String type, String branchCode,
+			String name);
 }
