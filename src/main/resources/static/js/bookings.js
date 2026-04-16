@@ -1,3 +1,4 @@
+window.isEditMode = false;
 let currentOperationStatus = ""; // holds DISPATCHED / RECEIVED / DELIVERED
 
 function toggleSidebar() {
@@ -27,6 +28,12 @@ function safeHide(id) {
 	if (el) el.style.display = 'none';
 }
 function hideAllForms() {
+
+    window.isEditMode = false;
+    const button = document.querySelector("button[type='submit']");
+        if (button) {
+            button.innerText = "Booking";
+        }
 	safeHide('bookingReportForm');
 	safeHide('bookingFormContainer');
 	safeHide('CreateBranchContainer');
@@ -47,12 +54,67 @@ function hideAllForms() {
 		summary2.innerHTML = "";
 		summary2.style.display = "none";
 	}
+	const lrDiv = document.getElementById("dynamicLR");
+	if (lrDiv) {
+		lrDiv.remove();
+	}
+	removeDynamicLR();
+	// 🔥 RESET EVERYTHING
+	const form = document.getElementById("bookingForm");
+	if (form) form.reset();
 
+	document.getElementById("freight").value = 0;
+	document.getElementById("loadingCharge").value = 0;
+	document.getElementById("lrCharge").value = 0;
+	document.getElementById("sgst").value = 0;
+	document.getElementById("cgst").value = 0;
+	document.getElementById("igst").value = 0;
+	document.getElementById("grandTotal").value = 0;
+
+	$('#deliveryDestination').val(null).trigger('change');
+
+// reset article table
+	const tbody = document.getElementById("editArticleTableBody");
+	if (tbody) {
+		tbody.innerHTML = `
+    <tr>
+        <td>
+            <select id="article" class="form-select">
+                <option value="Article">Article</option>
+                <option value="Weight">Weight</option>
+                <option value="Fix">Fix</option>
+            </select>
+        </td>
+        <td><input type="number" id="artQuantity" value="0" class="form-control"></td>
+        <td>
+            <select id="artType" class="form-select">
+                <option value="Auto Parts">Auto Parts</option>
+                <option value="Electronics">Electronics</option>
+                <option value="Garments">Garments</option>
+            </select>
+        </td>
+        <td><input type="text" id="saidToContain" class="form-control"></td>
+        <td><input type="number" id="artAmount" value="0" class="form-control"></td>
+        <td><span id="totalAmount">0</span></td>
+        <td>
+            <button type="button" class="btn btn-success btn-sm" onclick="addArticlebooking()">Add</button>
+        </td>
+    </tr>`;
+	}
 }
-
+function removeDynamicLR() {
+	const lrDiv = document.getElementById("dynamicLR");
+	if (lrDiv) {
+		lrDiv.remove();
+		console.log("LR removed");
+	}
+}
 function showBookingForm() {
+	removeDynamicLR();
 	hideAllForms();
+	resetBookingForm();
 	document.getElementById('bookingFormContainer').style.display = 'block';
+	document.getElementById("chargesPanel").style.display = "block";
 	// first time or refresh case → fetch from API
 	const currentBranch = userData?.companyAndBranchDeatils?.branchCode || null;
 	if (!currentBranch) {
@@ -1003,79 +1065,59 @@ function updateFreight() {
 
 // ----------------- Calculate Charges for Booking Form -----------------
 function calculateChargesBooking() {
-	const freight = parseFloat(document.getElementById("freight").value) || 0;
-	const loadingCharge = parseFloat(document.getElementById("loadingCharge").value) || 0;
-	const lrCharge = parseFloat(document.getElementById("lrCharge").value) || 0;
+
+	const freight = parseFloat(document.getElementById("freight")?.value) || 0;
+	const loadingCharge = parseFloat(document.getElementById("loadingCharge")?.value) || 0;
+	const lrCharge = parseFloat(document.getElementById("lrCharge")?.value) || 0;
 
 	const consignorGST = (document.getElementById("consignorGST")?.value || "").trim();
 	const consigneeGST = (document.getElementById("consigneeGST")?.value || "").trim();
 
 	let sgst = 0, cgst = 0, igst = 0;
+
 	if (freight > 0) {
 
-		// GST calculation only based on GST inputs
 		if (consignorGST && consigneeGST) {
+
 			const consignorState = consignorGST.substring(0, 2);
 			const consigneeState = consigneeGST.substring(0, 2);
 
 			if (consignorState === consigneeState) {
-				// Same state → SGST + CGST
 				sgst = +(freight * 0.025).toFixed(2);
 				cgst = +(freight * 0.025).toFixed(2);
-				igst = 0; // 🚨 explicitly reset IGST
+				igst = 0;
 			} else {
-				// Different state → IGST
 				igst = +(freight * 0.05).toFixed(2);
-				sgst = 0; // 🚨 reset SGST
-				cgst = 0; // 🚨 reset CGST
+				sgst = 0;
+				cgst = 0;
 			}
+
 		} else if (consignorGST || consigneeGST) {
-			// Only one GST → IGST
+
 			igst = +(freight * 0.05).toFixed(2);
-			sgst = 0; // 🚨 reset SGST
-			cgst = 0; // 🚨 reset CGST
+			sgst = 0;
+			cgst = 0;
+
 		} else {
-			// No GST → all 0
+
 			sgst = 0;
 			cgst = 0;
 			igst = 0;
 		}
 	}
-	const grandTotal = (freight + loadingCharge + lrCharge + sgst + cgst + igst).toFixed(2);
 
+	// 🔥 FINAL GRAND TOTAL
+	const grandTotal = freight + loadingCharge + lrCharge + sgst + cgst + igst;
 
-	safeAssign("sgst", sgst);
-	safeAssign("cgst", cgst);
-	safeAssign("igst", igst);
-	safeAssign("grandTotal", parseFloat(grandTotal));
+	// 🔥 DIRECT SET (safeAssign avoid cheyyi ippudu)
+	document.getElementById("sgst").value = sgst.toFixed(2);
+	document.getElementById("cgst").value = cgst.toFixed(2);
+	document.getElementById("igst").value = igst.toFixed(2);
+
+	document.getElementById("grandTotal").value = grandTotal.toFixed(2);
+
 	document.getElementById("chargesPanel").style.display = "block";
 }
-
-// ----------------- Reset Booking Form must clear manual flags -----------------
-function resetBookingForm() {
-	// existing resets...
-	const form = document.getElementById("bookingForm");
-	if (form) form.reset();
-
-	// Reset specific fields
-	["freight", "loadingCharge", "lrCharge", "sgst", "cgst", "igst", "grandTotal"].forEach(id => {
-		const el = document.getElementById(id);
-		if (el) el.value = id === "freight" ? "0.00" : "0";
-		if (el && el.dataset) delete el.dataset.manual;
-	});
-
-	// Clear article rows, hide charges
-	const tableBody = document.getElementById("articleTableBody");
-	if (tableBody) tableBody.innerHTML = ""; // if you use this body id
-	const addedRows = document.querySelectorAll("#bookingForm table tbody tr[data-added='true']");
-	addedRows.forEach(r => r.remove());
-	document.getElementById("chargesPanel").style.display = "none";
-
-	// Scroll to top optionally
-	window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-
 
 function printBookingReceipt(booking) {
 	const printWindow = window.open('', '', 'width=900,height=700');
@@ -1257,14 +1299,29 @@ function printBookingReceipt(booking) {
 		</html>
 	`;
 
-	printWindow.document.write(fullHTML);
-	printWindow.document.close();
+if (printWindow) {
+		printWindow.document.write(fullHTML);
+		printWindow.document.close();
+	} else {
+		console.error("Failed to open print window. Please check your popup blocker settings.");
+		alert("Printing failed: Please allow popups for this site.");
+	}
 }
 
 let globalNextLr = null;
 
 document.getElementById("bookingForm").addEventListener("submit", async function(event) {
+
 	event.preventDefault();
+
+	if (window.isEditMode) {
+		console.log("✅ UPDATE API");
+		updateBookingAPI();
+		return; // 🔥 STOP HERE! Don't run the CREATE logic below.
+	} else {
+		console.log("✅ CREATE API");
+		createBookingAPI();
+	}
 
 	const deliveryInput = document.getElementById("deliveryDestination").value;
 	if (!deliveryInput) {
@@ -1510,13 +1567,6 @@ function resetBookingForm() {
 	// Clear article table rows
 	const tableBody = document.getElementById("articleTableBody");
 	if (tableBody) tableBody.innerHTML = "";
-
-	// Hide charges panel
-	const chargesPanel = document.getElementById("chargesPanel");
-	if (chargesPanel) chargesPanel.style.display = "none";
-
-	// Clear session info
-
 
 	// Optional: scroll to top
 	window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2227,8 +2277,9 @@ function setPaymentMode(mode) {
 }
 
 function searchLRByNumber(lrNumber) {
+
 	const container = document.getElementById("lrSearchResultContainer");
-	container.innerHTML = ""; // Clear previous
+	container.innerHTML = "";
 
 	fetch(`/api/bookings/searchBylr?lr=${encodeURIComponent(lrNumber)}`)
 		.then(res => {
@@ -2236,109 +2287,361 @@ function searchLRByNumber(lrNumber) {
 			return res.json();
 		})
 		.then(data => {
-			window.lastSearchResult = data;
+
+			// ✅ STORE DATA PROPERLY
+			window.editData = data;
 
 			const gst = (data.sgst || 0) + (data.cgst || 0) + (data.igst || 0);
 			const grandTotal = (data.freight || 0) + gst;
 
-			// 🔽 Start article table generation
+			// Articles table
 			let articlesHtml = "";
+
 			if (Array.isArray(data.articleDetails) && data.articleDetails.length > 0) {
+
 				articlesHtml = `
-					<hr>
-					<h6 class="text-center text-success mt-3">🧾 Article Details</h6>
-					<div class="table-responsive">
-						<table class="table table-sm table-bordered text-center">
-							<thead class="table-light">
-								<tr>
-									<th>Article</th>
-									<th>Qty</th>
-									<th>Type</th>
-									<th>Said To Contain</th>
-									<th>Amount</th>
-									<th>Total</th>
-								</tr>
-							</thead>
-							<tbody>`;
+                <hr>
+                <h6 class="text-center text-success mt-3">🧾 Article Details</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered text-center">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Article</th>
+                                <th>Qty</th>
+                                <th>Type</th>
+                                <th>Said To Contain</th>
+                                <th>Amount</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
 
 				data.articleDetails.forEach(a => {
 					articlesHtml += `
-						<tr>
-							<td>${a.article || '-'}</td>
-							<td>${a.artQty || '-'}</td>
-							<td>${a.artType || '-'}</td>
-							<td>${a.saidToContain || '-'}</td>
-							<td>${a.artAmt || '-'}</td>
-							<td>${a.total || '-'}</td>
-						</tr>`;
+                    <tr>
+                        <td>${a.article || '-'}</td>
+                        <td>${a.artQty || '-'}</td>
+                        <td>${a.artType || '-'}</td>
+                        <td>${a.saidToContain || '-'}</td>
+                        <td>${a.artAmt || '-'}</td>
+                        <td>${a.total || '-'}</td>
+                    </tr>`;
 				});
 
 				articlesHtml += `
-							</tbody>
-						</table>
-					</div>`;
+                        </tbody>
+                    </table>
+                </div>`;
 			}
 
-			// 🔽 Main HTML
+			// ✅ CLEAN HTML
 			const html = `
-				<div class="lr-search-card">
-					<h5 class="text-primary mb-3">🔍 Loading Receipt: ${data.loadingReciept}</h5>
+                <div class="lr-search-card">
 
+                    <h5 class="text-primary mb-3">
+                        🔍 Loading Receipt: ${data.loadingReciept}
+                    </h5>
 
+                    <div class="text-end mb-3">
+                        <button class="btn btn-warning btn-sm" onclick="enableInlineEditMode()">
+                            ✏ Edit
+                        </button>
+                    </div>
 
-					<div class="row mb-2">
-						<div class="col-md-6"><strong>Status:</strong> ${data.consignStatus || 'N/A'}</div>
-						<div class="col-md-6"><strong>Booked On:</strong> ${formatDate(data.bookingDate)}</div>
-					</div>
+                    <div class="row mb-2">
+                        <div class="col-md-6"><strong>Status:</strong> ${data.consignStatus || 'N/A'}</div>
+                        <div class="col-md-6"><strong>Booked On:</strong> ${formatDate(data.bookingDate)}</div>
+                    </div>
 
-					<div class="row mb-2">
-						<div class="col-md-6"><strong>From Branch:</strong> ${data.branchCode}</div>
-						<div class="col-md-6"><strong>To Branch:</strong> ${data.destinationBranchCode}</div>
-					</div>
+                    <div class="row mb-2">
+                        <div class="col-md-6"><strong>From Branch:</strong> ${data.branchCode}</div>
+                        <div class="col-md-6"><strong>To Branch:</strong> ${data.destinationBranchCode}</div>
+                    </div>
 
-					<hr>
+                    <hr>
 
-					<div class="row mb-2">
-						<div class="col-md-6"><strong>Consignor:</strong> ${data.consignorName} (${data.consignorMobile})</div>
-						<div class="col-md-6"><strong>Consignee:</strong> ${data.consigneeName} (${data.consigneeMobile})</div>
-					</div>
+                    <div class="row mb-2">
+                        <div class="col-md-6">
+                            <strong>Consignor:</strong> ${data.consignorName} (${data.consignorMobile})
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Consignee:</strong> ${data.consigneeName} (${data.consigneeMobile})
+                        </div>
+                    </div>
 
-					<div class="row mb-2">
-						<div class="col-md-6"><strong>Invoice:</strong> ${data.invoiceNumber || '-'} (₹${data.invoiceValue || 0})</div>
-						<div class="col-md-6"><strong>E-WayBill:</strong> ${data.eWayBillNumber || '-'}</div>
-					</div>
+                    <div class="row mb-2">
+                        <div class="col-md-6">
+                            <strong>Invoice:</strong> ${data.invoiceNumber || '-'} (₹${data.invoiceValue || 0})
+                        </div>
+                        <div class="col-md-6">
+                            <strong>E-WayBill:</strong> ${data.eWayBillNumber || '-'}
+                        </div>
+                    </div>
 
-					<hr>
+                    <hr>
 
-					<div class="row mb-2">
-						<div class="col-md-6"><strong>Article Type:</strong> ${data.articleType || 'N/A'}</div>
-						<div class="col-md-6"><strong>Weight:</strong> ${data.articleWeight || 0} kg</div>
-					</div>
+                    <div class="row mb-2">
+                        <div class="col-md-6">
+                            <strong>Article Type:</strong> ${data.articleType || 'N/A'}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Weight:</strong> ${data.articleWeight || 0} kg
+                        </div>
+                    </div>
 
-					<div class="row mb-2">
-						<div class="col-md-4"><strong>Freight:</strong> ₹${data.freight || 0}</div>
-						<div class="col-md-4"><strong>GST:</strong> ₹${gst.toFixed(2)}</div>
-						<div class="col-md-4"><strong>Grand Total:</strong> ₹${grandTotal.toFixed(2)}</div>
-					</div>
+                    <div class="row mb-2">
+                        <div class="col-md-4"><strong>Freight:</strong> ₹${data.freight || 0}</div>
+                        <div class="col-md-4"><strong>GST:</strong> ₹${gst.toFixed(2)}</div>
+                        <div class="col-md-4"><strong>Grand Total:</strong> ₹${grandTotal.toFixed(2)}</div>
+                    </div>
 
-					${articlesHtml}
-				</div>
-			`;
+                    ${articlesHtml}
 
-			hideAllForms(); // custom function to hide other forms
+                </div>
+            `;
+
+			hideAllForms();
 			container.innerHTML = html;
 			container.style.display = "block";
+
 			document.getElementById("lrSearchInput").value = "";
 			container.scrollIntoView({ behavior: "smooth" });
+
 		})
 		.catch(err => {
 			console.error(err);
-			container.innerHTML = `<div class="alert alert-danger mt-3">No record found for LR: <strong>${lrNumber}</strong></div>`;
+			container.innerHTML = `
+                <div class="alert alert-danger mt-3">
+                    No record found for LR: <strong>${lrNumber}</strong>
+                </div>`;
 			container.style.display = 'block';
 		});
 }
 
+function enableInlineEditMode() {
+	window.isEditMode = true;
+	// ✅ FIRST LINE (VERY IMPORTANT)
+	const data = window.editData;
 
+	if (!data) {
+		console.error("No data found");
+		return;
+	}
+
+	// 🔥 Create LR field dynamically (no HTML change)
+	let lrDiv = document.getElementById("dynamicLR");
+
+	if (!lrDiv) {
+		lrDiv = document.createElement("div");
+		lrDiv.id = "dynamicLR";
+		lrDiv.style.marginBottom = "10px";
+
+		lrDiv.innerHTML = `
+            <label style="font-weight:bold;">LR Number</label>
+            <input type="text" class="form-control" readonly id="lrNumberDynamic">
+        `;
+
+		const form = document.getElementById("bookingForm");
+		form.parentNode.insertBefore(lrDiv, form);
+	}
+
+	// ✅ NOW SAFE
+	const lrInput = document.getElementById("lrNumberDynamic");
+	if (lrInput) lrInput.value = data.loadingReciept || "";
+
+	// Show form
+	document.getElementById("bookingFormContainer").style.display = "block";
+	document.getElementById("lrSearchResultContainer").style.display = "none";
+
+	// Populate
+	const destination = document.getElementById("deliveryDestination");
+	if (destination) {
+		destination.value = data.destinationBranchCode || "";
+		$('#deliveryDestination').trigger('change');
+	}
+
+	document.getElementById("consignorName").value = data.consignorName || "";
+	document.getElementById("consignorMobile").value = data.consignorMobile || "";
+	document.getElementById("consignorGST").value = data.consignorGST || "";
+	document.getElementById("consignorAddress").value = data.consignorAddress || "";
+
+	document.getElementById("consigneeName").value = data.consigneeName || "";
+	document.getElementById("consigneeMobile").value = data.consigneeMobile || "";
+	document.getElementById("consigneeGST").value = data.consigneeGST || "";
+	document.getElementById("consigneeAddress").value = data.consigneeAddress || "";
+
+	document.getElementById("invoiceNo").value = data.invoiceNumber || "";
+	document.getElementById("Invoicevalue").value = data.invoiceValue || "";
+	document.getElementById("ewayBill").value = data.eWayBillNumber || "";
+
+	// Charges
+	document.getElementById("freight").value = data.freight || 0;
+	document.getElementById("loadingCharge").value = data.loading || 0;
+	document.getElementById("lrCharge").value = data.loadingCharge || 0;
+
+	document.getElementById("sgst").value = data.sgst || 0;
+	document.getElementById("cgst").value = data.cgst || 0;
+	document.getElementById("igst").value = data.igst || 0;
+
+	// 🔥 IMPORTANT → calculate instead of trusting backend
+	setTimeout(() => {
+		calculateChargesBooking();
+	}, 100);
+
+	// Articles (ADD ROW PRESERVE)
+	const tbody = document.getElementById("editArticleTableBody");
+tbody.innerHTML = "";
+	if (data.articleDetails) {
+		data.articleDetails.forEach(a => {
+			let row = `
+           <tr data-added="true">
+                <td>${a.article}</td>
+                <td>${a.artQty}</td>
+                <td>${a.artType}</td>
+                <td>${a.saidToContain}</td>
+                <td>${a.artAmt}</td>
+                <td>${a.total}</td>
+                <td>
+                    <button class="btn btn-danger btn-sm"
+                        onclick="this.closest('tr').remove(); updateFreight();">
+                        Delete
+                    </button>
+                </td>
+            </tr>`;
+			tbody.innerHTML += row;
+		});
+	}
+
+	// 🔒 LOCK AFTER EVERYTHING
+	setTimeout(() => {
+
+		hardLock("freight");
+		hardLock("lrCharge");
+		hardLock("sgst");
+		hardLock("cgst");
+		hardLock("igst");
+		hardLock("grandTotal");
+
+		hardLock("consignorGST");
+		hardLock("consigneeGST");
+
+		document.getElementById("deliveryDestination").disabled = true;
+
+		// only loading editable
+		const loading = document.getElementById("loadingCharge");
+		if (loading) {
+			loading.readOnly = false;
+			loading.style.backgroundColor = "";
+		}
+
+	}, 200);
+
+	// recalc on loading change
+	document.getElementById("loadingCharge").addEventListener("input", function () {
+		calculateChargesBooking();
+	});
+
+
+	const button = document.querySelector("button[type='submit']");
+    button.innerText = window.isEditMode ? "Update Booking" : "Booking";
+	updateFreight();
+}
+
+function updateBookingAPI() {
+
+	const data = window.editData;
+	if (!data) {
+		alert("No data found");
+		return;
+	}
+
+	const lr = data.loadingReciept;
+
+	// 🔥 PREPARE DTO (MATCHING BACKEND)
+	const payload = {
+		loadingReciept: lr,
+
+		consignorName: document.getElementById("consignorName").value,
+		consignorMobile: document.getElementById("consignorMobile").value,
+		consignorAddress: document.getElementById("consignorAddress").value,
+
+		consigneeName: document.getElementById("consigneeName").value,
+		consigneeMobile: document.getElementById("consigneeMobile").value,
+		consigneeAddress: document.getElementById("consigneeAddress").value,
+
+		destinationBranchCode: document.getElementById("deliveryDestination").value,
+
+		invoiceNumber: document.getElementById("invoiceNo").value,
+		invoiceValue: parseFloat(document.getElementById("Invoicevalue").value) || 0,
+		eWayBillNumber: document.getElementById("ewayBill").value,
+
+		freight: parseFloat(document.getElementById("freight").value) || 0,
+		loading: parseFloat(document.getElementById("loadingCharge").value) || 0,
+		loadingCharge: parseFloat(document.getElementById("lrCharge").value) || 0,
+
+		sgst: parseFloat(document.getElementById("sgst").value) || 0,
+		cgst: parseFloat(document.getElementById("cgst").value) || 0,
+		igst: parseFloat(document.getElementById("igst").value) || 0,
+
+		paidVia: document.getElementById("paidVia")?.value || null,
+
+		// 🔥 ARTICLES
+		articleDetails: getArticleTableData()
+	};
+
+	console.log("Sending payload:", payload);
+
+	// 🔥 API CALL
+	fetch(`/api/bookings/updateBookLoad?lr=${encodeURIComponent(lr)}`, {
+		method: "PUT",
+		headers: {
+			"Content-Type": "application/json"
+		},
+		body: JSON.stringify(payload)
+	})
+		.then(res => {
+			if (!res.ok) throw new Error("Update failed");
+			return res.json();
+		})
+		.then(updated => {
+
+			alert("✅ Booking Updated Successfully");
+			window.isEditMode = false;
+			console.log("Updated response:", updated);
+
+			// Optional: refresh UI
+			searchLRByNumber(lr);
+
+		})
+		.catch(err => {
+			console.error(err);
+			alert("❌ Update failed");
+		});
+}
+
+function getArticleTableData() {
+
+	const rows = document.querySelectorAll("#editArticleTableBody tr");
+	let articles = [];
+
+	rows.forEach(row => {
+
+		const cells = row.querySelectorAll("td");
+
+		if (cells.length < 6) return; // skip add row
+
+		articles.push({
+			article: cells[0].innerText,
+			artQty: cells[1].innerText,
+			artType: cells[2].innerText,
+			saidToContain: cells[3].innerText,
+			artAmt: cells[4].innerText,
+			total: cells[5].innerText
+		});
+	});
+
+	return articles;
+}
 function formatDate(dt) {
 	if (!dt) return '-';
 	const date = new Date(dt);
@@ -2395,7 +2698,7 @@ function resetArticleInputRow() {
 	document.getElementById("article").selectedIndex = 0;
 	document.getElementById("artQuantity").value = 0;
 	document.getElementById("artType").selectedIndex = 0;
-	document.getElementById("saidToContain").selectedIndex = 0;
+document.getElementById("saidToContain").value = "";
 	document.getElementById("artAmount").value = 0;
 }
 
@@ -2795,84 +3098,8 @@ function resetGlobalSearch() {
 	globalIsLoading = false;
 }
 
-// View-Only Mode Upgrade: In-place editing of LR
 
 
-function enableInlineEditMode(data) {
-	const container = document.getElementById("lrSearchResultContainer");
-	if (!container) return;
-
-	container.innerHTML = `
-   
-
-    <div class="row">
-      <div class="col-md-6">
-        <label><strong>Consignor Name</strong></label>
-        <input class="form-control form-control-sm" id="consignorName" value="${data.consignorName || ''}">
-        <label><strong>Mobile</strong></label>
-        <input class="form-control form-control-sm" id="consignorMobile" value="${data.consignorMobile || ''}">
-        <label><strong>Address</strong></label>
-        <input class="form-control form-control-sm" id="consignorAddress" value="${data.consignorAddress || ''}">
-      </div>
-      <div class="col-md-6">
-        <label><strong>Consignee Name</strong></label>
-        <input class="form-control form-control-sm" id="consigneeName" value="${data.consigneeName || ''}">
-        <label><strong>Mobile</strong></label>
-        <input class="form-control form-control-sm" id="consigneeMobile" value="${data.consigneeMobile || ''}">
-        <label><strong>Address</strong></label>
-        <input class="form-control form-control-sm" id="consigneeAddress" value="${data.consigneeAddress || ''}">
-      </div>
-    </div>
-
-    <hr>
-    <h6 class="text-success mt-2">🧾 Article Details</h6>
-    <table class="table table-bordered table-sm">
-      <thead>
-        <tr>
-          <th>Article</th><th>Qty</th><th>Type</th><th>Said To Contain</th><th>Amount</th><th>Total</th><th>❌</th>
-        </tr>
-      </thead>
-      <tbody id="editArticleTableBody"></tbody>
-    </table>
-    <div class="mb-3">
-      <button class="btn btn-sm btn-success" onclick="addInlineArticleRow()">➕ Add Article</button>
-    </div>
-
-    <hr>
-    <h6 class="text-success">💰 Charges</h6>
-    <div class="row">
-      <div class="col-md-3">
-        <label>Freight</label>
-        <input class="form-control form-control-sm" id="freight" value="${data.freight || 0}" readonly>
-      </div>
-      <div class="col-md-3">
-        <label>SGST</label>
-        <input class="form-control form-control-sm" id="sgst" value="${data.sgst || 0}" readonly>
-      </div>
-      <div class="col-md-3">
-        <label>CGST</label>
-        <input class="form-control form-control-sm" id="cgst" value="${data.cgst || 0}" readonly>
-      </div>
-      <div class="col-md-3">
-        <label>IGST</label>
-        <input class="form-control form-control-sm" id="igst" value="${data.igst || 0}" readonly>
-      </div>
-    </div>
-    <div class="row mt-2">
-      <div class="col-md-4 offset-md-8">
-        <label>Grand Total</label>
-        <input class="form-control form-control-sm text-success fw-bold" id="grandTotal" value="${(data.freight + data.sgst + data.cgst + data.igst).toFixed(2)}" readonly>
-      </div>
-    </div>
-
-    <div class="text-end mt-3">
-      <button class="btn btn-primary" onclick="submitInlineEdit('${data.loadingReciept}')">🔄 Update Booking</button>
-    </div>
-  `;
-
-	(data.articleDetails || []).forEach(a => addInlineArticleRow(a));
-	recalculateInlineCharges();
-}
 // Function to update charges panel based on articles table
 function updateChargesPanelFromArticles() {
 	let totalFreight = 0;
@@ -3002,7 +3229,7 @@ function submitInlineEdit(lrNumber) {
 		grandTotal: parseFloat(document.getElementById("grandTotal").value || 0)
 	};
 
-	fetch(`/api/bookings/bookLoad/${encodeURIComponent(lrNumber)}`, {
+	fetch(`/api/bookings/updateBookLoad?lr=${encodeURIComponent(lrNumber)}`, {
 		method: 'PUT',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify(bookingData)
@@ -3761,20 +3988,20 @@ function printStatements() { window.print(); }
 
 //custom alert form
 function showCustomAlert(message) {
-  const alertBox = document.getElementById("customAlert");
-  const alertMsg = document.getElementById("customAlertMsg");
+	const alertBox = document.getElementById("customAlert");
+	const alertMsg = document.getElementById("customAlertMsg");
 
-  if (alertBox && alertMsg) {
-    alertMsg.textContent = message || "Something went wrong!";
-   alertBox.style.display = "flex";
-  }
+	if (alertBox && alertMsg) {
+		alertMsg.textContent = message || "Something went wrong!";
+		alertBox.style.display = "flex";
+	}
 }
 
 function hideCustomAlert() {
-  const alertBox = document.getElementById("customAlert");
-  if (alertBox) {
-    alertBox.style.display = "none";
-  }
+	const alertBox = document.getElementById("customAlert");
+	if (alertBox) {
+		alertBox.style.display = "none";
+	}
 }
 
 
@@ -4036,53 +4263,145 @@ document.addEventListener("keydown", function(e) {
 	}
 });
 
+function formatDateInput(date) {
+	if (!date) return "";
+	const d = new Date(date);
+	return d.toISOString().slice(0, 16);
+}
 
-
-// debounce helper
-function debounce(fn, delay) {
+// --- Debounce ---
+function debounce(fn, ms) {
     let t;
     return function (...args) {
         clearTimeout(t);
-        t = setTimeout(() => fn.apply(this, args), delay);
+        t = setTimeout(() => fn.apply(this, args), ms);
     };
 }
 
-// Auto-fill from server
+// ---------------------------------------
+// GLOBAL BRANCH CODE
+// ---------------------------------------
+function getBranchCode() {
+    return userData?.companyAndBranchDeatils?.branchCode || "";
+}
+
+
+// ---------------------------------------
+// LOCAL STORAGE KEYS
+// ---------------------------------------
+const CACHE_KEYS = {
+    consignor: "consignors_cache",
+    consignee: "consignees_cache"
+};
+
+// ---------------------------------------
+// SAVE CONTACT TO LOCAL CACHE
+// ---------------------------------------
+function saveToCache(kind, contact) {
+    if (!contact.name) return;
+
+    const key = CACHE_KEYS[kind];
+    let list = JSON.parse(localStorage.getItem(key) || "[]");
+
+    const idx = list.findIndex(c => c.name.toLowerCase() === contact.name.toLowerCase());
+
+    if (idx >= 0) list[idx] = contact;
+    else list.push(contact);
+
+    localStorage.setItem(key, JSON.stringify(list));
+}
+
+// ---------------------------------------
+// LOAD LOCAL CACHE LIST
+// ---------------------------------------
+function loadCache(kind) {
+    const key = CACHE_KEYS[kind];
+    return JSON.parse(localStorage.getItem(key) || "[]");
+}
+
+// ---------------------------------------
+// POPULATE DATALIST
+// ---------------------------------------
+function refreshDatalist(kind) {
+    const list = loadCache(kind);
+    const dl = document.getElementById(kind + "List");
+    if (!dl) return;
+
+    dl.innerHTML = "";
+    list.forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = c.name;
+        dl.appendChild(opt);
+    });
+}
+
+// ---------------------------------------
+// CALL SERVER SEARCH
+// ---------------------------------------
+function serverSearch(kind, name) {
+    if (!name) return Promise.resolve([]);
+
+    const url =
+        `/contacts/search?type=${encodeURIComponent(kind)}` +
+        `&q=${encodeURIComponent(name)}` +
+        `&branchCode=${encodeURIComponent(getBranchCode())}`;
+
+    return fetch(url)
+        .then(r => r.ok ? r.json() : [])
+        .catch(() => []);
+}
+
+// ---------------------------------------
+// APPLY CONTACT TO FORM FIELDS
+// ---------------------------------------
+function applyContact(kind, c) {
+    document.getElementById(kind + "Mobile").value = c.mobile || "";
+    document.getElementById(kind + "GST").value = c.gst || "";
+    document.getElementById(kind + "Address").value = c.address || "";
+}
+
+// ---------------------------------------
+// AUTOFILL LOGIC (LOCAL + SERVER)
+// ---------------------------------------
 function attachAutoFill(kind) {
 
     const nameEl = document.getElementById(kind + "Name");
-    const mobileEl = document.getElementById(kind + "Mobile");
-    const gstEl = document.getElementById(kind + "GST");
-    const addrEl = document.getElementById(kind + "Address");
-
     if (!nameEl) return;
 
     const doSearch = debounce(function () {
         const q = nameEl.value.trim();
         if (!q) return;
 
-        fetch(`/contacts/search?type=${kind}&q=${encodeURIComponent(q)}`)
-            .then(r => r.json())
-            .then(list => {
-                if (!list || list.length === 0) return;
+        const localList = loadCache(kind);
+        const localMatch = localList.find(c => c.name.toLowerCase() === q.toLowerCase());
 
-                // exact match first
-                let match = list.find(c =>
-                    c.name.toLowerCase() === q.toLowerCase()
-                ) || list[0];
+        if (localMatch) {
+            applyContact(kind, localMatch);
+            return;
+        }
 
-                // fill only empty fields
-                if (mobileEl && !mobileEl.value) mobileEl.value = match.mobile || "";
-                if (gstEl && !gstEl.value) gstEl.value = match.gst || "";
-                if (addrEl && !addrEl.value) addrEl.value = match.address || "";
-            });
+        serverSearch(kind, q).then(list => {
+            if (!Array.isArray(list) || list.length === 0) return;
+
+            const exact = list.find(c => c.name.toLowerCase() === q.toLowerCase());
+            const result = exact || list[0];
+
+            applyContact(kind, result);
+
+            // save server result to cache
+            saveToCache(kind, result);
+            refreshDatalist(kind);
+        });
+
     }, 300);
 
-    nameEl.addEventListener("input", doSearch);
+    //nameEl.addEventListener("input", doSearch);
     nameEl.addEventListener("blur", doSearch);
 }
 
-// Save consignor/consignee automatically on booking submit
+// ---------------------------------------
+// SAVE TO SERVER ON BOOKING SUBMIT
+// ---------------------------------------
 function attachSaveOnSubmit(formId) {
 
     const form = document.getElementById(formId);
@@ -4097,11 +4416,17 @@ function attachSaveOnSubmit(formId) {
                 name: document.getElementById(kind + "Name").value.trim(),
                 mobile: document.getElementById(kind + "Mobile").value.trim(),
                 gst: document.getElementById(kind + "GST").value.trim(),
-                address: document.getElementById(kind + "Address").value.trim()
+                address: document.getElementById(kind + "Address").value.trim(),
+                branchCode: getBranchCode()
             };
 
             if (!payload.name) return;
 
+            // save to local cache
+            saveToCache(kind, payload);
+            refreshDatalist(kind);
+
+            // save to server
             fetch("/contacts", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -4112,136 +4437,15 @@ function attachSaveOnSubmit(formId) {
     });
 }
 
+// ---------------------------------------
+// INIT
+// ---------------------------------------
 document.addEventListener("DOMContentLoaded", function () {
+    refreshDatalist("consignor");
+    refreshDatalist("consignee");
+
     attachAutoFill("consignor");
     attachAutoFill("consignee");
-    attachSaveOnSubmit("bookingForm");   // change ID if needed
+
+    attachSaveOnSubmit("bookingForm");
 });
-// === Exact-match only autofill (works with datalist + blur + Enter) ===
-// This full block replaces your old autofill code.
-
-(function(){
-
-  const SEARCH_URL = '/contacts/search';
-  const LOCAL_KEY_CONSIGNOR = 'consignors_cache_v1';
-  const LOCAL_KEY_CONSIGNEE = 'consignees_cache_v1';
-
-  function debounce(fn, ms){ let t; return function(...args){ clearTimeout(t); t = setTimeout(()=>fn.apply(this,args), ms); }; }
-  function norm(s){ return (s||'').trim(); }
-  function normLower(s){ return norm(s).toLowerCase(); }
-
-  function applyContact(kind, contact){
-    if(!contact) return;
-    const mobileEl = document.getElementById(kind + 'Mobile');
-    const gstEl = document.getElementById(kind + 'GST');
-    const addrEl = document.getElementById(kind + 'Address');
-    if(mobileEl) mobileEl.value = contact.mobile || '';
-    if(gstEl) gstEl.value = contact.gst || '';
-    if(addrEl) addrEl.value = contact.address || '';
-  }
-
-  function serverSearch(kind, q){
-    if(!q) return Promise.resolve([]);
-    const url = `${SEARCH_URL}?type=${encodeURIComponent(kind)}&q=${encodeURIComponent(q)}`;
-    return fetch(url)
-      .then(r => r.ok ? r.json() : [])
-      .catch(err => {
-        console.warn('server search failed', err);
-        return [];
-      });
-  }
-
-  function loadLocal(kind){
-    try{
-      const key = kind === 'consignor' ? LOCAL_KEY_CONSIGNOR : LOCAL_KEY_CONSIGNEE;
-      return JSON.parse(localStorage.getItem(key) || '[]');
-    }catch(e){ return []; }
-  }
-
-  function saveLocal(kind, arr){
-    try{
-      const key = kind === 'consignor' ? LOCAL_KEY_CONSIGNOR : LOCAL_KEY_CONSIGNEE;
-      localStorage.setItem(key, JSON.stringify(arr || []));
-    }catch(e){}
-  }
-
-  function forceRefreshContacts(kind){
-    return serverSearch(kind, '')
-      .then(list => {
-        if(Array.isArray(list)) saveLocal(kind, list);
-        return list;
-      });
-  }
-  window.forceRefreshContacts = forceRefreshContacts;
-
-  function findExactContact(kind, name){
-    const q = norm(name);
-    if(!q) return Promise.resolve(null);
-
-    return serverSearch(kind, q).then(list => {
-      if(Array.isArray(list) && list.length){
-        const exact = list.find(c => c.name && c.name.trim().toLowerCase() === q.toLowerCase());
-        if(exact) return exact;
-      }
-      const localList = loadLocal(kind);
-      const exactLocal = (localList || []).find(c => c.name && c.name.trim().toLowerCase() === q.toLowerCase());
-      if(exactLocal) return exactLocal;
-
-      return null;
-    }).catch(()=> {
-      const localList = loadLocal(kind);
-      const exactLocal = (localList || []).find(c => c.name && c.name.trim().toLowerCase() === q.toLowerCase());
-      return exactLocal || null;
-    });
-  }
-
-  function attachExactAutofill(kind){
-    const nameEl = document.getElementById(kind + 'Name');
-    if(!nameEl) return;
-
-    function checkAndApply(){
-      const nameVal = norm(nameEl.value);
-      if(!nameVal) return;
-      findExactContact(kind, nameVal).then(contact => {
-        if(contact) applyContact(kind, contact);
-      });
-    }
-
-    nameEl.addEventListener('blur', checkAndApply);
-
-    nameEl.addEventListener('keydown', function(ev){
-      if(ev.key === 'Enter'){
-        setTimeout(checkAndApply, 0);
-      }
-    });
-
-    nameEl.addEventListener('input', function(){
-      const listId = nameEl.getAttribute('list');
-      if(!listId) return;
-      const dl = document.getElementById(listId);
-      if(!dl) return;
-      const val = nameEl.value.trim();
-      for(let i=0;i<dl.options.length;i++){
-        if(dl.options[i].value && dl.options[i].value.trim().toLowerCase() === val.toLowerCase()){
-          checkAndApply();
-          return;
-        }
-      }
-    });
-  }
-
-  document.addEventListener('DOMContentLoaded', function(){
-    attachExactAutofill('consignor');
-    attachExactAutofill('consignee');
-  });
-
-  window.__contacts_helpers = {
-    findExactContact,
-    forceRefreshContacts,
-    loadLocal,
-    saveLocal
-  };
-
-})(); // END
-
-
