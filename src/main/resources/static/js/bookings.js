@@ -28,6 +28,12 @@ function safeHide(id) {
 	if (el) el.style.display = 'none';
 }
 function hideAllForms() {
+
+    window.isEditMode = false;
+    const button = document.querySelector("button[type='submit']");
+        if (button) {
+            button.innerText = "Booking";
+        }
 	safeHide('bookingReportForm');
 	safeHide('bookingFormContainer');
 	safeHide('CreateBranchContainer');
@@ -1293,8 +1299,13 @@ function printBookingReceipt(booking) {
 		</html>
 	`;
 
-	printWindow.document.write(fullHTML);
-	printWindow.document.close();
+if (printWindow) {
+		printWindow.document.write(fullHTML);
+		printWindow.document.close();
+	} else {
+		console.error("Failed to open print window. Please check your popup blocker settings.");
+		alert("Printing failed: Please allow popups for this site.");
+	}
 }
 
 let globalNextLr = null;
@@ -1306,6 +1317,7 @@ document.getElementById("bookingForm").addEventListener("submit", async function
 	if (window.isEditMode) {
 		console.log("✅ UPDATE API");
 		updateBookingAPI();
+		return; // 🔥 STOP HERE! Don't run the CREATE logic below.
 	} else {
 		console.log("✅ CREATE API");
 		createBookingAPI();
@@ -2478,7 +2490,7 @@ function enableInlineEditMode() {
 
 	// Articles (ADD ROW PRESERVE)
 	const tbody = document.getElementById("editArticleTableBody");
-
+tbody.innerHTML = "";
 	if (data.articleDetails) {
 		data.articleDetails.forEach(a => {
 			let row = `
@@ -2491,7 +2503,7 @@ function enableInlineEditMode() {
                 <td>${a.total}</td>
                 <td>
                     <button class="btn btn-danger btn-sm"
-                        onclick="this.closest('tr').remove(); calculateChargesBooking();">
+                        onclick="this.closest('tr').remove(); updateFreight();">
                         Delete
                     </button>
                 </td>
@@ -2528,8 +2540,10 @@ function enableInlineEditMode() {
 	document.getElementById("loadingCharge").addEventListener("input", function () {
 		calculateChargesBooking();
 	});
-	document.querySelector("button[type='submit']").innerText = "Update Booking";
-	window.isEditMode = true;
+
+
+	const button = document.querySelector("button[type='submit']");
+    button.innerText = window.isEditMode ? "Update Booking" : "Booking";
 	updateFreight();
 }
 
@@ -2578,7 +2592,7 @@ function updateBookingAPI() {
 	console.log("Sending payload:", payload);
 
 	// 🔥 API CALL
-	fetch(`/api/bookings/bookLoad/${lr}`, {
+	fetch(`/api/bookings/updateBookLoad?lr=${encodeURIComponent(lr)}`, {
 		method: "PUT",
 		headers: {
 			"Content-Type": "application/json"
@@ -2684,7 +2698,7 @@ function resetArticleInputRow() {
 	document.getElementById("article").selectedIndex = 0;
 	document.getElementById("artQuantity").value = 0;
 	document.getElementById("artType").selectedIndex = 0;
-	document.getElementById("saidToContain").selectedIndex = 0;
+document.getElementById("saidToContain").value = "";
 	document.getElementById("artAmount").value = 0;
 }
 
@@ -3215,7 +3229,7 @@ function submitInlineEdit(lrNumber) {
 		grandTotal: parseFloat(document.getElementById("grandTotal").value || 0)
 	};
 
-	fetch(`/api/bookings/bookLoad/${encodeURIComponent(lrNumber)}`, {
+	fetch(`/api/bookings/updateBookLoad?lr=${encodeURIComponent(lrNumber)}`, {
 		method: 'PUT',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify(bookingData)
@@ -4419,4 +4433,3 @@ document.addEventListener("DOMContentLoaded", function () {
 
     attachSaveOnSubmit("bookingForm");
 });
-

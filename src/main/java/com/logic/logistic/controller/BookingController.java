@@ -43,8 +43,8 @@ public class BookingController {
 		return ResponseEntity.ok(saved);
 	}
 
-	 @PutMapping("/bookLoad/{lr}")
-	    public ResponseEntity<?> updateBooking(@PathVariable String lr, @RequestBody BookingDTO dto) {
+	@PutMapping("/updateBookLoad")
+	public ResponseEntity<?> updateBooking(@RequestParam String lr, @RequestBody BookingDTO dto) {
 	        try {
 	            Booking bookingUpdated = bookingService.updateBooking(lr, dto);
 	            return ResponseEntity.ok(bookingUpdated);
