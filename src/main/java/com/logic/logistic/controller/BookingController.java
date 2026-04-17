@@ -96,4 +96,5 @@ public class BookingController {
 	    public List<String> getSaidToContainsByCompany(@PathVariable String companyCode) {
 	        return bookingService.getSaidToContainsByCompany(companyCode);
 	    }
+
 }
