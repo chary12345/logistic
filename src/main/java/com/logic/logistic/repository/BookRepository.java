@@ -72,4 +72,10 @@ public interface BookRepository extends JpaRepository<Booking, String> {
 			+ "AND (:paymentMode IS NULL OR b.billType = :paymentMode)")
 	List<Booking> findStatements(@Param("branchCode") String branchCode, @Param("fromDate") LocalDateTime fromDate,
 			@Param("toDate") LocalDateTime toDate, @Param("paymentMode") String paymentMode);
+
+	List<Booking> findByLoadingRecieptInAndConsignStatus(
+			List<String> lrIds, String status);
+
+	/*List<Booking> findByVehicleNumberAndConsignStatus(
+			String vehicleNo, String status);*/
 }

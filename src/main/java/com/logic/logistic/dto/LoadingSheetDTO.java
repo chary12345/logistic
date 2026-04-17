@@ -40,6 +40,9 @@ public class LoadingSheetDTO {
     @Column(name = "created_date")
     private LocalDateTime createdAt;
 
+	@Column(name = "status")
+	private String status;
+
 	public Long getLoadingSheetNumber() {
 		return loadingSheetNumber;
 	}
@@ -103,6 +106,12 @@ public class LoadingSheetDTO {
 	public void setCreatedAt(LocalDateTime createdAt) {
 		this.createdAt = createdAt;
 	}
-    
-    
+
+	public String getStatus() {
+		return status;
+	}
+
+	public void setStatus(String status) {
+		this.status = status;
+	}
 }

@@ -2,11 +2,11 @@ package com.logic.logistic.controller;
 
 import java.util.List;
 
+import com.logic.logistic.dto.DispatchedResponseDTO;
+import com.logic.logistic.dto.ReceiveRequest;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import com.logic.logistic.dto.Booking;
 import com.logic.logistic.model.OperationFilter;
@@ -24,4 +24,20 @@ public class OpperationController {
 		List<Booking> bookingsWithFilter = operationService.getBookingsWithFilter(filter);
 	    return bookingsWithFilter;
 	}
+
+	@GetMapping("/disaptchedList")
+	public ResponseEntity<DispatchedResponseDTO> disaptchedListByLsORVehicleNumber(
+			@RequestParam(required = false) Long lsId,
+			@RequestParam(required = false) String vehicleNo) {
+
+		DispatchedResponseDTO result = operationService.disaptchedListByLsORVehicleNumber(lsId, vehicleNo);
+		return ResponseEntity.ok(result);
+	}
+
+	@PostMapping("/receive")
+	public ResponseEntity<String> receiveSelectedLrs(@RequestBody ReceiveRequest request) {
+		operationService.receiveSelectedLrs(request);
+		return ResponseEntity.ok("Selected LRs received successfully");
+	}
+
 }
