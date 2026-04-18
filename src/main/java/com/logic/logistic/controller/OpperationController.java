@@ -40,4 +40,21 @@ public class OpperationController {
 		return ResponseEntity.ok("Selected LRs received successfully");
 	}
 
+	@GetMapping("/fetchReceivedLrs")
+	public ResponseEntity<List<Booking>> getReceivedLrs(
+			@RequestParam String destinationBranchCode) {
+
+		return ResponseEntity.ok(
+				operationService.getReceivedLrsForDelivery(destinationBranchCode)
+		);
+	}
+
+	@PostMapping("/deliverLrs")
+	public ResponseEntity<String> deliverLrs(
+			@RequestBody List<String> lrIds) {
+
+		operationService.deliverSelectedLrs(lrIds);
+
+		return ResponseEntity.ok("LRs delivered successfully");
+	}
 }
