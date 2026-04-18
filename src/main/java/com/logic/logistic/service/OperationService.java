@@ -12,4 +12,8 @@ public interface OperationService {
 	List<Booking> getBookingsWithFilter(OperationFilter filter);
 	DispatchedResponseDTO disaptchedListByLsORVehicleNumber(Long lsId, String vehicleNo);
 	void receiveSelectedLrs(ReceiveRequest request);
+
+	List<Booking> getReceivedLrsForDelivery(String destinationBranchCode);
+
+	void deliverSelectedLrs(List<String> lrIds);
 }

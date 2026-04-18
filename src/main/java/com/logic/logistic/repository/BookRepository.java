@@ -21,14 +21,69 @@ public interface BookRepository extends JpaRepository<Booking, String> {
 			@Param("toDate") LocalDateTime toDate, @Param("status") String status,
 			@Param("branchCode") String branchCode);
 
-	@Query("SELECT b FROM Booking b WHERE b.bookingDate BETWEEN :from AND :to AND b.consignStatus = :status AND b.BranchCode= :branchCode ORDER BY b.bookingDate DESC")
-	List<Booking> findFirstPage(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to,
-			@Param("status") String status, Pageable pageable, @Param("branchCode") String branchCode);
+	@Query("""
+SELECT b FROM Booking b 
+WHERE 
+(
+    (:status = 'BOOKED' AND b.bookingDate BETWEEN :from AND :to) OR
+    (:status = 'DISPATCHED' AND b.dispatchDate BETWEEN :from AND :to) OR
+    (:status = 'RECEIVED' AND b.recieveDate BETWEEN :from AND :to) OR
+    (:status = 'DELIVERED' AND b.deliveryDate BETWEEN :from AND :to)
+)
+AND b.consignStatus = :status 
+AND 
+(
+    (:status IN ('BOOKED','DISPATCHED') AND b.BranchCode = :branchCode) OR
+    (:status IN ('RECEIVED','DELIVERED') AND b.destinationBranchCode = :branchCode)
+)
+ORDER BY 
+CASE 
+    WHEN :status = 'BOOKED' THEN b.bookingDate
+    WHEN :status = 'DISPATCHED' THEN b.dispatchDate
+    WHEN :status = 'RECEIVED' THEN b.recieveDate
+    WHEN :status = 'DELIVERED' THEN b.deliveryDate
+END DESC
+""")
+	List<Booking> findFirstPage(
+			@Param("from") LocalDateTime from,
+			@Param("to") LocalDateTime to,
+			@Param("status") String status,
+			Pageable pageable,
+			@Param("branchCode") String branchCode
+	);
 
-	@Query("SELECT b FROM Booking b WHERE b.bookingDate BETWEEN :from AND :to AND b.consignStatus = :status AND b.BranchCode= :branchCode AND b.id < :lastId ORDER BY b.bookingDate DESC")
-	List<Booking> findNextPage(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to,
-			@Param("status") String status, @Param("lastId") String lastId, Pageable pageable,
-			@Param("branchCode") String branchCode);
+	@Query("""
+SELECT b FROM Booking b 
+WHERE 
+(
+    (:status = 'BOOKED' AND b.bookingDate BETWEEN :from AND :to) OR
+    (:status = 'DISPATCHED' AND b.dispatchDate BETWEEN :from AND :to) OR
+    (:status = 'RECEIVED' AND b.recieveDate BETWEEN :from AND :to) OR
+    (:status = 'DELIVERED' AND b.deliveryDate BETWEEN :from AND :to)
+)
+AND b.consignStatus = :status 
+AND 
+(
+    (:status IN ('BOOKED','DISPATCHED') AND b.BranchCode = :branchCode) OR
+    (:status IN ('RECEIVED','DELIVERED') AND b.destinationBranchCode = :branchCode)
+)
+AND b.id < :lastId
+ORDER BY 
+CASE 
+    WHEN :status = 'BOOKED' THEN b.bookingDate
+    WHEN :status = 'DISPATCHED' THEN b.dispatchDate
+    WHEN :status = 'RECEIVED' THEN b.recieveDate
+    WHEN :status = 'DELIVERED' THEN b.deliveryDate
+END DESC
+""")
+	List<Booking> findNextPage(
+			@Param("from") LocalDateTime from,
+			@Param("to") LocalDateTime to,
+			@Param("status") String status,
+			@Param("lastId") String lastId,
+			Pageable pageable,
+			@Param("branchCode") String branchCode
+	);
 
 	@Query("SELECT b FROM Booking b WHERE b.loadingReciept IN :receipts")
 	List<Booking> findByLoadingRecieptIn(List<String> receipts);
@@ -76,6 +131,10 @@ public interface BookRepository extends JpaRepository<Booking, String> {
 	List<Booking> findByLoadingRecieptInAndConsignStatus(
 			List<String> lrIds, String status);
 
+	List<Booking> findByConsignStatusAndDestinationBranchCode(
+			String status,
+			String destinationBranchCode
+	);
 	/*List<Booking> findByVehicleNumberAndConsignStatus(
 			String vehicleNo, String status);*/
 }

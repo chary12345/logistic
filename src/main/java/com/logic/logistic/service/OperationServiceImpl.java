@@ -193,6 +193,7 @@ public class OperationServiceImpl implements OperationService {
 				.findByLoadingRecieptIn(selectedLrIds);
 
 		for (Booking b : bookings) {
+			b.setRecieveDate(LocalDateTime.now());
 			b.setConsignStatus("RECEIVED");
 		}
 
@@ -217,6 +218,50 @@ public class OperationServiceImpl implements OperationService {
 
 		loadingSheetRepository.save(ls);
 	}
+
+	@Override
+	public List<Booking> getReceivedLrsForDelivery(String destinationBranchCode) {
+
+		if (destinationBranchCode == null || destinationBranchCode.isEmpty()) {
+			throw new RuntimeException("Destination branch code required");
+		}
+		List<Booking> receivedLrList = bookingRepository
+				.findByConsignStatusAndDestinationBranchCode(
+						"RECEIVED", destinationBranchCode
+				);
+		return receivedLrList;
+	}
+
+	@Override
+	public void deliverSelectedLrs(List<String> lrIds) {
+
+		// 🔹 Fetch bookings
+		List<Booking> bookings = bookingRepository
+				.findByLoadingRecieptIn(lrIds);
+
+		if (bookings == null || bookings.isEmpty()) {
+			throw new RuntimeException("No LRs found for delivery");
+		}
+
+		// 🔹 Update only RECEIVED ones
+		for (Booking booking : bookings) {
+
+			if ("RECEIVED".equalsIgnoreCase(booking.getConsignStatus())) {
+
+				booking.setConsignStatus("DELIVERED");
+				booking.setDeliveryDate(LocalDateTime.now());
+
+			} else {
+				throw new RuntimeException(
+						"LR " + booking.getLoadingReciept() + " is not in RECEIVED state"
+				);
+			}
+		}
+
+		// 🔹 Save all
+		bookingRepository.saveAll(bookings);
+	}
+
 	public static LocalDateTime toDateTime(String input) {
 	DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
 	return LocalDateTime.parse(input, formatter);
