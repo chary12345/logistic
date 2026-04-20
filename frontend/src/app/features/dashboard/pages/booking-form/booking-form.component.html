@@ -1,0 +1,319 @@
+<div class="booking-page">
+
+  <!-- Edit Mode Banner -->
+  <div class="edit-banner" *ngIf="isEditMode">
+    <div class="edit-banner-info">
+      <mat-icon>edit_note</mat-icon>
+      <span>Editing Booking — LR: <strong>{{ editLR }}</strong></span>
+    </div>
+    <button mat-stroked-button type="button" (click)="resetForm()" class="new-booking-btn">
+      <mat-icon>add_circle</mat-icon> New Booking
+    </button>
+  </div>
+
+  <!-- Loading overlay while fetching edit data -->
+  <div class="loading-inline" *ngIf="loadingBooking">
+    <mat-spinner diameter="32"></mat-spinner>
+    <span>Loading booking data...</span>
+  </div>
+
+  <!-- Payment Mode Banner -->
+  <div class="pm-banner" [class]="'pm-' + paymentMode.toLowerCase().replace(' ','-')">
+    <div class="pm-mode-label">Payment Mode:</div>
+    <div class="pm-keys">
+      <button class="pm-key" [class.active]="paymentMode==='PAID'" (click)="setPaymentMode('PAID')">
+        <kbd>F7</kbd> PAID
+      </button>
+      <button class="pm-key" [class.active]="paymentMode==='TO PAY'" (click)="setPaymentMode('TO PAY')">
+        <kbd>F8</kbd> TO PAY
+      </button>
+      <button class="pm-key" [class.active]="paymentMode==='TBB'" (click)="setPaymentMode('TBB')">
+        <kbd>F9</kbd> TBB
+      </button>
+    </div>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="submit()">
+    <div class="booking-grid">
+
+      <!-- LEFT: Form Fields -->
+      <div class="form-col">
+
+        <!-- Delivery Destination -->
+        <div class="page-card">
+          <div class="section-title">📍 Delivery Destination</div>
+          <mat-form-field class="dest-field">
+            <mat-label>Select destination</mat-label>
+            <mat-select formControlName="deliveryDestination">
+              <!-- Search box inside select -->
+              <div class="dest-search-box" (keydown)="$event.stopPropagation()" (click)="$event.stopPropagation()">
+                <mat-icon class="search-icon">search</mat-icon>
+                <input [formControl]="destinationFilterCtrl" placeholder="Search for destination branch here.."
+                  autocomplete="off" class="dest-search-input">
+              </div>
+
+              <!-- Options -->
+              <mat-option *ngFor="let d of filteredDestinations" [value]="d">
+                {{ d }}
+              </mat-option>
+
+              <!-- No results -->
+              <mat-option *ngIf="filteredDestinations.length === 0" disabled>
+                No branches found
+              </mat-option>
+            </mat-select>
+            <mat-error
+              *ngIf="form.get('deliveryDestination')?.hasError('required') && form.get('deliveryDestination')?.touched">
+              Destination is required
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <!-- Consignor -->
+        <div class="page-card">
+          <div class="section-title">👤 Consignor (From)</div>
+          <div class="form-grid">
+            <div class="autocomplete-wrap">
+              <mat-form-field>
+              <mat-label>Consignor Name</mat-label>
+                <input matInput formControlName="consignorName" (input)="searchConsignor($any($event.target).value)"
+                  autocomplete="off">
+                <mat-error
+                  *ngIf="form.get('consignorName')?.hasError('required') && form.get('consignorName')?.touched">Required</mat-error>
+              </mat-form-field>
+              <mat-icon class="field-suffix-icon">person</mat-icon>
+              <div class="suggestion-list" *ngIf="consignorSuggestions.length">
+                <div class="suggestion-item" *ngFor="let c of consignorSuggestions" (click)="fillConsignor(c)">
+                  <strong>{{ c.name }}</strong> · {{ c.mobile }}
+                </div>
+              </div>
+            </div>
+
+            <mat-form-field>
+              <mat-label>Mobile</mat-label>
+              <input matInput formControlName="consignorMobile" maxlength="10" inputmode="numeric">
+              <mat-error
+                *ngIf="form.get('consignorMobile')?.hasError('required') && form.get('consignorMobile')?.touched">Required</mat-error>
+              <mat-error
+                *ngIf="form.get('consignorMobile')?.hasError('pattern') && form.get('consignorMobile')?.touched">Valid
+                10-digit number required</mat-error>
+            </mat-form-field>
+
+            <mat-form-field>
+              <mat-label>GST</mat-label>
+              <input matInput formControlName="consignorGST">
+            </mat-form-field>
+
+            <mat-form-field>
+              <mat-label>Address</mat-label>
+              <input matInput formControlName="consignorAddress">
+              <mat-error
+                *ngIf="form.get('consignorAddress')?.hasError('required') && form.get('consignorAddress')?.touched">Required</mat-error>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- Consignee -->
+        <div class="page-card">
+          <div class="section-title">📦 Consignee (To)</div>
+          <div class="form-grid">
+            <div class="autocomplete-wrap">
+              <mat-form-field>
+              <mat-label>Consignee Name</mat-label>
+                <input matInput formControlName="consigneeName" (input)="searchConsignee($any($event.target).value)"
+                  autocomplete="off">
+                <mat-error
+                  *ngIf="form.get('consigneeName')?.hasError('required') && form.get('consigneeName')?.touched">Required</mat-error>
+              </mat-form-field>
+              <mat-icon class="field-suffix-icon">person_outline</mat-icon>
+              <div class="suggestion-list" *ngIf="consigneeSuggestions.length">
+                <div class="suggestion-item" *ngFor="let c of consigneeSuggestions" (click)="fillConsignee(c)">
+                  <strong>{{ c.name }}</strong> · {{ c.mobile }}
+                </div>
+              </div>
+            </div>
+
+            <mat-form-field>
+              <mat-label>Mobile</mat-label>
+              <input matInput formControlName="consigneeMobile" maxlength="10" inputmode="numeric">
+              <mat-error
+                *ngIf="form.get('consigneeMobile')?.hasError('required') && form.get('consigneeMobile')?.touched">Required</mat-error>
+              <mat-error
+                *ngIf="form.get('consigneeMobile')?.hasError('pattern') && form.get('consigneeMobile')?.touched">Valid
+                10-digit number required</mat-error>
+            </mat-form-field>
+
+            <mat-form-field>
+              <mat-label>GST</mat-label>
+              <input matInput formControlName="consigneeGST">
+            </mat-form-field>
+
+            <mat-form-field>
+              <mat-label>Address</mat-label>
+              <input matInput formControlName="consigneeAddress">
+              <mat-error
+                *ngIf="form.get('consigneeAddress')?.hasError('required') && form.get('consigneeAddress')?.touched">Required</mat-error>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- Article Details -->
+        <div class="page-card">
+          <div class="section-title">📋 Article Details</div>
+          <div class="table-scroll-container">
+            <table class="mat-mdc-table articles-table" formArrayName="articles">
+              <thead>
+                <tr>
+                  <th>Article</th>
+                  <th>Qty</th>
+                  <th>Type</th>
+                  <th>Said To Contain</th>
+                  <th>Rate (₹)</th>
+                  <th>Total</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let row of articles.controls; let i=index" [formGroupName]="i">
+                  <td>
+                    <mat-select formControlName="article" class="mini-select">
+                      <mat-option value="Article">Article</mat-option>
+                      <mat-option value="Weight">Weight</mat-option>
+                      <mat-option value="Fix">Fix</mat-option>
+                    </mat-select>
+                  </td>
+                  <td>
+                    <input type="number" formControlName="artQuantity" class="mini-input" min="0"
+                      (change)="onArticleChange(i)">
+                  </td>
+                  <td>
+                    <mat-select formControlName="artType" class="mini-select">
+                      <mat-option *ngFor="let t of articleTypes" [value]="t">{{t}}</mat-option>
+                    </mat-select>
+                  </td>
+                  <td>
+                    <mat-select formControlName="saidToContain" class="mini-select" placeholder="Select..."
+                      panelClass="stc-panel">
+                      <div class="stc-search-box" (keydown)="$event.stopPropagation()" (click)="$event.stopPropagation()">
+                        <mat-icon class="search-icon">search</mat-icon>
+                        <input [formControl]="stcFilterCtrl" placeholder="Search..." autocomplete="off" class="stc-search-input">
+                      </div>
+                      <mat-option *ngFor="let s of filteredSaidToContains" [value]="s">{{ s }}</mat-option>
+                      <mat-option *ngIf="filteredSaidToContains.length === 0" disabled>No match</mat-option>
+                    </mat-select>
+                  </td>
+                  <td>
+                    <input type="number" formControlName="artAmount" class="mini-input" min="0"
+                      (change)="onArticleChange(i)">
+                  </td>
+                  <td class="total-cell">₹{{ (row.get('artQuantity')?.value || 0) * (row.get('artAmount')?.value || 0)
+                    }}</td>
+                  <td>
+                    <button type="button" mat-icon-button color="warn" (click)="removeArticle(i)"
+                      [disabled]="articles.length === 1" matTooltip="Remove row">
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <button type="button" mat-stroked-button color="primary" (click)="addArticle()" class="add-row-btn">
+            <mat-icon>add</mat-icon> Add Article Row
+          </button>
+        </div>
+
+        <!-- Invoice / E-Waybill -->
+        <div class="page-card">
+          <div class="section-title">🧾 Invoice & E-Waybill</div>
+          <div class="form-grid invoice-grid">
+            <mat-form-field>
+              <mat-label>Invoice No.</mat-label>
+              <input matInput formControlName="invoiceNo">
+            </mat-form-field>
+            <mat-form-field>
+              <mat-label>Invoice Value</mat-label>
+              <input matInput type="number" formControlName="invoiceValue" inputmode="numeric">
+              <span matTextPrefix>₹&nbsp;</span>
+            </mat-form-field>
+            <mat-form-field>
+              <mat-label>E-Waybill No. (12 digits)</mat-label>
+              <input matInput formControlName="ewayBill" maxlength="12" inputmode="numeric">
+            </mat-form-field>
+          </div>
+
+          <!-- Paid Via (conditional) -->
+          <div *ngIf="showPaidVia" class="paid-via-wrap">
+            <label class="paid-via-label">Paid Via*</label>
+            <mat-form-field>
+              <mat-select formControlName="paidVia">
+                <mat-option value="CASH">Cash</mat-option>
+                <mat-option value="ONLINE">Online</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT: Charges Panel -->
+      <div class="charges-col">
+        <div class="charges-card page-card">
+          <div class="section-title">💰 Charges</div>
+
+          <div class="charge-row">
+            <span class="c-label">Freight</span>
+            <span class="c-value">₹{{ form.get('freight')?.value | number:'1.2-2' }}</span>
+          </div>
+          <mat-form-field class="charge-field">
+            <mat-label>Loading Charge</mat-label>
+            <input matInput type="number" formControlName="loadingCharge" min="0">
+            <span matTextPrefix>₹&nbsp;</span>
+          </mat-form-field>
+          <mat-form-field class="charge-field">
+            <mat-label>LR Charge</mat-label>
+            <input matInput type="number" formControlName="lrCharge" min="0">
+            <span matTextPrefix>₹&nbsp;</span>
+          </mat-form-field>
+
+          <mat-divider class="charge-divider"></mat-divider>
+
+          <div class="charge-row">
+            <span class="c-label">SGST (2.5%)</span>
+            <span class="c-value">₹{{ form.get('sgst')?.value | number:'1.2-2' }}</span>
+          </div>
+          <div class="charge-row">
+            <span class="c-label">CGST (2.5%)</span>
+            <span class="c-value">₹{{ form.get('cgst')?.value | number:'1.2-2' }}</span>
+          </div>
+          <div class="charge-row">
+            <span class="c-label">IGST (5%)</span>
+            <span class="c-value">₹{{ form.get('igst')?.value | number:'1.2-2' }}</span>
+          </div>
+
+          <mat-divider class="charge-divider"></mat-divider>
+
+          <div class="grand-total-row">
+            <span>Grand Total</span>
+            <span class="grand-total-value">₹{{ form.get('grandTotal')?.value | number:'1.2-2' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Submit (direct child of grid so order works on mobile) -->
+      <div class="submit-row">
+        <button mat-raised-button color="primary" type="submit" class="submit-btn"
+          [disabled]="loading || loadingBooking">
+          <mat-spinner *ngIf="loading" diameter="18" class="btn-spinner"></mat-spinner>
+          <mat-icon *ngIf="!loading">{{ isEditMode ? 'save' : 'add_task' }}</mat-icon>
+          {{ loading ? (isEditMode ? 'Updating...' : 'Saving...') : (isEditMode ? 'Update Booking' : 'Create Booking')
+          }}
+        </button>
+        <button mat-stroked-button type="button" (click)="resetForm()" [disabled]="loading" class="reset-btn">
+          <mat-icon>refresh</mat-icon> Reset
+        </button>
+      </div>
+
+    </div>
+  </form>
+</div>

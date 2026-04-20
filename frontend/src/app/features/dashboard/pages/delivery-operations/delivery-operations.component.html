@@ -1,0 +1,38 @@
+<div class="page-card">
+  <h2 class="page-heading"><mat-icon>delivery_dining</mat-icon> Delivery</h2>
+
+  <!-- Refresh -->
+  <div class="filter-row">
+    <button mat-raised-button color="primary" type="button" (click)="fetchReceivedLrs()" [disabled]="loading">
+      <mat-icon>refresh</mat-icon> Refresh
+    </button>
+  </div>
+
+  <mat-progress-bar *ngIf="loading" mode="indeterminate"></mat-progress-bar>
+
+  <!-- AG Grid -->
+  <div class="grid-wrapper" *ngIf="rowData.length">
+    <ag-grid-angular
+      class="ag-theme-alpine"
+      [rowData]="rowData" [columnDefs]="columnDefs" [defaultColDef]="defaultColDef"
+      [rowSelection]="'multiple'" [suppressRowClickSelection]="true"
+      [pagination]="true" [paginationPageSize]="20" [paginationPageSizeSelector]="[10, 20, 50, 100]"
+      [animateRows]="true" [suppressCellFocus]="true" [domLayout]="'autoHeight'"
+      (gridReady)="onGridReady($event)" (gridSizeChanged)="onGridSizeChanged($event)"
+      (selectionChanged)="onSelectionChanged($event)">
+    </ag-grid-angular>
+  </div>
+
+  <!-- Deliver Action Bar -->
+  <div class="action-bar-bottom" *ngIf="selectedRows.length > 0">
+    <button mat-raised-button color="accent" type="button" (click)="deliverSelected()">
+      <mat-icon>delivery_dining</mat-icon> Deliver Selected ({{ selectedRows.length }})
+    </button>
+  </div>
+
+  <!-- Empty state -->
+  <div *ngIf="!loading && rowData.length === 0" class="empty-state">
+    <mat-icon>delivery_dining</mat-icon>
+    <p>No received consignments pending delivery at your branch.</p>
+  </div>
+</div>

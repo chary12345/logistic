@@ -1,0 +1,113 @@
+<div class="login-page">
+
+  <!-- Top Header -->
+  <div class="top-header">
+    <div class="brand">
+      <mat-icon>local_shipping</mat-icon>
+      <span class="brand-text">1UNIQ TRANS</span>
+    </div>
+    <div class="contact">
+      <mat-icon>phone</mat-icon>
+      <span>+91 95535 85585</span>
+    </div>
+  </div>
+
+  <!-- Scrolling marquee banner -->
+  <div class="welcome-banner">
+    <div class="marquee-track">
+      Welcome to 1UNIQ TRANS Logistics Portal — Reliable, Fast &amp; Secure Cargo Solutions!! &nbsp;&nbsp;&nbsp;&nbsp;
+    </div>
+  </div>
+
+  <div class="login-content">
+    <div class="login-split-card">
+
+      <!-- Truck image side -->
+      <div class="truck-section">
+        <img src="assets/images/1Uniq Trans.png" alt="Truck" class="truck-image">
+      </div>
+
+      <!-- Form side -->
+      <div class="form-section">
+        <div class="login-header">
+          <h1>Logistics Portal</h1>
+          <p>Please sign in to your account</p>
+        </div>
+
+        <form [formGroup]="form" (ngSubmit)="submit()" autocomplete="off" novalidate>
+
+          <mat-form-field>
+            <mat-label>Company Name</mat-label>
+            <input matInput formControlName="group" placeholder="Enter company name" autocomplete="off">
+            <mat-icon matSuffix>business</mat-icon>
+            @if (form.get('group')?.hasError('required') && form.get('group')?.touched) {
+            <mat-error>Company name is required</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field>
+            <mat-label>Username</mat-label>
+            <input matInput formControlName="username" placeholder="Enter username" autocomplete="off">
+            <mat-icon matSuffix>person</mat-icon>
+            @if (form.get('username')?.hasError('required') && form.get('username')?.touched) {
+            <mat-error>Username is required</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field>
+            <mat-label>Password</mat-label>
+            <input matInput [type]="hidePassword ? 'password' : 'text'" formControlName="password"
+              autocomplete="current-password">
+            <button mat-icon-button matSuffix type="button" (click)="hidePassword = !hidePassword">
+              <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            @if (form.get('password')?.hasError('required') && form.get('password')?.touched) {
+            <mat-error>Password is required</mat-error>
+            }
+          </mat-form-field>
+
+          <!-- Captcha -->
+          <div class="captcha-row">
+            <div class="captcha-display">
+              <span class="captcha-text">{{ captchaText }}</span>
+              <button type="button" mat-icon-button (click)="generateCaptcha()" matTooltip="Refresh captcha">
+                <mat-icon>refresh</mat-icon>
+              </button>
+            </div>
+            <mat-form-field class="captcha-input-field">
+              <mat-label>Enter Captcha</mat-label>
+              <input matInput formControlName="captchaInput" autocomplete="off">
+              @if (form.get('captchaInput')?.hasError('required') && form.get('captchaInput')?.touched) {
+              <mat-error>Captcha is required</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <!-- Error message -->
+          @if (errorMsg) {
+          <div class="error-msg">
+            <mat-icon>error_outline</mat-icon>
+            {{ errorMsg }}
+          </div>
+          }
+
+          <!-- Submit -->
+          <button mat-raised-button color="primary" type="submit" class="login-btn" [disabled]="loading">
+            @if (loading) {
+            <mat-spinner diameter="18"></mat-spinner>
+            <span>Signing in...</span>
+            } @else {
+            <ng-container>
+              <mat-icon>login</mat-icon>
+              <span>Login</span>
+            </ng-container>
+            }
+          </button>
+
+        </form>
+      </div>
+
+    </div>
+  </div>
+
+</div>

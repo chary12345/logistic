@@ -1,0 +1,24 @@
+{
+  "/api": {
+    "target": "http://localhost:8080",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "info"
+  },
+  "/createBranch": { "target": "http://localhost:8080", "secure": false, "changeOrigin": true },
+  "/updateBranch": { "target": "http://localhost:8080", "secure": false, "changeOrigin": true },
+  "/BranchesByCompanyCode": { "target": "http://localhost:8080", "secure": false, "changeOrigin": true },
+  "/validate-branch-code": { "target": "http://localhost:8080", "secure": false, "changeOrigin": true },
+  "/validate-company-code": { "target": "http://localhost:8080", "secure": false, "changeOrigin": true },
+  "/validate-username": { "target": "http://localhost:8080", "secure": false, "changeOrigin": true },
+  "/addEmployee": { "target": "http://localhost:8080", "secure": false, "changeOrigin": true },
+  "/employeeList": { "target": "http://localhost:8080", "secure": false, "changeOrigin": true },
+  "/vehicles": { "target": "http://localhost:8080", "secure": false, "changeOrigin": true },
+  "/region": { "target": "http://localhost:8080", "secure": false, "changeOrigin": true },
+  "/statement": { "target": "http://localhost:8080", "secure": false, "changeOrigin": true },
+  "/contacts": { "target": "http://localhost:8080", "secure": false, "changeOrigin": true },
+  "/operation": { "target": "http://localhost:8080", "secure": false, "changeOrigin": true },
+  "/company": { "target": "http://localhost:8080", "secure": false, "changeOrigin": true },
+  "/nextLr": { "target": "http://localhost:8080", "secure": false, "changeOrigin": true },
+  "/getBranchDetails": { "target": "http://localhost:8080", "secure": false, "changeOrigin": true }
+}

@@ -1,0 +1,27 @@
+// Branch manage — uses global: .page-heading, .submit-row, .form-grid, .mode-toggle
+
+.edit-select-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-md);
+  margin-bottom: var(--sp-md);
+  flex-wrap: wrap;
+
+  mat-form-field {
+    min-width: 240px;
+    flex: 1;
+    max-width: 360px;
+  }
+
+  @media (max-width: 520px) {
+    mat-form-field {
+      min-width: unset;
+      max-width: none;
+      width: 100%;
+    }
+  }
+}
+
+.branch-form {
+  margin-top: var(--sp-sm);
+}
