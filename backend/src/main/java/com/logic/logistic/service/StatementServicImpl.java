@@ -1,9 +1,13 @@
 package com.logic.logistic.service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.logic.logistic.model.LrStatementDTO;
+import com.logic.logistic.model.TbbStatementResponse;
+import com.logic.logistic.model.TbbSummaryRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -52,6 +56,53 @@ public class StatementServicImpl implements StatementService{
 	                (effectiveDate != null ? total : 0) // amount only if effective date present
 	        );
 	    }).collect(Collectors.toList());
+	}
+
+	@Override
+	public TbbStatementResponse getTbbStatement(TbbSummaryRequest request) {
+
+		List<Booking> bookings = bookingRepository.findTbbBookings(
+				request.getConsignorName(),
+				request.getFromDate(),
+				request.getToDate()
+		);
+
+		double totalFreight = 0;
+		double totalGst = 0;
+
+		List<LrStatementDTO> lrList = new ArrayList<>();
+
+		for (Booking b : bookings) {
+
+			double gst = b.getSgst() + b.getCgst() + b.getIgst();
+			double total = b.getFreight() + gst;
+
+			totalFreight += b.getFreight();
+			totalGst += gst;
+
+			LrStatementDTO lr = new LrStatementDTO();
+			lr.setLrNumber(b.getLoadingReciept());
+			lr.setBookingDate(b.getBookingDate());
+			lr.setFromBranch(b.getBranchCode());
+			lr.setToBranch(b.getDestinationBranchCode());
+			lr.setConsigneeName(b.getConsigneeName());
+			lr.setFreight(b.getFreight());
+			lr.setGst(gst);
+			lr.setTotal(total);
+			lr.setStatus(b.getConsignStatus());
+
+			lrList.add(lr);
+		}
+
+		TbbStatementResponse res = new TbbStatementResponse();
+		res.setConsignorName(request.getConsignorName());
+		res.setTotalLrs(bookings.size());
+		res.setTotalFreight(totalFreight);
+		res.setTotalGst(totalGst);
+		res.setTotalAmount(totalFreight + totalGst);
+		res.setLrStatements(lrList);
+
+		return res;
 	}
 
 }

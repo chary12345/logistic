@@ -135,6 +135,19 @@ END DESC
 			String status,
 			String destinationBranchCode
 	);
+	@Query("""
+SELECT b FROM Booking b
+WHERE 
+    b.billType = 'TBB'
+    AND b.consignorName = :consignorName
+    AND b.bookingDate BETWEEN :from AND :to
+ORDER BY b.bookingDate DESC
+""")
+	List<Booking> findTbbBookings(
+			@Param("consignorName") String consignorName,
+			@Param("from") LocalDateTime from,
+			@Param("to") LocalDateTime to
+	);
 	/*List<Booking> findByVehicleNumberAndConsignStatus(
 			String vehicleNo, String status);*/
 }
