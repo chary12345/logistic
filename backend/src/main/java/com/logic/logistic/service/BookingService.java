@@ -271,6 +271,8 @@ public class BookingService {
 		existing.setConsigneeMobile(dto.getConsigneeMobile());
 		existing.setConsigneeAddress(dto.getConsigneeAddress());
 		existing.setFreight(dto.getFreight());
+		existing.setLoading(dto.getLoading());
+		existing.setLoadingCharge(dto.getLoadingCharge());
 		existing.setSgst(dto.getSgst());
 		existing.setCgst(dto.getCgst());
 		existing.setIgst(dto.getIgst());
@@ -279,6 +281,7 @@ public class BookingService {
 		existing.seteWayBillNumber(dto.geteWayBillNumber());
 		existing.setDestinationBranchCode(dto.getDestinationBranchCode());
 		existing.setBillType(dto.getBillType());
+		existing.setPaidVia(dto.getPaidVia());
 		existing.setModifiedDate(LocalDateTime.now());
 
 		articleRepo.deleteByLoadingReciept(lr);
