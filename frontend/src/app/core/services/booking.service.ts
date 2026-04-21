@@ -15,7 +15,7 @@ export class BookingService {
   }
 
   update(lr: string, dto: BookingDTO): Observable<Booking> {
-    return this.http.put<Booking>(`/api/bookings/bookLoad?lr=${lr}`, dto);
+    return this.http.put<Booking>(`/api/bookings/updateBookLoad?lr=${encodeURIComponent(lr)}`, dto);
   }
 
   searchByLR(lr: string): Observable<BookingDTO> {

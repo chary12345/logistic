@@ -944,3 +944,36 @@ body {
     }
   }
 }
+
+// ============================================================
+// Edit Booking Dialog — Fully Responsive
+// ============================================================
+.edit-booking-dialog-panel {
+  .mat-mdc-dialog-container {
+    padding: 0 !important;
+    border-radius: 8px !important;
+    overflow: hidden;
+
+    .mat-mdc-dialog-surface {
+      border-radius: 8px !important;
+      overflow: hidden;
+    }
+  }
+
+  // Full screen on mobile
+  @media (max-width: 600px) {
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    margin: 0 !important;
+
+    .mat-mdc-dialog-container {
+      border-radius: 0 !important;
+
+      .mat-mdc-dialog-surface {
+        border-radius: 0 !important;
+      }
+    }
+  }
+}

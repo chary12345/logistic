@@ -38,7 +38,8 @@
               "core-js",
               "raf",
               "rgbcolor",
-              "html2canvas"
+              "html2canvas",
+              "highcharts"
             ]
           },
           "configurations": {

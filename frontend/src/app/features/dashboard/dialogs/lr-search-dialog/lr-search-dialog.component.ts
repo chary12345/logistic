@@ -9,8 +9,9 @@ import { MatDividerModule } from '@angular/material/divider';
 import { BookingService } from '../../../../core/services/booking.service';
 import { ExportService } from '../../../../core/services/export.service';
 import { BookingDTO } from '../../../../shared/models/models';
-import { MatDialog } from '@angular/material/dialog';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { LrReceiptDialogComponent } from '../lr-receipt-dialog/lr-receipt-dialog.component';
+import { EditBookingDialogComponent } from '../edit-booking-dialog/edit-booking-dialog.component';
 
 @Component({
   selector: 'app-lr-search-dialog',
@@ -54,6 +55,9 @@ import { LrReceiptDialogComponent } from '../lr-receipt-dialog/lr-receipt-dialog
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       <button mat-button mat-dialog-close>Close</button>
+      <button mat-raised-button color="accent" *ngIf="booking && booking.consignStatus === 'BOOKED'" (click)="openEdit()">
+        <mat-icon>edit</mat-icon> Edit
+      </button>
       <button mat-raised-button *ngIf="booking" (click)="openReceipt()">
         <mat-icon>receipt</mat-icon> View Receipt
       </button>
@@ -89,6 +93,7 @@ export class LrSearchDialogComponent implements OnInit {
     @Inject(MAT_DIALOG_DATA) public data: { lr: string },
     private bookingSvc: BookingService,
     private dialog: MatDialog,
+    private dialogRef: MatDialogRef<LrSearchDialogComponent>,
   ) {}
 
   ngOnInit(): void {
@@ -115,6 +120,17 @@ export class LrSearchDialogComponent implements OnInit {
       data: { booking: this.booking },
       width: '700px',
       maxWidth: '95vw',
+    });
+  }
+
+  openEdit(): void {
+    this.dialogRef.close();
+    this.dialog.open(EditBookingDialogComponent, {
+      data: { lr: this.data.lr },
+      width: '800px',
+      maxWidth: '95vw',
+      maxHeight: '95vh',
+      panelClass: 'edit-booking-dialog-panel',
     });
   }
 }

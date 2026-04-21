@@ -368,7 +368,14 @@ export class BookingFormComponent implements OnInit, OnDestroy {
     }
     this.recalcCharges();
 
+
     const raw = this.form.getRawValue();
+    // Extract only the branch code from the selected destination string
+    let branchCodeOnly = raw.deliveryDestination;
+    if (branchCodeOnly && branchCodeOnly.includes('(') && branchCodeOnly.includes(')')) {
+      branchCodeOnly = branchCodeOnly.substring(branchCodeOnly.indexOf('(') + 1, branchCodeOnly.indexOf(')'));
+    }
+
     const articleDetails = raw.articles.map((a: any) => ({
       article:       a.article,
       artQty:        String(a.artQuantity),
@@ -382,7 +389,7 @@ export class BookingFormComponent implements OnInit, OnDestroy {
     const dto: any = {
       billType:              this.paymentMode,
       paidVia:               this.showPaidVia ? raw.paidVia : undefined,
-      destinationBranchCode: raw.deliveryDestination,
+      destinationBranchCode: branchCodeOnly,
       consignorName:         raw.consignorName,
       consignorMobile:       raw.consignorMobile,
       consignorAddress:      raw.consignorAddress,

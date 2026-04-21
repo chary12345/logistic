@@ -86,7 +86,7 @@ export class LoginComponent implements OnInit {
         this.loading = false;
         if (res.loginResponse) {
           this.auth.login(res.loginResponse);
-          this.router.navigate(['/dashboard/booking']);
+          this.router.navigate(['/dashboard/home']);
         } else {
           this.errorMsg = res.message || 'Login failed. Please check your credentials.';
           this.generateCaptcha();
