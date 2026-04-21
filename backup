@@ -1,0 +1,202 @@
+create table address_dto
+(
+    address_id               bigint auto_increment
+        primary key,
+    area_or_streetline       varchar(255) null,
+    branch_code              varchar(255) null,
+    city                     varchar(255) null,
+    country                  varchar(255) null,
+    create_date              date         null,
+    flat_or_apartment_number varchar(255) null,
+    land_mark                varchar(255) null,
+    postal_code              varchar(255) null,
+    state                    varchar(255) null,
+    updated_date             date         null
+)
+    charset = utf8mb4;
+
+create table booking
+(
+    loading_reciept   varchar(50)                        not null
+        primary key,
+    consignor_name    varchar(100)                       null,
+    consignor_mobile  varchar(15)                        null,
+    consignor_address varchar(255)                       null,
+    consignee_name    varchar(100)                       null,
+    consignee_mobile  varchar(15)                        null,
+    consignee_address varchar(255)                       null,
+    freight           double                             null,
+    sgst              double                             null,
+    cgst              double                             null,
+    igst              double                             null,
+    booking_date      datetime default CURRENT_TIMESTAMP null,
+    dispatch_date     datetime                           null,
+    recieve_date      datetime                           null,
+    delivery_date     datetime                           null,
+    consign_status    varchar(45)                        null,
+    bill_type         varchar(45)                        null,
+    invoice_number    varchar(45)                        null,
+    invoice_value     double                             null,
+    eway_bill_number  varchar(45)                        null,
+    branch_code       varchar(45)                        null,
+    booking_type      varchar(45)                        null,
+    dest_branch_code  varchar(45)                        null,
+    cancel_lr         tinyint                            null,
+    remarks           varchar(255)                       null,
+    modified_date     datetime                           null,
+    employee_name     varchar(45)                        null,
+    loading           bigint   default 0                 null,
+    loading_charge    bigint   default 0                 null,
+    Paid_Via          varchar(45)                        null
+)
+    charset = utf8mb4;
+
+create table booking_article_detail
+(
+    row_num         bigint auto_increment
+        primary key,
+    loading_reciept varchar(50)  not null,
+    article         varchar(100) null,
+    art_qty         varchar(20)  null,
+    art_type        varchar(50)  null,
+    said_to_contain varchar(255) null,
+    art_amt         varchar(20)  null,
+    total           varchar(20)  null,
+    company_code    varchar(45)  null
+)
+    charset = utf8mb4;
+
+create table booking_receipt_sequence
+(
+    key_code    varchar(40) not null
+        primary key,
+    last_number int         not null
+)
+    charset = utf8mb4;
+
+create table branch_data
+(
+    branch_code         varchar(255) not null
+        primary key,
+    branch_created_by   varchar(255) null,
+    branch_email        varchar(255) null,
+    branch_name         varchar(255) null,
+    branch_opperations  varchar(255) null,
+    branch_pan          varchar(255) null,
+    branch_phone        varchar(15)  null,
+    branch_type         varchar(255) null,
+    company_code        varchar(255) null,
+    contact_person_name varchar(255) null,
+    create_date         date         null,
+    gst_in              varchar(255) null,
+    is_branch_active    bit          not null,
+    update_date         date         null,
+    branch_phone_alt    varchar(12)  null
+)
+    charset = utf8mb4;
+
+create table company_dto
+(
+    company_code           varchar(255) not null
+        primary key,
+    company_blocked_reason varchar(255) null,
+    company_blocked_by     varchar(255) null,
+    company_full_name      varchar(255) null,
+    createdate             date         null,
+    expiry_date            date         null,
+    group_name             varchar(255) null,
+    is_company_block       bit          not null,
+    logo                   longblob     null,
+    plan                   varchar(255) null,
+    start_date             date         null,
+    update_date            date         null
+)
+    charset = utf8mb4;
+
+create table contacts
+(
+    id          bigint auto_increment
+        primary key,
+    type        varchar(20)                         not null,
+    name        varchar(255)                        not null,
+    mobile      varchar(50)                         null,
+    gst         varchar(50)                         null,
+    address     text                                null,
+    created_at  timestamp default CURRENT_TIMESTAMP null,
+    updated_at  timestamp default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP,
+    branch_code varchar(45)                         null
+);
+
+create index idx_contacts_type_name
+    on contacts (type, name);
+
+create table loading_sheet
+(
+    loading_sheet_number bigint auto_increment
+        primary key,
+    vehicle_number       varchar(30) not null,
+    lr_ids               json        not null,
+    destination_branch   varchar(50) not null,
+    created_date         datetime    null,
+    driver_name          varchar(45) null,
+    driver_mobile        varchar(45) null,
+    vehicle_name         varchar(45) null
+)
+    charset = utf8mb4;
+
+create table region_master
+(
+    state        varchar(50) not null,
+    city         varchar(50) not null,
+    branch_area  varchar(50) not null,
+    branch_code  varchar(45) not null,
+    company_code varchar(45) null,
+    create_date  datetime    null,
+    primary key (state, city, branch_code)
+)
+    charset = utf8mb4;
+
+create table user_data
+(
+    user_id      varchar(255) not null
+        primary key,
+    block_reason varchar(255) null,
+    block_user   bit          not null,
+    blocked_by   varchar(255) null,
+    branch_code  varchar(255) null,
+    company_code varchar(255) null,
+    created_date date         null,
+    email        varchar(255) null,
+    expiry_date  date         null,
+    first_name   varchar(255) null,
+    last_name    varchar(255) null,
+    logo         varchar(255) null,
+    password     varchar(255) null,
+    permissions  varchar(255) null,
+    phone        varchar(255) null,
+    role         varchar(255) null,
+    updated_date date         null,
+    user_name    varchar(255) null
+)
+    charset = utf8mb4;
+
+create table vehicle_master
+(
+    truck_number varchar(45)    not null
+        primary key,
+    company_code varchar(45)    null,
+    vehicle_name varchar(45)    null,
+    capacity     decimal(10, 2) null,
+    owner_name   varchar(45)    null,
+    vehicle_type varchar(45)    null,
+    branch_code  varchar(45)    null,
+    rc_number    varchar(45)    null,
+    created_at   timestamp      null,
+    updated_at   timestamp      null,
+    is_active    tinyint        null,
+    constraint truck_number_UNIQUE
+        unique (truck_number)
+)
+    charset = utf8mb4;
+
+
