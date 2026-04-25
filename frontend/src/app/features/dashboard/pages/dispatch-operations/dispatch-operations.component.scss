@@ -1,0 +1,136 @@
+// Dispatch operations — fully responsive
+
+// AG Grid wrapper — scrollable on mobile
+.grid-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 8px;
+  background: #fff;
+  margin-top: 4px;
+
+  ag-grid-angular {
+    width: 100%;
+    min-width: 1100px; // ensures horizontal scroll on small screens
+  }
+}
+
+::ng-deep .ag-theme-alpine {
+  --ag-header-background-color: #12233a;
+  --ag-header-foreground-color: #cfe8ff;
+  --ag-header-cell-hover-background-color: #1e3a5f;
+  --ag-row-hover-color: #f0f7ff;
+  --ag-odd-row-background-color: #f8fafc;
+  --ag-font-size: 12px;
+  --ag-font-family: 'Poppins', sans-serif;
+
+  .ag-header-cell-label {
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.03em;
+  }
+
+  .ag-cell {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  .ag-paging-panel {
+    font-size: 11px;
+  }
+}
+
+// Status cell badge
+::ng-deep .status-cell {
+  &.booked {
+    color: #1565c0;
+    font-weight: 600;
+  }
+}
+
+// Dispatch button bar
+.dispatch-bar {
+  margin-top: 12px;
+
+  button {
+    font-weight: 600 !important;
+  }
+}
+
+// Booking Summary
+.summary-section {
+  margin-top: 20px;
+}
+
+.summary-title {
+  text-align: center;
+  color: #d32f2f;
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+}
+
+.summary-table-wrapper {
+  overflow-x: auto;
+}
+
+.summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  background: #fff;
+  border: 1px solid #ccc;
+
+  th, td {
+    padding: 8px 14px;
+    text-align: center;
+    border: 1px solid #ccc;
+  }
+
+  th {
+    background: #12233a;
+    color: #cfe8ff;
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+  }
+
+  td {
+    color: #1a2744;
+  }
+
+  .total-row {
+    background: #e8f5e9;
+    font-weight: 700;
+
+    td {
+      color: #2e7d32;
+    }
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .summary-table {
+    font-size: 11px;
+
+    th, td {
+      padding: 6px 8px;
+    }
+  }
+}
+
+@media (max-width: 520px) {
+  .summary-title {
+    font-size: 13px;
+  }
+
+  .summary-table {
+    font-size: 10px;
+
+    th, td {
+      padding: 5px 6px;
+    }
+  }
+}

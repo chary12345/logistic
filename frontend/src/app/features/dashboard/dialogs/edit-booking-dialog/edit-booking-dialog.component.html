@@ -1,0 +1,352 @@
+<div class="edit-booking-dialog">
+  <!-- Dialog Header -->
+  <h2 mat-dialog-title class="dialog-title">
+    <div class="title-left">
+      <mat-icon>edit_note</mat-icon>
+      <span>Edit Booking</span>
+      <span class="lr-badge">LR: {{ data.lr }}</span>
+    </div>
+    <button mat-icon-button class="close-btn" (click)="cancel()" matTooltip="Close">
+      <mat-icon>close</mat-icon>
+    </button>
+  </h2>
+
+  <mat-dialog-content class="dialog-content">
+    <!-- Loading State -->
+    <div *ngIf="loadingData" class="loading-state">
+      <mat-spinner diameter="40"></mat-spinner>
+      <span>Loading booking data...</span>
+    </div>
+
+    <!-- Form Content -->
+    <form *ngIf="!loadingData" [formGroup]="form" class="edit-form">
+
+      <!-- Payment Mode Section -->
+      <div class="payment-mode-section">
+        <span class="pm-label">Payment Mode:</span>
+        <div class="pm-buttons">
+          <button type="button" class="pm-btn" [class.active]="paymentMode === 'PAID'"
+                  (click)="setPaymentMode('PAID')">
+            <span class="pm-key">F7</span> PAID
+          </button>
+          <button type="button" class="pm-btn" [class.active]="paymentMode === 'TO PAY'"
+                  (click)="setPaymentMode('TO PAY')">
+            <span class="pm-key">F8</span> TO PAY
+          </button>
+          <button type="button" class="pm-btn" [class.active]="paymentMode === 'TBB'"
+                  (click)="setPaymentMode('TBB')">
+            <span class="pm-key">F9</span> TBB
+          </button>
+        </div>
+      </div>
+
+      <!-- Delivery Destination -->
+      <div class="form-section">
+        <div class="section-header">
+          <mat-icon>location_on</mat-icon>
+          <span>Delivery Destination</span>
+        </div>
+        <mat-form-field class="full-width">
+          <mat-label>Select destination</mat-label>
+          <mat-select formControlName="deliveryDestination">
+            <div class="search-box" (keydown)="$event.stopPropagation()" (click)="$event.stopPropagation()">
+              <mat-icon class="search-icon">search</mat-icon>
+              <input [formControl]="destinationFilterCtrl" placeholder="Search branch..."
+                     autocomplete="off" class="search-input">
+            </div>
+            <mat-option *ngFor="let d of filteredDestinations" [value]="d">{{ d }}</mat-option>
+            <mat-option *ngIf="filteredDestinations.length === 0" disabled>No branches found</mat-option>
+          </mat-select>
+          <mat-error *ngIf="form.get('deliveryDestination')?.hasError('required')">Required</mat-error>
+        </mat-form-field>
+      </div>
+
+      <!-- Consignor Section -->
+      <div class="form-section">
+        <div class="section-header">
+          <mat-icon>person</mat-icon>
+          <span>Consignor (From)</span>
+        </div>
+        <div class="form-grid">
+          <mat-form-field>
+            <mat-label>Name</mat-label>
+            <input matInput formControlName="consignorName" autocomplete="off">
+            <mat-error *ngIf="form.get('consignorName')?.hasError('required')">Required</mat-error>
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>Mobile</mat-label>
+            <input matInput formControlName="consignorMobile" maxlength="10" autocomplete="off">
+            <mat-error *ngIf="form.get('consignorMobile')?.hasError('required')">Required</mat-error>
+            <mat-error *ngIf="form.get('consignorMobile')?.hasError('pattern')">Invalid mobile</mat-error>
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>GST</mat-label>
+            <input matInput formControlName="consignorGST" autocomplete="off">
+          </mat-form-field>
+          <mat-form-field class="full-width-mobile">
+            <mat-label>Address</mat-label>
+            <input matInput formControlName="consignorAddress" autocomplete="off">
+            <mat-error *ngIf="form.get('consignorAddress')?.hasError('required')">Required</mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Consignee Section -->
+      <div class="form-section">
+        <div class="section-header">
+          <mat-icon>person_outline</mat-icon>
+          <span>Consignee (To)</span>
+        </div>
+        <div class="form-grid">
+          <mat-form-field>
+            <mat-label>Name</mat-label>
+            <input matInput formControlName="consigneeName" autocomplete="off">
+            <mat-error *ngIf="form.get('consigneeName')?.hasError('required')">Required</mat-error>
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>Mobile</mat-label>
+            <input matInput formControlName="consigneeMobile" maxlength="10" autocomplete="off">
+            <mat-error *ngIf="form.get('consigneeMobile')?.hasError('required')">Required</mat-error>
+            <mat-error *ngIf="form.get('consigneeMobile')?.hasError('pattern')">Invalid mobile</mat-error>
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>GST</mat-label>
+            <input matInput formControlName="consigneeGST" autocomplete="off">
+          </mat-form-field>
+          <mat-form-field class="full-width-mobile">
+            <mat-label>Address</mat-label>
+            <input matInput formControlName="consigneeAddress" autocomplete="off">
+            <mat-error *ngIf="form.get('consigneeAddress')?.hasError('required')">Required</mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Article Details -->
+      <div class="form-section">
+        <div class="section-header">
+          <mat-icon>inventory_2</mat-icon>
+          <span>Article Details</span>
+        </div>
+
+        <!-- Desktop Table View -->
+        <div class="articles-table-wrap">
+          <table class="articles-table">
+            <thead>
+              <tr>
+                <th>Article</th>
+                <th>Qty</th>
+                <th>Type</th>
+                <th>Said To Contain</th>
+                <th>Rate (₹)</th>
+                <th>Total</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody formArrayName="articles">
+              <tr *ngFor="let row of articles.controls; let i = index" [formGroupName]="i">
+                <td>
+                  <mat-select formControlName="article" class="mini-select" placeholder="Select..." panelClass="stc-panel">
+                    <div class="stc-search-box" (keydown)="$event.stopPropagation()" (click)="$event.stopPropagation()">
+                      <mat-icon class="search-icon">search</mat-icon>
+                      <input [formControl]="articleFilterCtrl" placeholder="Search..." autocomplete="off" class="stc-search-input">
+                    </div>
+                    <mat-option *ngFor="let a of filteredArticleOptions" [value]="a">{{ a }}</mat-option>
+                    <mat-option *ngIf="filteredArticleOptions.length === 0" disabled>No match</mat-option>
+                  </mat-select>
+                </td>
+                <td>
+                  <input type="number" formControlName="artQuantity" class="mini-input"
+                         (input)="onArticleChange(i)" min="0">
+                </td>
+                <td>
+                  <mat-select formControlName="artType" class="mini-select" placeholder="Select..." panelClass="stc-panel">
+                    <div class="stc-search-box" (keydown)="$event.stopPropagation()" (click)="$event.stopPropagation()">
+                      <mat-icon class="search-icon">search</mat-icon>
+                      <input [formControl]="typeFilterCtrl" placeholder="Search..." autocomplete="off" class="stc-search-input">
+                    </div>
+                    <mat-option *ngFor="let t of filteredArticleTypes" [value]="t">{{ t }}</mat-option>
+                    <mat-option *ngIf="filteredArticleTypes.length === 0" disabled>No match</mat-option>
+                  </mat-select>
+                </td>
+                <td>
+                  <mat-select formControlName="saidToContain" class="mini-select" placeholder="Select..." panelClass="stc-panel">
+                    <div class="stc-search-box" (keydown)="$event.stopPropagation()" (click)="$event.stopPropagation()">
+                      <mat-icon class="search-icon">search</mat-icon>
+                      <input [formControl]="stcFilterCtrl" placeholder="Search..." autocomplete="off" class="stc-search-input">
+                    </div>
+                    <mat-option *ngFor="let s of filteredSaidToContains" [value]="s">{{ s }}</mat-option>
+                    <mat-option *ngIf="filteredSaidToContains.length === 0" disabled>No match</mat-option>
+                  </mat-select>
+                </td>
+                <td>
+                  <input type="number" formControlName="artAmount" class="mini-input"
+                         (input)="onArticleChange(i)" min="0">
+                </td>
+                <td class="total-cell">₹{{ row.get('total')?.value || 0 }}</td>
+                <td>
+                  <button type="button" mat-icon-button color="warn" (click)="removeArticle(i)"
+                          [disabled]="articles.length === 1" matTooltip="Remove">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Mobile Card View -->
+        <div class="articles-cards" formArrayName="articles">
+          <div *ngFor="let row of articles.controls; let i = index" [formGroupName]="i" class="article-card">
+            <div class="article-card-header">
+              <span>Article {{ i + 1 }}</span>
+              <button type="button" mat-icon-button color="warn" (click)="removeArticle(i)"
+                      [disabled]="articles.length === 1">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+            <div class="article-card-body">
+              <div class="card-field">
+                <label>Article</label>
+                <mat-select formControlName="article" class="card-mat-select" placeholder="Select..." panelClass="stc-panel">
+                  <div class="stc-search-box" (keydown)="$event.stopPropagation()" (click)="$event.stopPropagation()">
+                    <mat-icon class="search-icon">search</mat-icon>
+                    <input [formControl]="articleFilterCtrl" placeholder="Search..." autocomplete="off" class="stc-search-input">
+                  </div>
+                  <mat-option *ngFor="let a of filteredArticleOptions" [value]="a">{{ a }}</mat-option>
+                </mat-select>
+              </div>
+              <div class="card-field">
+                <label>Quantity</label>
+                <input type="number" formControlName="artQuantity" class="card-input"
+                       (input)="onArticleChange(i)" min="0">
+              </div>
+              <div class="card-field">
+                <label>Type</label>
+                <mat-select formControlName="artType" class="card-mat-select" placeholder="Select..." panelClass="stc-panel">
+                  <div class="stc-search-box" (keydown)="$event.stopPropagation()" (click)="$event.stopPropagation()">
+                    <mat-icon class="search-icon">search</mat-icon>
+                    <input [formControl]="typeFilterCtrl" placeholder="Search..." autocomplete="off" class="stc-search-input">
+                  </div>
+                  <mat-option *ngFor="let t of filteredArticleTypes" [value]="t">{{ t }}</mat-option>
+                </mat-select>
+              </div>
+              <div class="card-field">
+                <label>Said To Contain</label>
+                <mat-select formControlName="saidToContain" class="card-mat-select" placeholder="Select..." panelClass="stc-panel">
+                  <div class="stc-search-box" (keydown)="$event.stopPropagation()" (click)="$event.stopPropagation()">
+                    <mat-icon class="search-icon">search</mat-icon>
+                    <input [formControl]="stcFilterCtrl" placeholder="Search..." autocomplete="off" class="stc-search-input">
+                  </div>
+                  <mat-option *ngFor="let s of filteredSaidToContains" [value]="s">{{ s }}</mat-option>
+                </mat-select>
+              </div>
+              <div class="card-field">
+                <label>Rate (₹)</label>
+                <input type="number" formControlName="artAmount" class="card-input"
+                       (input)="onArticleChange(i)" min="0">
+              </div>
+              <div class="card-field total">
+                <label>Total</label>
+                <span class="total-value">₹{{ row.get('total')?.value || 0 }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button type="button" mat-stroked-button color="primary" class="add-article-btn" (click)="addArticle()">
+          <mat-icon>add</mat-icon> Add Article
+        </button>
+      </div>
+
+      <!-- Invoice & E-Waybill -->
+      <div class="form-section">
+        <div class="section-header">
+          <mat-icon>receipt</mat-icon>
+          <span>Invoice & E-Waybill</span>
+        </div>
+        <div class="form-grid invoice-grid">
+          <mat-form-field>
+            <mat-label>Invoice No.</mat-label>
+            <input matInput formControlName="invoiceNo" autocomplete="off">
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>Invoice Value</mat-label>
+            <input matInput type="number" formControlName="invoiceValue" autocomplete="off">
+          </mat-form-field>
+          <mat-form-field>
+            <mat-label>E-Waybill</mat-label>
+            <input matInput formControlName="ewayBill" maxlength="12" autocomplete="off">
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Paid Via (only for PAID mode) -->
+      <div class="form-section" *ngIf="showPaidVia">
+        <div class="section-header">
+          <mat-icon>payment</mat-icon>
+          <span>Payment Method</span>
+        </div>
+        <mat-form-field class="paid-via-field">
+          <mat-label>Paid Via</mat-label>
+          <mat-select formControlName="paidVia">
+            <mat-option value="CASH">Cash</mat-option>
+            <mat-option value="ONLINE">Online</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <!-- Charges Summary -->
+      <div class="charges-section">
+        <div class="section-header">
+          <mat-icon>calculate</mat-icon>
+          <span>Charges</span>
+        </div>
+        <div class="charges-grid">
+          <mat-form-field class="charge-field">
+            <mat-label>Loading Charge</mat-label>
+            <span matPrefix>₹&nbsp;</span>
+            <input matInput type="number" formControlName="loadingCharge" min="0">
+          </mat-form-field>
+          <mat-form-field class="charge-field">
+            <mat-label>LR Charge</mat-label>
+            <span matPrefix>₹&nbsp;</span>
+            <input matInput type="number" formControlName="lrCharge" min="0">
+          </mat-form-field>
+        </div>
+        <div class="charges-summary">
+          <div class="charge-row">
+            <span>Freight</span>
+            <span>₹{{ form.get('freight')?.value || 0 }}</span>
+          </div>
+          <div class="charge-row">
+            <span>SGST (2.5%)</span>
+            <span>₹{{ form.get('sgst')?.value || 0 }}</span>
+          </div>
+          <div class="charge-row">
+            <span>CGST (2.5%)</span>
+            <span>₹{{ form.get('cgst')?.value || 0 }}</span>
+          </div>
+          <div class="charge-row">
+            <span>IGST (5%)</span>
+            <span>₹{{ form.get('igst')?.value || 0 }}</span>
+          </div>
+          <mat-divider></mat-divider>
+          <div class="charge-row grand-total">
+            <span>Grand Total</span>
+            <span>₹{{ form.get('grandTotal')?.value || 0 }}</span>
+          </div>
+        </div>
+      </div>
+    </form>
+  </mat-dialog-content>
+
+  <!-- Dialog Actions -->
+  <mat-dialog-actions class="dialog-actions" *ngIf="!loadingData">
+    <button mat-button type="button" (click)="cancel()">Cancel</button>
+    <button mat-raised-button color="primary" type="button" (click)="save()" [disabled]="saving">
+      <mat-spinner *ngIf="saving" diameter="18" class="btn-spinner"></mat-spinner>
+      <mat-icon *ngIf="!saving">save</mat-icon>
+      {{ saving ? 'Saving...' : 'Update Booking' }}
+    </button>
+  </mat-dialog-actions>
+</div>

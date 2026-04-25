@@ -1,0 +1,665 @@
+.booking-page {
+  padding-bottom: 8px;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  @media (max-width: 520px) {
+    padding: 0 2px 40px 2px;
+  }
+}
+
+// Edit mode banner
+.edit-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-sm);
+  padding: var(--sp-sm) var(--sp-md);
+  background: #e0f2fe;
+  border: 1px solid #7dd3fc;
+  border-radius: var(--radius-md);
+  margin-bottom: var(--sp-md);
+  font-size: var(--fs-base);
+  font-weight: 600;
+  color: #0369a1;
+
+  .edit-banner-info {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-sm);
+    min-width: 0;
+
+    mat-icon {
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    span {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+
+  .new-booking-btn {
+    font-size: var(--fs-sm);
+    height: 30px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+
+    mat-icon {
+      font-size: 15px;
+    }
+  }
+}
+
+// Inline loading
+.loading-inline {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-md);
+  padding: var(--sp-sm) var(--sp-md);
+  background: #f8fafc;
+  border-radius: var(--radius-md);
+  margin-bottom: var(--sp-md);
+  color: var(--text-secondary);
+  font-size: var(--fs-base);
+}
+
+// Payment Mode Banner
+.pm-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  padding: 4px var(--sp-sm);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--sp-sm);
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  flex-wrap: wrap;
+
+  &.pm-paid {
+    background: #d1fae5;
+    border-color: #6ee7b7;
+  }
+
+  &.pm-to-pay {
+    background: #fef3c7;
+    border-color: #fcd34d;
+  }
+
+  &.pm-tbb {
+    background: #e0e7ff;
+    border-color: #a5b4fc;
+  }
+}
+
+.pm-mode-label {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.pm-keys {
+  display: flex;
+  gap: var(--sp-sm);
+  flex-wrap: wrap;
+}
+
+.pm-key {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: var(--radius-sm);
+  padding: 3px 8px;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s;
+  color: var(--text-primary);
+  font-family: 'Poppins', sans-serif;
+
+  kbd {
+    background: #e2e8f0;
+    border-radius: 3px;
+    padding: 1px 4px;
+    font-size: var(--fs-xs);
+  }
+
+  &:hover {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+
+    kbd {
+      background: rgba(255, 255, 255, 0.2);
+    }
+  }
+
+  &.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+    box-shadow: 0 0 8px rgba(11, 94, 215, 0.35);
+
+    kbd {
+      background: rgba(255, 255, 255, 0.2);
+    }
+  }
+}
+
+// Layout
+.booking-grid {
+  display: grid;
+  grid-template-columns: 1fr 220px;
+  grid-template-rows: auto auto;
+  gap: var(--sp-sm);
+  align-items: start;
+  min-width: 0;
+  overflow: hidden;
+
+  .form-col {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .charges-col {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .submit-row {
+    grid-column: 1;
+    grid-row: 2;
+  }
+}
+
+.form-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-sm);
+  min-width: 0;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 2fr;
+  gap: 6px;
+  min-width: 0;
+
+  // Prevent children from blowing out the grid
+  > * {
+    min-width: 0;
+  }
+
+  .full-col {
+    grid-column: 1 / -1;
+  }
+
+  &.invoice-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  @media (max-width: 960px) {
+    grid-template-columns: repeat(2, 1fr);
+
+    &.invoice-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 520px) {
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+
+    &.invoice-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  // Ensure mat-form-fields respect grid cell width
+  ::ng-deep .mat-mdc-form-field {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+.dest-field {
+  width: 100%;
+  max-width: 400px;
+
+  .mat-mdc-select-value-text {
+    font-size: var(--fs-base) !important;
+  }
+
+  @media (max-width: 520px) {
+    max-width: 100%;
+  }
+}
+
+// Autocomplete wrapper
+.autocomplete-wrap {
+  position: relative;
+  min-width: 0;
+
+  .field-suffix-icon {
+    position: absolute;
+    right: 8px;
+    top: 40%;
+    transform: translateY(-80%);
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    color: var(--text-secondary);
+    pointer-events: none;
+  }
+}
+
+// autocomplete suggestion list
+.suggestion-list {
+  position: absolute;
+  top: calc(100% - 14px);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  z-index: 100;
+  max-height: 160px;
+  overflow-y: auto;
+  box-shadow: var(--shadow-md);
+}
+
+.suggestion-item {
+  padding: 7px 10px;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+  border-bottom: 1px solid #f1f5f9;
+
+  &:hover {
+    background: #f0f7ff;
+  }
+}
+
+// Delivery destination select search box
+.dest-search-box {
+  display: flex;
+  align-items: center;
+  padding: var(--sp-sm) var(--sp-md);
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 10;
+  border-bottom: 1px solid var(--border);
+
+  .search-icon {
+    font-size: 18px;
+    height: 18px;
+    width: 18px;
+    color: var(--text-secondary);
+    margin-right: var(--sp-sm);
+  }
+
+  .dest-search-input {
+    border: none;
+    outline: none;
+    font-size: var(--fs-base);
+    flex: 1;
+    font-family: 'Poppins', sans-serif;
+    color: var(--text-primary);
+  }
+}
+
+// Said To Contain search box (inside mini mat-select dropdown)
+.stc-search-box {
+  display: flex;
+  align-items: center;
+  padding: var(--sp-xs) var(--sp-sm);
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 10;
+  border-bottom: 1px solid var(--border);
+
+  .search-icon {
+    font-size: 15px;
+    height: 15px;
+    width: 15px;
+    color: var(--text-secondary);
+    margin-right: var(--sp-xs);
+  }
+
+  .stc-search-input {
+    border: none;
+    outline: none;
+    font-size: var(--fs-sm);
+    flex: 1;
+    font-family: 'Poppins', sans-serif;
+    color: var(--text-primary);
+  }
+}
+
+// Table scroll container for mobile responsiveness
+.table-scroll-container {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--sp-xs);
+  background: #fff;
+
+  // Custom scrollbar
+  &::-webkit-scrollbar {
+    height: 6px;
+  }
+  &::-webkit-scrollbar-track {
+    background: #f1f5f9;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+  }
+}
+
+// Article table
+.articles-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+  min-width: 750px; // Ensure columns don't squash too much
+
+  th {
+    background: var(--sidebar);
+    color: #cfe8ff;
+    padding: 8px 6px;
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--border);
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  tr:hover td {
+    background: #f0f7ff;
+  }
+
+  // Fix mat-select dropdown display inside table cells
+  .mat-mdc-form-field {
+    width: 100%;
+  }
+}
+
+.mini-select {
+  width: 100%;
+  min-width: 60px;
+  font-size: var(--fs-sm) !important;
+
+  // Ensure the select trigger is visible & properly sized in table
+  &.mat-mdc-select {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+  }
+}
+
+.mini-input {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0 5px;
+  height: 28px;
+  line-height: 26px;
+  box-sizing: border-box;
+  font-size: var(--fs-sm);
+  width: 100%;
+  min-width: 45px;
+  max-width: 100px;
+  font-family: 'Poppins', sans-serif;
+  outline: none;
+
+  &:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(11, 94, 215, 0.15);
+  }
+}
+
+.total-cell {
+  font-weight: 700;
+  color: var(--primary);
+  white-space: nowrap;
+}
+
+.add-row-btn {
+  margin-top: var(--sp-sm);
+  font-size: var(--fs-sm);
+}
+
+// Paid Via
+.paid-via-wrap {
+  margin-top: var(--sp-sm);
+  max-width: 180px;
+
+  .paid-via-label {
+    font-weight: 600;
+    font-size: var(--fs-base);
+    margin-bottom: 4px;
+    display: block;
+    color: var(--text-primary);
+  }
+}
+
+// Submit
+.submit-btn {
+  height: 34px;
+  padding: 0 16px;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+
+  mat-icon {
+    font-size: 15px;
+    width: 15px;
+    height: 15px;
+  }
+
+  .btn-spinner {
+    margin-right: 4px;
+    display: inline-block;
+  }
+}
+
+.reset-btn {
+  height: 34px;
+  padding: 0 16px;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+
+  mat-icon {
+    font-size: 15px;
+    width: 15px;
+    height: 15px;
+  }
+}
+
+// Charges panel
+.charges-col {
+  position: sticky;
+  top: 12px;
+}
+
+.charges-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  .charge-field {
+    margin-top: var(--sp-sm);
+  }
+}
+
+.charge-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--fs-sm);
+  padding: 2px 0;
+  border-bottom: 1px dashed var(--border);
+}
+
+.c-label {
+  color: var(--text-secondary);
+  font-size: var(--fs-xs);
+}
+
+.c-value {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: var(--fs-sm);
+}
+
+.grand-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(90deg, var(--primary), #0097d7);
+  color: #fff;
+  padding: 6px var(--sp-sm);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.grand-total-value {
+  font-size: var(--fs-lg);
+  font-weight: 800;
+}
+
+.charge-divider {
+  margin: 4px 0;
+}
+
+// Responsive
+@media (max-width: 960px) {
+  .booking-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+
+    .form-col {
+      grid-column: 1;
+      grid-row: auto;
+      order: 0;
+    }
+
+    .charges-col {
+      grid-column: 1;
+      grid-row: auto;
+      position: relative;
+      top: 0;
+      order: 1;
+    }
+
+    .submit-row {
+      grid-column: 1;
+      grid-row: auto;
+      order: 2;
+    }
+  }
+}
+
+@media (max-width: 520px) {
+  .pm-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 6px;
+  }
+
+  .booking-grid {
+    gap: 6px;
+  }
+
+  .edit-banner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .submit-btn {
+    width: 100%;
+    justify-content: center;
+    height: 40px;
+    font-size: 13px;
+  }
+
+  .reset-btn {
+    width: 100%;
+    justify-content: center;
+    height: 40px;
+  }
+
+  .mini-input {
+    max-width: none;
+  }
+
+  .grand-total-value {
+    font-size: 16px;
+  }
+
+  .paid-via-wrap {
+    max-width: 100%;
+  }
+
+  .charges-card {
+    .charge-field {
+      width: 100%;
+    }
+  }
+
+  .suggestion-list {
+    max-height: 120px;
+  }
+}
+
+// Article table responsive (mobile-friendly horizontal scroll)
+@media (max-width: 768px) {
+  .articles-table {
+    th, td {
+      padding: 3px 3px;
+      font-size: var(--fs-xs);
+    }
+  }
+
+  .mini-select {
+    min-width: 50px;
+    font-size: var(--fs-xs) !important;
+  }
+
+  .mini-input {
+    min-width: 40px;
+    font-size: var(--fs-xs);
+    height: 26px;
+    padding: 0 3px;
+  }
+}
