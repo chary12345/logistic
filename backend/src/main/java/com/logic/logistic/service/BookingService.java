@@ -79,6 +79,8 @@ public class BookingService {
 				booking.setConsignorMobile(dto.getConsignorMobile());
 			if (dto.getConsignorAddress() != null)
 				booking.setConsignorAddress(dto.getConsignorAddress());
+			if (dto.getConsignorGST() != null)
+				booking.setConsignorGST(dto.getConsignorGST());
 
 			if (dto.getConsigneeName() != null)
 				booking.setConsigneeName(dto.getConsigneeName());
@@ -86,6 +88,8 @@ public class BookingService {
 				booking.setConsigneeMobile(dto.getConsigneeMobile());
 			if (dto.getConsigneeAddress() != null)
 				booking.setConsigneeAddress(dto.getConsigneeAddress());
+			if (dto.getConsigneeGST() != null)
+				booking.setConsigneeGST(dto.getConsigneeGST());
 			booking.setLoading(dto.getLoading());
 			booking.setLoadingCharge(dto.getLoadingCharge());
 			
@@ -181,7 +185,15 @@ public class BookingService {
 	public BookingPageResponse getReports(LocalDateTime from, LocalDateTime to, String status, String lastId,
 			String branchCode) {
 		int limit = 10;
-		Pageable pageable = PageRequest.of(0, limit, Sort.by("bookingDate").descending());
+		String sortField = "bookingDate";
+		if ("DISPATCHED".equals(status)) {
+			sortField = "dispatchDate";
+		} else if ("RECEIVED".equals(status)) {
+			sortField = "recieveDate";
+		} else if ("DELIVERED".equals(status)) {
+			sortField = "deliveryDate";
+		}
+		Pageable pageable = PageRequest.of(0, limit, Sort.by(sortField).descending());
 		List<Booking> bookings;
 
 		if (lastId == null) {
@@ -270,6 +282,8 @@ public class BookingService {
 		existing.setConsigneeName(dto.getConsigneeName());
 		existing.setConsigneeMobile(dto.getConsigneeMobile());
 		existing.setConsigneeAddress(dto.getConsigneeAddress());
+		existing.setConsignorGST(dto.getConsignorGST());
+		existing.setConsigneeGST(dto.getConsigneeGST());
 		existing.setFreight(dto.getFreight());
 		existing.setLoading(dto.getLoading());
 		existing.setLoadingCharge(dto.getLoadingCharge());
@@ -362,7 +376,12 @@ public class BookingService {
 	}
 
 	public List<String> getSaidToContainsByCompany(String companyCode) {
-		 return articleRepo.findDistinctSaidToContainsByCompanyCode(companyCode);
+		 List<String> list = articleRepo.findDistinctSaidToContainsByCompanyCode(companyCode);
+		 if (list == null) return new ArrayList<>();
+		 return list.stream()
+		            .filter(s -> s != null && !s.trim().isEmpty())
+		            .sorted()
+		            .toList();
 	}
 
 
