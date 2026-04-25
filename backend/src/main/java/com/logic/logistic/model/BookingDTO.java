@@ -8,10 +8,12 @@ public class BookingDTO {
 	private String loadingReciept;
     private String consignorName;
     private String consignorMobile;
+    private String consignorGST;
     private String consignorAddress;
 
     private String consigneeName;
     private String consigneeMobile;
+    private String consigneeGST;
     private String consigneeAddress;
 
     private List<ArticleDetail> articleDetails;
@@ -210,6 +212,17 @@ public class BookingDTO {
 		this.paidVia = paidVia;
 	}
 	
+	public String getConsignorGST() {
+		return consignorGST;
+	}
+	public void setConsignorGST(String consignorGST) {
+		this.consignorGST = consignorGST;
+	}
+	public String getConsigneeGST() {
+		return consigneeGST;
+	}
+	public void setConsigneeGST(String consigneeGST) {
+		this.consigneeGST = consigneeGST;
+	}
 
-    
 }

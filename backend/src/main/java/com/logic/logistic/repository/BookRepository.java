@@ -26,9 +26,9 @@ SELECT b FROM Booking b
 WHERE 
 (
     (:status = 'BOOKED' AND b.bookingDate BETWEEN :from AND :to) OR
-    (:status = 'DISPATCHED' AND b.dispatchDate BETWEEN :from AND :to) OR
-    (:status = 'RECEIVED' AND b.recieveDate BETWEEN :from AND :to) OR
-    (:status = 'DELIVERED' AND b.deliveryDate BETWEEN :from AND :to)
+    (:status = 'DISPATCHED' AND COALESCE(b.dispatchDate, b.bookingDate) BETWEEN :from AND :to) OR
+    (:status = 'RECEIVED' AND COALESCE(b.recieveDate, b.bookingDate) BETWEEN :from AND :to) OR
+    (:status = 'DELIVERED' AND COALESCE(b.deliveryDate, b.bookingDate) BETWEEN :from AND :to)
 )
 AND b.consignStatus = :status 
 AND 
@@ -57,9 +57,9 @@ SELECT b FROM Booking b
 WHERE 
 (
     (:status = 'BOOKED' AND b.bookingDate BETWEEN :from AND :to) OR
-    (:status = 'DISPATCHED' AND b.dispatchDate BETWEEN :from AND :to) OR
-    (:status = 'RECEIVED' AND b.recieveDate BETWEEN :from AND :to) OR
-    (:status = 'DELIVERED' AND b.deliveryDate BETWEEN :from AND :to)
+    (:status = 'DISPATCHED' AND COALESCE(b.dispatchDate, b.bookingDate) BETWEEN :from AND :to) OR
+    (:status = 'RECEIVED' AND COALESCE(b.recieveDate, b.bookingDate) BETWEEN :from AND :to) OR
+    (:status = 'DELIVERED' AND COALESCE(b.deliveryDate, b.bookingDate) BETWEEN :from AND :to)
 )
 AND b.consignStatus = :status 
 AND 
@@ -67,7 +67,7 @@ AND
     (:status IN ('BOOKED','DISPATCHED') AND b.BranchCode = :branchCode) OR
     (:status IN ('RECEIVED','DELIVERED') AND b.destinationBranchCode = :branchCode)
 )
-AND b.id < :lastId
+AND b.loadingReciept < :lastId
 ORDER BY 
 CASE 
     WHEN :status = 'BOOKED' THEN b.bookingDate

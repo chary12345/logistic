@@ -42,10 +42,11 @@ public class OpperationController {
 
 	@GetMapping("/fetchReceivedLrs")
 	public ResponseEntity<List<Booking>> getReceivedLrs(
-			@RequestParam String destinationBranchCode) {
+			@RequestParam String destinationBranchCode,
+			@RequestParam(required = false) String lrNumber) {
 
 		return ResponseEntity.ok(
-				operationService.getReceivedLrsForDelivery(destinationBranchCode)
+				operationService.getReceivedLrsForDelivery(destinationBranchCode, lrNumber)
 		);
 	}
 
