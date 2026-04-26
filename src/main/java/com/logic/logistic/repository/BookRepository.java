@@ -108,12 +108,19 @@ END DESC
 			@Param("status") String status, @Param("region") String region, @Param("subregion") String subregion,
 			@Param("branchCode") String branchCode, @Param("employeeName") String employeeName);
 
-	@Query("SELECT DISTINCT (TRIM(r.id.branchCode)) " + "FROM RegionMasterDto r "
-			+ "WHERE (:state IS NULL OR (TRIM(r.id.region)) = (TRIM(:state))) "
-			+ "AND (:city IS NULL OR (TRIM(r.id.subRegion)) = (TRIM(:city))) "
-			+ "AND (:branchCode IS NULL OR (TRIM(r.id.branchCode)) = (TRIM(:branchCode)))")
-	List<String> getlistofBranchcodes(@Param("city") String city, @Param("state") String state,
-			@Param("branchCode") String branchCode);
+	@Query(value = "SELECT DISTINCT branch_code " +
+			"FROM region_master " +
+			"WHERE company_code = :companyCode " +
+			"AND (:state IS NULL OR state = :state) " +
+			"AND (:city IS NULL OR city = :city) " +
+			"AND (:branchCode IS NULL OR branch_code = :branchCode)",
+			nativeQuery = true)
+	List<String> getlistofBranchcodes(
+			@Param("city") String city,
+			@Param("state") String state,
+			@Param("branchCode") String branchCode,
+			@Param("companyCode") String companyCode
+	);
 
 	@Query("SELECT b FROM Booking b " + "WHERE b.bookingDate BETWEEN :fromDate AND :toDate "
 			+ "AND b.BranchCode IN (:branchCodes) " + "AND (:status IS NULL OR b.consignStatus = :status) "
@@ -139,7 +146,7 @@ END DESC
 SELECT b FROM Booking b
 WHERE 
     b.billType = 'TBB'
-    AND b.consignorName = :consignorName
+    AND b.partyName = :consignorName
     AND b.bookingDate BETWEEN :from AND :to
 ORDER BY b.bookingDate DESC
 """)

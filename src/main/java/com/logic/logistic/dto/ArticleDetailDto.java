@@ -9,7 +9,7 @@ public class ArticleDetailDto {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "row_num")
-	private Long id; // ✅ Just a technical identifier
+	private Long id;
 
 
 	@Column(name = "article")

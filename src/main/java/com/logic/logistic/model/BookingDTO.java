@@ -38,6 +38,8 @@ public class BookingDTO {
     private String eWayBillNumber;
     private String employeeName;
     private String paidVia;
+	private String partyName;
+
     
 	public String getConsignorName() {
 		return consignorName;
@@ -209,7 +211,12 @@ public class BookingDTO {
 	public void setPaidVia(String paidVia) {
 		this.paidVia = paidVia;
 	}
-	
 
-    
+	public String getPartyName() {
+		return partyName;
+	}
+
+	public void setPartyName(String partyName) {
+		this.partyName = partyName;
+	}
 }

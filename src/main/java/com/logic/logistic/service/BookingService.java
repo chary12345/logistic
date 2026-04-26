@@ -86,6 +86,8 @@ public class BookingService {
 				booking.setConsigneeMobile(dto.getConsigneeMobile());
 			if (dto.getConsigneeAddress() != null)
 				booking.setConsigneeAddress(dto.getConsigneeAddress());
+			if (dto.getPartyName() != null)
+				booking.setPartyName(dto.getPartyName());
 			booking.setLoading(dto.getLoading());
 			booking.setLoadingCharge(dto.getLoadingCharge());
 			
@@ -131,18 +133,6 @@ public class BookingService {
 		return save;
 	}
 
-	/*
-	 * public BookingPageResponse getBookingReportsBetweenDates(LocalDateTime
-	 * fromDate, LocalDateTime toDate, String status) {
-	 * 
-	 * try { List<Booking> page = bookingRepo.findByBookingDateBetween(fromDate,
-	 * toDate, "BOOKED"); BookingPageResponse response = new BookingPageResponse();
-	 * response.setContent(page);
-	 * 
-	 * logger.info("BookingPageResponse: " + response); return response; } catch
-	 * (Exception e) { logger.info("error BookingPageResponse: " +
-	 * e.getLocalizedMessage()); return null; } }
-	 */
 
 	@Transactional
 	public DispatchResponse dispatchLoad(DispatchRequest request) {
@@ -300,38 +290,16 @@ public class BookingService {
 		}
 	}
 
-//	public BookingPageResponse getGlobalSearchreports(LocalDateTime fromDate, LocalDateTime toDate, String lastId,
-//			String branchCode) {
-//		int limit = 10;
-//		Pageable pageable = PageRequest.of(0, limit, Sort.by("bookingDate").descending());
-//		List<Booking> bookings;
-//
-//		if (lastId == null) {
-//			bookings = bookingRepo.findFirstPageForGlobalSearchreports(fromDate, toDate, pageable, branchCode);
-//		} else {
-//			bookings = bookingRepo.findNextPageForGlobalSearchreports(fromDate, toDate, lastId, pageable, branchCode);
-//		}
-//
-//		BookingPageResponse response = new BookingPageResponse();
-//		response.setContent(bookings);
-//		response.setPageSize(limit);
-//		response.setPageNumber(0);
-//		response.setTotalElements(bookings.size());
-//		response.setTotalPages(1);
-//		response.setLast(bookings.size() < limit);
-//
-//		return response;
-//	}
-
 	public BookingPageResponse getGlobalSearchReports(BookingSearchRequest request) {
 	    int limit = 10;
 	    Pageable pageable = PageRequest.of(0, limit, Sort.by("bookingDate").descending());
 
-	    List<String> branchCodes = bookingRepo.getlistofBranchcodes(
-	        request.getCity(),
-	        request.getState(),
-	        request.getBranchCode()
-	    );
+        List<String> branchCodes = bookingRepo.getlistofBranchcodes(
+                normalize(request.getCity()),
+                normalize(request.getState()),
+                normalize(request.getBranchCode()),
+                request.getCompanyCode()
+        );
 
 	    if (branchCodes.isEmpty()) {
 	        return new BookingPageResponse(); // empty if no branches
@@ -363,6 +331,8 @@ public class BookingService {
 	}
 
 
-
+    private String normalize(String value) {
+        return (value == null || value.trim().isEmpty()) ? null : value.trim();
+    }
 
 }
