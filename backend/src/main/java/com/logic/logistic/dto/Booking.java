@@ -34,12 +34,6 @@ public class Booking {
 	@Column(name = "consignee_address", length = 255)
 	private String consigneeAddress;
 
-	@Column(name = "consignor_gst", length = 20)
-	private String consignorGST;
-
-	@Column(name = "consignee_gst", length = 20)
-	private String consigneeGST;
-
 
 
 	@Column(name = "freight")
@@ -102,7 +96,10 @@ public class Booking {
     
     @Column(name = "Paid_via")
     private String paidVia;
-    
+
+	@Column(name = "party_name")
+	private String partyName;
+
     @Transient
     private String companyCode;
    
@@ -371,20 +368,11 @@ public class Booking {
 		this.nextLr = nextLr;
 	}
 
-	public String getConsignorGST() {
-		return consignorGST;
+	public String getPartyName() {
+		return partyName;
 	}
 
-	public void setConsignorGST(String consignorGST) {
-		this.consignorGST = consignorGST;
+	public void setPartyName(String partyName) {
+		this.partyName = partyName;
 	}
-
-	public String getConsigneeGST() {
-		return consigneeGST;
-	}
-
-	public void setConsigneeGST(String consigneeGST) {
-		this.consigneeGST = consigneeGST;
-	}
-
 }

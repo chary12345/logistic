@@ -79,8 +79,6 @@ public class BookingService {
 				booking.setConsignorMobile(dto.getConsignorMobile());
 			if (dto.getConsignorAddress() != null)
 				booking.setConsignorAddress(dto.getConsignorAddress());
-			if (dto.getConsignorGST() != null)
-				booking.setConsignorGST(dto.getConsignorGST());
 
 			if (dto.getConsigneeName() != null)
 				booking.setConsigneeName(dto.getConsigneeName());
@@ -88,8 +86,8 @@ public class BookingService {
 				booking.setConsigneeMobile(dto.getConsigneeMobile());
 			if (dto.getConsigneeAddress() != null)
 				booking.setConsigneeAddress(dto.getConsigneeAddress());
-			if (dto.getConsigneeGST() != null)
-				booking.setConsigneeGST(dto.getConsigneeGST());
+			if (dto.getPartyName() != null)
+				booking.setPartyName(dto.getPartyName());
 			booking.setLoading(dto.getLoading());
 			booking.setLoadingCharge(dto.getLoadingCharge());
 			
@@ -135,18 +133,6 @@ public class BookingService {
 		return save;
 	}
 
-	/*
-	 * public BookingPageResponse getBookingReportsBetweenDates(LocalDateTime
-	 * fromDate, LocalDateTime toDate, String status) {
-	 * 
-	 * try { List<Booking> page = bookingRepo.findByBookingDateBetween(fromDate,
-	 * toDate, "BOOKED"); BookingPageResponse response = new BookingPageResponse();
-	 * response.setContent(page);
-	 * 
-	 * logger.info("BookingPageResponse: " + response); return response; } catch
-	 * (Exception e) { logger.info("error BookingPageResponse: " +
-	 * e.getLocalizedMessage()); return null; } }
-	 */
 
 	@Transactional
 	public DispatchResponse dispatchLoad(DispatchRequest request) {
@@ -185,15 +171,7 @@ public class BookingService {
 	public BookingPageResponse getReports(LocalDateTime from, LocalDateTime to, String status, String lastId,
 			String branchCode) {
 		int limit = 10;
-		String sortField = "bookingDate";
-		if ("DISPATCHED".equals(status)) {
-			sortField = "dispatchDate";
-		} else if ("RECEIVED".equals(status)) {
-			sortField = "recieveDate";
-		} else if ("DELIVERED".equals(status)) {
-			sortField = "deliveryDate";
-		}
-		Pageable pageable = PageRequest.of(0, limit, Sort.by(sortField).descending());
+		Pageable pageable = PageRequest.of(0, limit, Sort.by("bookingDate").descending());
 		List<Booking> bookings;
 
 		if (lastId == null) {
@@ -282,11 +260,7 @@ public class BookingService {
 		existing.setConsigneeName(dto.getConsigneeName());
 		existing.setConsigneeMobile(dto.getConsigneeMobile());
 		existing.setConsigneeAddress(dto.getConsigneeAddress());
-		existing.setConsignorGST(dto.getConsignorGST());
-		existing.setConsigneeGST(dto.getConsigneeGST());
 		existing.setFreight(dto.getFreight());
-		existing.setLoading(dto.getLoading());
-		existing.setLoadingCharge(dto.getLoadingCharge());
 		existing.setSgst(dto.getSgst());
 		existing.setCgst(dto.getCgst());
 		existing.setIgst(dto.getIgst());
@@ -295,7 +269,6 @@ public class BookingService {
 		existing.seteWayBillNumber(dto.geteWayBillNumber());
 		existing.setDestinationBranchCode(dto.getDestinationBranchCode());
 		existing.setBillType(dto.getBillType());
-		existing.setPaidVia(dto.getPaidVia());
 		existing.setModifiedDate(LocalDateTime.now());
 
 		articleRepo.deleteByLoadingReciept(lr);
@@ -317,38 +290,16 @@ public class BookingService {
 		}
 	}
 
-//	public BookingPageResponse getGlobalSearchreports(LocalDateTime fromDate, LocalDateTime toDate, String lastId,
-//			String branchCode) {
-//		int limit = 10;
-//		Pageable pageable = PageRequest.of(0, limit, Sort.by("bookingDate").descending());
-//		List<Booking> bookings;
-//
-//		if (lastId == null) {
-//			bookings = bookingRepo.findFirstPageForGlobalSearchreports(fromDate, toDate, pageable, branchCode);
-//		} else {
-//			bookings = bookingRepo.findNextPageForGlobalSearchreports(fromDate, toDate, lastId, pageable, branchCode);
-//		}
-//
-//		BookingPageResponse response = new BookingPageResponse();
-//		response.setContent(bookings);
-//		response.setPageSize(limit);
-//		response.setPageNumber(0);
-//		response.setTotalElements(bookings.size());
-//		response.setTotalPages(1);
-//		response.setLast(bookings.size() < limit);
-//
-//		return response;
-//	}
-
 	public BookingPageResponse getGlobalSearchReports(BookingSearchRequest request) {
 	    int limit = 10;
 	    Pageable pageable = PageRequest.of(0, limit, Sort.by("bookingDate").descending());
 
-	    List<String> branchCodes = bookingRepo.getlistofBranchcodes(
-	        request.getCity(),
-	        request.getState(),
-	        request.getBranchCode()
-	    );
+        List<String> branchCodes = bookingRepo.getlistofBranchcodes(
+                normalize(request.getCity()),
+                normalize(request.getState()),
+                normalize(request.getBranchCode()),
+                request.getCompanyCode()
+        );
 
 	    if (branchCodes.isEmpty()) {
 	        return new BookingPageResponse(); // empty if no branches
@@ -376,15 +327,12 @@ public class BookingService {
 	}
 
 	public List<String> getSaidToContainsByCompany(String companyCode) {
-		 List<String> list = articleRepo.findDistinctSaidToContainsByCompanyCode(companyCode);
-		 if (list == null) return new ArrayList<>();
-		 return list.stream()
-		            .filter(s -> s != null && !s.trim().isEmpty())
-		            .sorted()
-		            .toList();
+		 return articleRepo.findDistinctSaidToContainsByCompanyCode(companyCode);
 	}
 
 
-
+    private String normalize(String value) {
+        return (value == null || value.trim().isEmpty()) ? null : value.trim();
+    }
 
 }
