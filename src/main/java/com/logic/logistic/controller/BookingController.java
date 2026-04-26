@@ -3,6 +3,8 @@ package com.logic.logistic.controller;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.logic.logistic.model.*;
+import com.logic.logistic.service.ArticleTypeService;
 import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -19,10 +21,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.logic.logistic.dto.Booking;
 import com.logic.logistic.dto.BookingSearchRequest;
-import com.logic.logistic.model.BookingDTO;
-import com.logic.logistic.model.BookingPageResponse;
-import com.logic.logistic.model.DispatchRequest;
-import com.logic.logistic.model.DispatchResponse;
 import com.logic.logistic.service.BookingService;
 
 @RestController
@@ -32,6 +30,9 @@ public class BookingController {
 
 	@Autowired
 	private BookingService bookingService;
+
+	@Autowired
+	private ArticleTypeService articleTypeService;
 
 	private static final long serialVersionUID = 1L;
 
@@ -97,4 +98,19 @@ public class BookingController {
 	        return bookingService.getSaidToContainsByCompany(companyCode);
 	    }
 
+
+	@PostMapping("/createArticleType")
+	public ResponseEntity<ArticleTypeResponse> createArticleType(
+			@RequestBody ArticleTypeRequest request) {
+
+		return ResponseEntity.ok(articleTypeService.create(request));
+	}
+
+
+	@GetMapping("/fetchArticleTypeList")
+	public ResponseEntity<List<String>> getByCompany(
+			@RequestParam String companyCode) {
+
+		return ResponseEntity.ok(articleTypeService.getByCompany(companyCode));
+	}
 }

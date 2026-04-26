@@ -96,7 +96,10 @@ public class Booking {
     
     @Column(name = "Paid_via")
     private String paidVia;
-    
+
+	@Column(name = "party_name")
+	private String partyName;
+
     @Transient
     private String companyCode;
    
@@ -365,6 +368,11 @@ public class Booking {
 		this.nextLr = nextLr;
 	}
 
+	public String getPartyName() {
+		return partyName;
+	}
 
-
+	public void setPartyName(String partyName) {
+		this.partyName = partyName;
+	}
 }
