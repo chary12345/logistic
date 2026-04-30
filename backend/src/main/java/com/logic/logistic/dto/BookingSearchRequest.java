@@ -6,7 +6,7 @@ public class BookingSearchRequest {
     private String state;
     private String city;
     private String branchCode;
-
+	private String companyCode;
     private String status=null;
     private String lastId;
     private int page;
@@ -64,17 +64,27 @@ public class BookingSearchRequest {
 	public void setPage(int page) {
 		this.page = page;
 	}
-	public BookingSearchRequest(LocalDateTime fromDate, LocalDateTime toDate, String status, String lastId,
-			String branchCode, String city, String state) {
-		super();
-		this.fromDate = fromDate;
-		this.toDate = toDate;
+
+	public String getCompanyCode() {
+		return companyCode;
+	}
+
+	public void setCompanyCode(String companyCode) {
+		this.companyCode = companyCode;
+	}
+
+	public BookingSearchRequest(String state, String city, String branchCode, String companyCode, String status, String lastId, int page, LocalDateTime fromDate, LocalDateTime toDate) {
+		this.state = state;
+		this.city = city;
+		this.branchCode = branchCode;
+		this.companyCode = companyCode;
 		this.status = status;
 		this.lastId = lastId;
-		this.branchCode = branchCode;
-		this.city = city;
-		this.state = state;
+		this.page = page;
+		this.fromDate = fromDate;
+		this.toDate = toDate;
 	}
+
 	public BookingSearchRequest() {
 		super();
 	}
