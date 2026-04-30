@@ -27,6 +27,13 @@ export const appConfig: ApplicationConfig = {
       provide: MAT_SNACK_BAR_DEFAULT_OPTIONS,
       useValue: { duration: 4000, horizontalPosition: 'right', verticalPosition: 'bottom' }
     },
-    provideHighcharts(),
+    provideHighcharts({
+      instance: () => import('highcharts'),
+      modules: () => [
+        import('highcharts/modules/accessibility'),
+        import('highcharts/modules/exporting'),
+        import('highcharts/modules/export-data')
+      ]
+    }),
   ]
 };

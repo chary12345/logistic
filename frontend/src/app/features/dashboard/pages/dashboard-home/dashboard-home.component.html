@@ -7,26 +7,25 @@
       <p class="sub-greeting">{{ branchName }} &mdash; Here's your logistics overview for this month</p>
     </div>
     <div class="header-actions">
-      <div class="next-lr-card">
-        <mat-icon>confirmation_number</mat-icon>
-        <span>Next LR: <strong>{{ nextLR }}</strong></span>
-      </div>
-      <button class="quick-book-btn" routerLink="/dashboard/booking">
+
+      <button class="refresh-btn" mat-stroked-button (click)="loadDashboardData()" [disabled]="loading">
+        <mat-icon>refresh</mat-icon>
+        <span class="d-none d-md-inline">Refresh Data</span>
+      </button>
+      <button class="quick-book-btn" mat-flat-button color="primary" routerLink="/dashboard/booking">
         <mat-icon>add_box</mat-icon>
-        <span>New Booking</span>
+        <span class="d-none d-md-inline">New Booking</span>
       </button>
     </div>
   </div>
 
   <!-- Loading state -->
-  @if (loading) {
-    <div class="loading-container">
-      <mat-spinner diameter="40"></mat-spinner>
-      <p>Loading dashboard data...</p>
-    </div>
-  }
+  <div class="loading-overlay" *ngIf="loading">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>Loading real-time data...</p>
+  </div>
 
-  @if (!loading) {
+  <div class="dashboard-content" [class.loading-blur]="loading">
     <!-- KPI Cards -->
     <div class="kpi-grid">
       @for (card of kpiCards; track card.title) {
@@ -50,15 +49,15 @@
       <div class="chart-card chart-wide">
         <highcharts-chart
           [options]="bookingTrendOptions"
-          [update]="updateFlags.bookingTrend"
-          style="width: 100%; display: block;">
+          [(update)]="updateFlags.bookingTrend"
+          style="width: 100%; height: 350px; display: block;">
         </highcharts-chart>
       </div>
       <div class="chart-card">
         <highcharts-chart
           [options]="paymentPieOptions"
-          [update]="updateFlags.paymentPie"
-          style="width: 100%; display: block;">
+          [(update)]="updateFlags.paymentPie"
+          style="width: 100%; height: 350px; display: block;">
         </highcharts-chart>
       </div>
     </div>
@@ -68,15 +67,15 @@
       <div class="chart-card">
         <highcharts-chart
           [options]="statusBarOptions"
-          [update]="updateFlags.statusBar"
-          style="width: 100%; display: block;">
+          [(update)]="updateFlags.statusBar"
+          style="width: 100%; height: 350px; display: block;">
         </highcharts-chart>
       </div>
       <div class="chart-card chart-wide">
         <highcharts-chart
           [options]="revenueAreaOptions"
-          [update]="updateFlags.revenueArea"
-          style="width: 100%; display: block;">
+          [(update)]="updateFlags.revenueArea"
+          style="width: 100%; height: 350px; display: block;">
         </highcharts-chart>
       </div>
     </div>
@@ -193,5 +192,5 @@
         </a>
       </div>
     </div>
-  }
+  </div>
 </div>

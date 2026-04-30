@@ -55,6 +55,31 @@ import { Booking, BookingSummaryRow } from '../../../../shared/models/models';
         </button>
       </form>
       <mat-progress-bar *ngIf="loading" mode="indeterminate"></mat-progress-bar>
+      
+      <!-- Summary Stats -->
+      <div class="summary-stats" *ngIf="rowData.length">
+        <div class="stat-card">
+          <div class="stat-label">Total Dispatches</div>
+          <div class="stat-value">{{ totals.count }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Grand Total</div>
+          <div class="stat-value">₹{{ totals.grandTotal | number:'1.0-0' }}</div>
+        </div>
+        <div class="stat-card success">
+          <div class="stat-label">PAID</div>
+          <div class="stat-value">₹{{ totals.paid | number:'1.0-0' }}</div>
+        </div>
+        <div class="stat-card warning">
+          <div class="stat-label">TO PAY</div>
+          <div class="stat-value">₹{{ totals.toPay | number:'1.0-0' }}</div>
+        </div>
+        <div class="stat-card danger">
+          <div class="stat-label">TBB</div>
+          <div class="stat-value">₹{{ totals.tbb | number:'1.0-0' }}</div>
+        </div>
+      </div>
+
       <div class="action-bar" *ngIf="rowData.length">
         <button mat-stroked-button (click)="downloadPDF('download')">
           <mat-icon>picture_as_pdf</mat-icon> PDF
@@ -223,6 +248,7 @@ export class DispatchReportComponent implements OnDestroy {
 
   rowData: Booking[] = [];
   summaryRows: BookingSummaryRow[] = [];
+  totals = { count: 0, grandTotal: 0, paid: 0, toPay: 0, tbb: 0 };
   loading = false;
   isMobile = window.innerWidth <= 768;
   activeRange: string | null = null;
@@ -270,10 +296,24 @@ export class DispatchReportComponent implements OnDestroy {
         next: r => {
           this.loading = false;
           this.rowData = r.content || [];
-          this.computeSummary(this.rowData);
+          this.calcTotals(this.rowData);
         },
         error: () => { this.loading = false; this.snack.error('Failed to load dispatch report.'); }
       });
+  }
+
+  private calcTotals(data: Booking[]): void {
+    const init = { count: 0, grandTotal: 0, paid: 0, toPay: 0, tbb: 0 };
+    this.totals = data.reduce((acc: typeof init, b: Booking) => {
+      acc.count++;
+      const gt = this.calcGrandTotal(b);
+      acc.grandTotal += gt;
+      if (b.billType === 'PAID') acc.paid += gt;
+      if (b.billType === 'TO PAY') acc.toPay += gt;
+      if (b.billType === 'TBB') acc.tbb += gt;
+      return acc;
+    }, { ...init });
+    this.computeSummary(data);
   }
 
   applyQuickRange(range: string): void {

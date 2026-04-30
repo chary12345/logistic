@@ -32,7 +32,7 @@ import { Contact } from '../../../../shared/models/models';
       <form [formGroup]="form" class="filter-row" (ngSubmit)="generateInvoice()">
         <!-- Consignor AutoComplete -->
         <mat-form-field appearance="outline">
-          <mat-label>Consignor Name</mat-label>
+          <mat-label>Party Name (TBB)</mat-label>
           <input matInput type="text" formControlName="consignorName" [matAutocomplete]="cnsgnrAuto" placeholder="Type to search...">
           <mat-autocomplete #cnsgnrAuto="matAutocomplete">
             <mat-option *ngFor="let c of consignorSuggestions" [value]="c.name">
@@ -66,7 +66,7 @@ import { Contact } from '../../../../shared/models/models';
       <div class="results-container" *ngIf="statementData && !loading">
         <div class="invoice-summary-card">
           <div class="summary-header">
-            <h3>Invoice Summary for {{ statementData.consignorName }}</h3>
+            <h3>Invoice Summary for {{ statementData.consignorName || statementData.partyName }}</h3>
           </div>
           <div class="summary-grid">
             <div class="stat-box">

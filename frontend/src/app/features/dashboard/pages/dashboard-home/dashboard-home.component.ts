@@ -15,7 +15,8 @@ import { OperationService } from '../../../../core/services/operation.service';
 import { StatementService } from '../../../../core/services/statement.service';
 import { VehicleService } from '../../../../core/services/vehicle.service';
 import { BranchService } from '../../../../core/services/branch.service';
-import { Booking, BookingPageResponse, VehicleDTO } from '../../../../shared/models/models';
+import { DashboardService } from '../../../../core/services/dashboard.service';
+import { Booking, BookingPageResponse, VehicleDTO, DashboardSummary } from '../../../../shared/models/models';
 
 interface KpiCard {
   title: string;
@@ -57,7 +58,7 @@ export class DashboardHomeComponent implements OnInit, OnDestroy {
   toPayCount = 0;
   tbbCount = 0;
   activeVehicles = 0;
-  nextLR = 'â€”';
+
 
   // Chart options
   bookingTrendOptions: Highcharts.Options = {};
@@ -79,6 +80,7 @@ export class DashboardHomeComponent implements OnInit, OnDestroy {
     private statementSvc: StatementService,
     private vehicleSvc: VehicleService,
     private branchSvc: BranchService,
+    private dashboardSvc: DashboardService,
     private router: Router,
   ) {}
 
@@ -86,7 +88,6 @@ export class DashboardHomeComponent implements OnInit, OnDestroy {
     this.setGreeting();
     this.userName = this.auth.userFullName;
     this.branchName = this.auth.currentUser?.companyAndBranchDeatils?.branchName || this.auth.branchCode;
-    this.loadNextLR();
     this.loadDashboardData();
   }
 
@@ -97,113 +98,41 @@ export class DashboardHomeComponent implements OnInit, OnDestroy {
     else this.greeting = 'Good Evening';
   }
 
-  private loadNextLR(): void {
-    const bc = this.auth.branchCode;
-    if (!bc) return;
-    this.branchSvc.getNextLR(bc).pipe(takeUntil(this.destroy$)).subscribe({
-      next: lr => this.nextLR = (lr || 'â€”').trim(),
-      error: () => this.nextLR = 'â€”',
-    });
-  }
 
-  private loadDashboardData(): void {
+
+  loadDashboardData(): void {
     this.loading = true;
     const branchCode = this.auth.branchCode;
+    if (!branchCode) {
+      this.loading = false;
+      return;
+    }
 
-    const todayStr = this.formatDate(this.today);
-    const monthStart = this.formatDate(new Date(this.today.getFullYear(), this.today.getMonth(), 1));
+    this.dashboardSvc.getDashboardSummary(branchCode).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (summary: DashboardSummary) => {
+        this.totalBookings = summary.totalBookings || 0;
+        this.todayBookings = summary.todayBookings || 0;
+        this.totalRevenue = summary.totalRevenue || 0;
+        this.todayRevenue = summary.todayRevenue || 0;
+        this.dispatchedCount = summary.dispatchedCount || 0;
+        this.receivedCount = summary.receivedCount || 0;
+        this.deliveredCount = summary.deliveredCount || 0;
+        this.paidCount = summary.paidCount || 0;
+        this.toPayCount = summary.toPayCount || 0;
+        this.tbbCount = summary.tbbCount || 0;
+        this.activeVehicles = summary.activeVehicles || 0;
+        
+        this.recentBookings = summary.recentBookings || [];
 
-    // Fetch all bookings for this month with different statuses
-    forkJoin({
-      booked: this.fetchAllPages(monthStart, todayStr, 'BOOKED', branchCode),
-      dispatched: this.fetchAllPages(monthStart, todayStr, 'DISPATCHED', branchCode),
-      received: this.fetchAllPages(monthStart, todayStr, 'RECEIVED', branchCode),
-      delivered: this.fetchAllPages(monthStart, todayStr, 'DELIVERED', branchCode),
-      vehicles: this.vehicleSvc.getActive(branchCode).pipe(catchError(() => of([] as VehicleDTO[]))),
-    }).pipe(takeUntil(this.destroy$)).subscribe({
-      next: (data) => {
-        const booked = data.booked || [];
-        const dispatched = data.dispatched || [];
-        const received = data.received || [];
-        const delivered = data.delivered || [];
-        const vehicles = data.vehicles || [];
-
-        this.allBookings = [...booked, ...dispatched, ...received, ...delivered];
-        this.activeVehicles = vehicles.length;
-
-        this.processData(booked, dispatched, received, delivered);
-        this.buildCharts();
+        this.buildCharts(summary);
         this.buildKpiCards();
         this.loading = false;
       },
       error: () => {
         this.loading = false;
         this.buildKpiCards();
-      },
+      }
     });
-  }
-
-  private fetchAllPages(from: string, to: string, status: string, branchCode: string): Observable<Booking[]> {
-    return new Observable<Booking[]>((subscriber) => {
-      const allItems: Booking[] = [];
-      const fetchPage = (lastId?: string) => {
-        this.bookingSvc.getReport(from, to, status, lastId, branchCode).subscribe({
-          next: (res: BookingPageResponse) => {
-            if (res.content) allItems.push(...res.content);
-            if (!res.last && res.lastId) {
-              fetchPage(res.lastId);
-            } else {
-              subscriber.next(allItems);
-              subscriber.complete();
-            }
-          },
-          error: () => {
-            subscriber.next(allItems);
-            subscriber.complete();
-          },
-        });
-      };
-      fetchPage();
-    });
-  }
-
-  private processData(booked: Booking[], dispatched: Booking[], received: Booking[], delivered: Booking[]): void {
-    const all = this.allBookings;
-    const todayStr = this.formatDate(this.today);
-
-    this.totalBookings = all.length;
-    this.todayBookings = all.filter(b => b.bookingDate === todayStr).length;
-    this.dispatchedCount = dispatched.length;
-    this.receivedCount = received.length;
-    this.deliveredCount = delivered.length;
-
-    this.totalRevenue = all.reduce((sum, b) => {
-      const freight = b.freight || 0;
-      const sgst = b.sgst || 0;
-      const cgst = b.cgst || 0;
-      const igst = b.igst || 0;
-      const loading = b.loading || 0;
-      const loadingCharge = b.loadingCharge || 0;
-      return sum + freight + sgst + cgst + igst + loading + loadingCharge;
-    }, 0);
-
-    this.todayRevenue = all.filter(b => b.bookingDate === todayStr).reduce((sum, b) => {
-      const freight = b.freight || 0;
-      const sgst = b.sgst || 0;
-      const cgst = b.cgst || 0;
-      const igst = b.igst || 0;
-      const loading = b.loading || 0;
-      const loadingCharge = b.loadingCharge || 0;
-      return sum + freight + sgst + cgst + igst + loading + loadingCharge;
-    }, 0);
-
-    this.paidCount = all.filter(b => b.billType === 'PAID').length;
-    this.toPayCount = all.filter(b => b.billType === 'TO PAY').length;
-    this.tbbCount = all.filter(b => b.billType === 'TBB').length;
-
-    this.recentBookings = [...all]
-      .sort((a, b) => (b.bookingDate || '').localeCompare(a.bookingDate || '') || (b.loadingReciept || '').localeCompare(a.loadingReciept || ''))
-      .slice(0, 10);
   }
 
   private buildKpiCards(): void {
@@ -219,11 +148,11 @@ export class DashboardHomeComponent implements OnInit, OnDestroy {
       },
       {
         title: 'Month Revenue',
-        value: 'â‚¹' + this.totalRevenue.toLocaleString('en-IN'),
+        value: this.totalRevenue.toLocaleString('en-IN'),
         icon: 'currency_rupee',
         color: '#15803d',
         bg: '#d1fae5',
-        subtitle: `Today: â‚¹${this.todayRevenue.toLocaleString('en-IN')}`,
+        subtitle: `Today: ${this.todayRevenue.toLocaleString('en-IN')}`,
         route: '/dashboard/statements',
       },
       {
@@ -265,25 +194,16 @@ export class DashboardHomeComponent implements OnInit, OnDestroy {
     ];
   }
 
-  private buildCharts(): void {
-    this.buildBookingTrendChart();
+  private buildCharts(summary: DashboardSummary): void {
+    this.buildBookingTrendChart(summary);
     this.buildPaymentPieChart();
     this.buildStatusBarChart();
-    this.buildRevenueAreaChart();
+    this.buildRevenueAreaChart(summary);
   }
 
-  private buildBookingTrendChart(): void {
-    const daysInMonth = new Date(this.today.getFullYear(), this.today.getMonth() + 1, 0).getDate();
-    const currentDay = this.today.getDate();
-    const dayLabels: string[] = [];
-    const dailyCounts: number[] = [];
-
-    for (let d = 1; d <= Math.min(daysInMonth, currentDay); d++) {
-      const dt = new Date(this.today.getFullYear(), this.today.getMonth(), d);
-      const dtStr = this.formatDate(dt);
-      dayLabels.push(d.toString());
-      dailyCounts.push(this.allBookings.filter(b => b.bookingDate === dtStr).length);
-    }
+  private buildBookingTrendChart(summary: DashboardSummary): void {
+    const dayLabels: string[] = summary.bookingTrend ? summary.bookingTrend.map(t => t.date) : [];
+    const dailyCounts: number[] = summary.bookingTrend ? summary.bookingTrend.map(t => t.value) : [];
 
     this.bookingTrendOptions = {
       chart: { type: 'areaspline', height: 300, style: { fontFamily: 'Poppins, sans-serif' } },
@@ -359,28 +279,20 @@ export class DashboardHomeComponent implements OnInit, OnDestroy {
       series: [{
         type: 'column',
         name: 'Count',
-        data: [bookedOnly, this.dispatchedCount, this.receivedCount, this.deliveredCount],
+        data: [
+          this.totalBookings - this.dispatchedCount - this.receivedCount - this.deliveredCount, 
+          this.dispatchedCount, 
+          this.receivedCount, 
+          this.deliveredCount
+        ],
       }],
     };
     this.updateFlags.statusBar = true;
   }
 
-  private buildRevenueAreaChart(): void {
-    const daysInMonth = new Date(this.today.getFullYear(), this.today.getMonth() + 1, 0).getDate();
-    const currentDay = this.today.getDate();
-    const dayLabels: string[] = [];
-    const dailyRevenue: number[] = [];
-
-    for (let d = 1; d <= Math.min(daysInMonth, currentDay); d++) {
-      const dt = new Date(this.today.getFullYear(), this.today.getMonth(), d);
-      const dtStr = this.formatDate(dt);
-      dayLabels.push(d.toString());
-      const dayBookings = this.allBookings.filter(b => b.bookingDate === dtStr);
-      const dayRev = dayBookings.reduce((sum, b) => {
-        return sum + (b.freight || 0) + (b.sgst || 0) + (b.cgst || 0) + (b.igst || 0) + (b.loading || 0) + (b.loadingCharge || 0);
-      }, 0);
-      dailyRevenue.push(dayRev);
-    }
+  private buildRevenueAreaChart(summary: DashboardSummary): void {
+    const dayLabels: string[] = summary.revenueTrend ? summary.revenueTrend.map(t => t.date) : [];
+    const dailyRevenue: number[] = summary.revenueTrend ? summary.revenueTrend.map(t => t.value) : [];
 
     this.revenueAreaOptions = {
       chart: { type: 'area', height: 300, style: { fontFamily: 'Poppins, sans-serif' } },
@@ -388,15 +300,15 @@ export class DashboardHomeComponent implements OnInit, OnDestroy {
       credits: { enabled: false },
       xAxis: { categories: dayLabels, title: { text: 'Day of Month' }, labels: { style: { fontSize: '10px' } } },
       yAxis: {
-        title: { text: 'Revenue (â‚¹)' },
+        title: { text: 'Revenue (₹)' },
         min: 0,
         labels: {
           style: { fontSize: '10px' },
-          formatter: function() { return 'â‚¹' + Highcharts.numberFormat(this.value as number, 0, '.', ','); },
+          formatter: function() { return '₹' + Highcharts.numberFormat(this.value as number, 0, '.', ','); },
         },
       },
       tooltip: {
-        valuePrefix: 'â‚¹',
+        valuePrefix: '₹',
         valueDecimals: 0,
       },
       plotOptions: {

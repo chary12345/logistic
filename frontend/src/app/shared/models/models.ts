@@ -76,6 +76,7 @@ export interface BookingDTO {
   branchCode?: string;
   companyCode?: string;
   employeeName?: string;
+  partyName?: string;
 }
 
 export interface Booking {
@@ -114,6 +115,7 @@ export interface Booking {
   BranchCode?: string;
   modifiedDate?: string;
   nextLr?: string;
+  partyName?: string;
 }
 
 export interface BookingPageResponse {
@@ -273,6 +275,7 @@ export interface StatementDto {
   total?: number;
   consignStatus?: string;
   dispatchDate?: string;
+  partyName?: string;
 }
 
 // ---- Contact ----
@@ -292,4 +295,27 @@ export interface PasswordChangeRequest {
   username: string;
   currentPassword: string;
   newPassword: string;
+}
+
+// ---- Dashboard ----
+export interface DailyTrend {
+  date: string;
+  value: number;
+}
+
+export interface DashboardSummary {
+  totalBookings: number;
+  todayBookings: number;
+  totalRevenue: number;
+  todayRevenue: number;
+  dispatchedCount: number;
+  receivedCount: number;
+  deliveredCount: number;
+  paidCount: number;
+  toPayCount: number;
+  tbbCount: number;
+  activeVehicles: number;
+  bookingTrend: DailyTrend[];
+  revenueTrend: DailyTrend[];
+  recentBookings: Booking[];
 }

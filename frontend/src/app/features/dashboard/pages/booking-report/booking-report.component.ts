@@ -40,7 +40,7 @@ export class BookingReportComponent implements OnInit, OnDestroy {
     { headerName: 'LR No', field: 'loadingReciept', minWidth: 120, sortable: true, filter: true },
     { headerName: 'Date', field: 'bookingDate', minWidth: 130, sortable: true,
       valueFormatter: p => this.datePipe.transform(p.value, 'dd/MM/yy HH:mm') || '' },
-    { headerName: 'Consignor', field: 'consignorName', minWidth: 120, sortable: true, filter: true },
+    { headerName: 'Consignor / Party', field: 'consignorName', minWidth: 120, sortable: true, filter: true },
     { headerName: 'Consignee', field: 'consigneeName', minWidth: 120, sortable: true, filter: true },
     { headerName: 'Destination', field: 'destinationBranchCode', minWidth: 110, sortable: true, filter: true },
     { headerName: 'Payment', field: 'billType', minWidth: 100, sortable: true,
