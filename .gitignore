@@ -10,7 +10,6 @@ target/
 .factorypath
 .project
 .settings
-.springBeans
 .sts4-cache
 
 ### IntelliJ IDEA ###
@@ -37,3 +36,12 @@ frontend/node_modules/
 frontend/.angular/
 frontend/out-tsc/
 frontend/dist/
+
+### Backend Static Build Artifacts (Hidden from Git UI) ###
+backend/src/main/resources/static/chunk-*.js
+backend/src/main/resources/static/main-*.js
+backend/src/main/resources/static/polyfills-*.js
+backend/src/main/resources/static/styles-*.css
+backend/src/main/resources/static/runtime-*.js
+backend/src/main/resources/static/*.txt
+backend/src/main/resources/static/*.ico
