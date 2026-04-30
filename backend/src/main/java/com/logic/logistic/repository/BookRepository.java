@@ -21,69 +21,83 @@ public interface BookRepository extends JpaRepository<Booking, String> {
 			@Param("toDate") LocalDateTime toDate, @Param("status") String status,
 			@Param("branchCode") String branchCode);
 
+	@Query(value = """
+			SELECT * FROM booking b
+			WHERE
+			    (UPPER(b.branch_code) = UPPER(:branchCode) AND (b.booking_date >= :from AND b.booking_date <= :to))
+			    OR
+			    (UPPER(b.branch_code) = UPPER(:branchCode) AND (b.dispatch_date >= :from AND b.dispatch_date <= :to))
+			    OR
+			    (UPPER(b.dest_branch_code) = UPPER(:branchCode) AND (b.recieve_date >= :from AND b.recieve_date <= :to))
+			    OR
+			    (UPPER(b.dest_branch_code) = UPPER(:branchCode) AND (b.delivery_date >= :from AND b.delivery_date <= :to))
+			""", nativeQuery = true)
+	List<Booking> findDashboardBookings(
+			@Param("from") LocalDateTime from,
+			@Param("to") LocalDateTime to,
+			@Param("branchCode") String branchCode);
+
 	@Query("""
-SELECT b FROM Booking b 
-WHERE 
-(
-    (:status = 'BOOKED' AND b.bookingDate BETWEEN :from AND :to) OR
-    (:status = 'DISPATCHED' AND COALESCE(b.dispatchDate, b.bookingDate) BETWEEN :from AND :to) OR
-    (:status = 'RECEIVED' AND COALESCE(b.recieveDate, b.bookingDate) BETWEEN :from AND :to) OR
-    (:status = 'DELIVERED' AND COALESCE(b.deliveryDate, b.bookingDate) BETWEEN :from AND :to)
-)
-AND b.consignStatus = :status 
-AND 
-(
-    (:status IN ('BOOKED','DISPATCHED') AND b.BranchCode = :branchCode) OR
-    (:status IN ('RECEIVED','DELIVERED') AND b.destinationBranchCode = :branchCode)
-)
-ORDER BY 
-CASE 
-    WHEN :status = 'BOOKED' THEN b.bookingDate
-    WHEN :status = 'DISPATCHED' THEN b.dispatchDate
-    WHEN :status = 'RECEIVED' THEN b.recieveDate
-    WHEN :status = 'DELIVERED' THEN b.deliveryDate
-END DESC
-""")
+			SELECT b FROM Booking b
+			WHERE
+			(
+			    (:status = 'BOOKED' AND b.bookingDate BETWEEN :from AND :to) OR
+			    (:status = 'DISPATCHED' AND COALESCE(b.dispatchDate, b.bookingDate) BETWEEN :from AND :to) OR
+			    (:status = 'RECEIVED' AND COALESCE(b.recieveDate, b.bookingDate) BETWEEN :from AND :to) OR
+			    (:status = 'DELIVERED' AND COALESCE(b.deliveryDate, b.bookingDate) BETWEEN :from AND :to)
+			)
+			AND b.consignStatus = :status
+			AND
+			(
+			    (:status IN ('BOOKED','DISPATCHED') AND b.BranchCode = :branchCode) OR
+			    (:status IN ('RECEIVED','DELIVERED') AND b.destinationBranchCode = :branchCode)
+			)
+			ORDER BY
+			CASE
+			    WHEN :status = 'BOOKED' THEN b.bookingDate
+			    WHEN :status = 'DISPATCHED' THEN b.dispatchDate
+			    WHEN :status = 'RECEIVED' THEN b.recieveDate
+			    WHEN :status = 'DELIVERED' THEN b.deliveryDate
+			END DESC
+			""")
 	List<Booking> findFirstPage(
 			@Param("from") LocalDateTime from,
 			@Param("to") LocalDateTime to,
 			@Param("status") String status,
 			Pageable pageable,
-			@Param("branchCode") String branchCode
-	);
+			@Param("branchCode") String branchCode);
 
 	@Query("""
-SELECT b FROM Booking b 
-WHERE 
-(
-    (:status = 'BOOKED' AND b.bookingDate BETWEEN :from AND :to) OR
-    (:status = 'DISPATCHED' AND COALESCE(b.dispatchDate, b.bookingDate) BETWEEN :from AND :to) OR
-    (:status = 'RECEIVED' AND COALESCE(b.recieveDate, b.bookingDate) BETWEEN :from AND :to) OR
-    (:status = 'DELIVERED' AND COALESCE(b.deliveryDate, b.bookingDate) BETWEEN :from AND :to)
-)
-AND b.consignStatus = :status 
-AND 
-(
-    (:status IN ('BOOKED','DISPATCHED') AND b.BranchCode = :branchCode) OR
-    (:status IN ('RECEIVED','DELIVERED') AND b.destinationBranchCode = :branchCode)
-)
-AND b.loadingReciept < :lastId
-ORDER BY 
-CASE 
-    WHEN :status = 'BOOKED' THEN b.bookingDate
-    WHEN :status = 'DISPATCHED' THEN b.dispatchDate
-    WHEN :status = 'RECEIVED' THEN b.recieveDate
-    WHEN :status = 'DELIVERED' THEN b.deliveryDate
-END DESC
-""")
+			SELECT b FROM Booking b
+			WHERE
+			(
+			    (:status = 'BOOKED' AND b.bookingDate BETWEEN :from AND :to) OR
+			    (:status = 'DISPATCHED' AND COALESCE(b.dispatchDate, b.bookingDate) BETWEEN :from AND :to) OR
+			    (:status = 'RECEIVED' AND COALESCE(b.recieveDate, b.bookingDate) BETWEEN :from AND :to) OR
+			    (:status = 'DELIVERED' AND COALESCE(b.deliveryDate, b.bookingDate) BETWEEN :from AND :to)
+			)
+			AND b.consignStatus = :status
+			AND
+			(
+			    (:status IN ('BOOKED','DISPATCHED') AND b.BranchCode = :branchCode) OR
+			    (:status IN ('RECEIVED','DELIVERED') AND b.destinationBranchCode = :branchCode)
+			)
+			AND b.loadingReciept < :lastId
+			ORDER BY
+			CASE
+			    WHEN :status = 'BOOKED' THEN b.bookingDate
+			    WHEN :status = 'DISPATCHED' THEN b.dispatchDate
+			    WHEN :status = 'RECEIVED' THEN b.recieveDate
+			    WHEN :status = 'DELIVERED' THEN b.deliveryDate
+			END DESC
+			""")
 	List<Booking> findNextPage(
 			@Param("from") LocalDateTime from,
 			@Param("to") LocalDateTime to,
 			@Param("status") String status,
 			@Param("lastId") String lastId,
 			Pageable pageable,
-			@Param("branchCode") String branchCode
-	);
+			@Param("branchCode") String branchCode);
 
 	@Query("SELECT b FROM Booking b WHERE b.loadingReciept IN :receipts")
 	List<Booking> findByLoadingRecieptIn(List<String> receipts);
@@ -140,21 +154,22 @@ END DESC
 
 	List<Booking> findByConsignStatusAndDestinationBranchCode(
 			String status,
-			String destinationBranchCode
-	);
+			String destinationBranchCode);
+
 	@Query("""
-SELECT b FROM Booking b
-WHERE 
-    b.billType = 'TBB'
-    AND b.partyName = :consignorName
-    AND b.bookingDate BETWEEN :from AND :to
-ORDER BY b.bookingDate DESC
-""")
+			SELECT b FROM Booking b
+			WHERE
+			    b.billType = 'TBB'
+			    AND (b.partyName = :consignorName OR b.consignorName = :consignorName)
+			    AND b.bookingDate BETWEEN :from AND :to
+			ORDER BY b.bookingDate DESC
+			""")
 	List<Booking> findTbbBookings(
 			@Param("consignorName") String consignorName,
 			@Param("from") LocalDateTime from,
-			@Param("to") LocalDateTime to
-	);
-	/*List<Booking> findByVehicleNumberAndConsignStatus(
-			String vehicleNo, String status);*/
+			@Param("to") LocalDateTime to);
+	/*
+	 * List<Booking> findByVehicleNumberAndConsignStatus(
+	 * String vehicleNo, String status);
+	 */
 }
