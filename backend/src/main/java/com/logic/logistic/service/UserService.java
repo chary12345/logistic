@@ -26,6 +26,12 @@ public class UserService {
             return false;
         }
 
+        // Validate current password
+        if (!user.getPassword().equalsIgnoreCase(currentPassword)) {
+            logger.info("Current password is incorrect for user: " + fullUsername);
+            return false;
+        }
+
         int rowsUpdated = userRepository.updatePassword(fullUsername, newPassword);
 
         if (rowsUpdated > 0) {
