@@ -4,6 +4,7 @@ import { ReactiveFormsModule, FormBuilder, Validators, AbstractControl, AsyncVal
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -13,13 +14,14 @@ import { EmployeeService } from '../../../../core/services/employee.service';
 import { BranchService } from '../../../../core/services/branch.service';
 import { SnackbarService } from '../../../../core/services/snackbar.service';
 import { BranchMap } from '../../../../shared/models/models';
+import { passwordStrengthValidator, PASSWORD_REQUIREMENTS_TEXT, PASSWORD_REQUIREMENTS_SHORT } from '../../../../shared/validators/password.validator';
 
 @Component({
   selector: 'app-employee-manage',
   standalone: true,
   imports: [
     CommonModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule,
-    MatSelectModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule,
+    MatSelectModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule,
   ],
   template: `
     <div class="page-card">
@@ -49,11 +51,20 @@ import { BranchMap } from '../../../../shared/models/models';
             <mat-error *ngIf="form.get('username')?.hasError('required') && form.get('username')?.touched">Required</mat-error>
             <mat-error *ngIf="form.get('username')?.hasError('taken')">Username already taken</mat-error>
           </mat-form-field>
-          <mat-form-field>
+          <mat-form-field appearance="outline">
             <mat-label>Password</mat-label>
             <input matInput type="password" formControlName="password">
+            <button mat-icon-button matSuffix type="button"
+                    [matTooltip]="PASSWORD_REQUIREMENTS_TEXT"
+                    matTooltipPosition="above"
+                    [attr.aria-label]="'Password requirements'">
+              <mat-icon color="primary">info</mat-icon>
+            </button>
+            <mat-hint>{{ PASSWORD_REQUIREMENTS_SHORT }}</mat-hint>
             <mat-error *ngIf="form.get('password')?.hasError('required') && form.get('password')?.touched">Required</mat-error>
-            <mat-error *ngIf="form.get('password')?.hasError('minlength')">Min 6 characters</mat-error>
+            <mat-error *ngIf="form.get('password')?.hasError('weakPassword')">
+              Password must meet validation
+            </mat-error>
           </mat-form-field>
           <mat-form-field>
             <mat-label>Role</mat-label>
@@ -74,7 +85,7 @@ import { BranchMap } from '../../../../shared/models/models';
           </mat-form-field>
         </div>
         <div class="submit-row">
-          <button mat-raised-button color="primary" type="submit" [disabled]="loading">
+          <button mat-raised-button color="primary" type="submit" [disabled]="loading || form.invalid">
             <mat-spinner *ngIf="loading" diameter="18"></mat-spinner>
             <mat-icon *ngIf="!loading">person_add</mat-icon>
             {{ loading ? 'Creating...' : 'Create Employee' }}
@@ -89,16 +100,22 @@ import { BranchMap } from '../../../../shared/models/models';
     :host ::ng-deep .placeholder-grey .mat-mdc-select-value-text {
       color: grey !important;
     }
+    :host ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+      position: relative;
+    }
   `]
 })
 export class EmployeeManageComponent implements OnDestroy {
+  PASSWORD_REQUIREMENTS_TEXT = PASSWORD_REQUIREMENTS_TEXT;
+  PASSWORD_REQUIREMENTS_SHORT = PASSWORD_REQUIREMENTS_SHORT;
+
   @ViewChild(FormGroupDirective) formDirective!: FormGroupDirective;
   form = this.fb.group({
     branchCode: [''],
     firstName: ['', Validators.required],
     lastName: ['', Validators.required],
     username: ['', Validators.required, [this.usernameValidator()]],
-    password: ['', [Validators.required, Validators.minLength(6)]],
+    password: ['', [Validators.required, passwordStrengthValidator]],
     role: ['', Validators.required],
     phone: [''],
     email: ['', Validators.email],

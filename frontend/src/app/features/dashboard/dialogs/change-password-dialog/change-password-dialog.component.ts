@@ -8,10 +8,12 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { LoginApiService } from '../../../../core/services/login-api.service';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { SnackbarService } from '../../../../core/services/snackbar.service';
 import * as CryptoJS from 'crypto-js';
+import { passwordStrengthValidator, PASSWORD_REQUIREMENTS_TEXT, PASSWORD_REQUIREMENTS_SHORT } from '../../../../shared/validators/password.validator';
 
 function passwordMatchValidator(group: AbstractControl): ValidationErrors | null {
   const newPw  = group.get('newPassword')?.value;
@@ -28,7 +30,7 @@ const AES_IV  = 'abcdefghijklmnop';
   imports: [
     CommonModule, ReactiveFormsModule, MatDialogModule,
     MatFormFieldModule, MatInputModule, MatButtonModule,
-    MatIconModule, MatProgressSpinnerModule, MatDividerModule
+    MatIconModule, MatProgressSpinnerModule, MatDividerModule, MatTooltipModule
   ],
   template: `
     <div class="dialog-wrapper">
@@ -67,13 +69,24 @@ const AES_IV  = 'abcdefghijklmnop';
                    [type]="showNew ? 'text' : 'password'"
                    formControlName="newPassword"
                    autocomplete="new-password">
-            <button mat-icon-button matSuffix type="button"
-                    (click)="showNew = !showNew">
-              <mat-icon>{{ showNew ? 'visibility_off' : 'visibility' }}</mat-icon>
-            </button>
-            <mat-hint>Minimum 6 characters</mat-hint>
+            <span matSuffix class="suffix-icons">
+              <button mat-icon-button type="button"
+                      [matTooltip]="PASSWORD_REQUIREMENTS_TEXT"
+                      matTooltipPosition="above"
+                      [attr.aria-label]="'Password requirements'">
+                <mat-icon color="primary">info</mat-icon>
+              </button>
+              <button mat-icon-button type="button"
+                      (click)="showNew = !showNew"
+                      [attr.aria-label]="showNew ? 'Hide password' : 'Show password'">
+                <mat-icon>{{ showNew ? 'visibility_off' : 'visibility' }}</mat-icon>
+              </button>
+            </span>
+            <mat-hint>{{ PASSWORD_REQUIREMENTS_SHORT }}</mat-hint>
             <mat-error *ngIf="form.get('newPassword')?.hasError('required')">New password is required</mat-error>
-            <mat-error *ngIf="form.get('newPassword')?.hasError('minlength')">Minimum 6 characters required</mat-error>
+            <mat-error *ngIf="form.get('newPassword')?.hasError('weakPassword')">
+              {{ PASSWORD_REQUIREMENTS_TEXT }}
+            </mat-error>
           </mat-form-field>
 
           <mat-form-field appearance="outline" subscriptSizing="dynamic">
@@ -102,11 +115,11 @@ const AES_IV  = 'abcdefghijklmnop';
       <mat-divider></mat-divider>
 
       <mat-dialog-actions class="dialog-actions">
-        <button mat-stroked-button mat-dialog-close type="button" class="cancel-btn">
+        <button mat-stroked-button mat-dialog-close type="button" form="no-form" class="cancel-btn">
           Cancel
         </button>
         <button mat-raised-button color="primary" type="button"
-                (click)="submit()" [disabled]="loading" class="save-btn">
+                (click)="submit()" [disabled]="loading || form.invalid" class="save-btn">
           <mat-spinner *ngIf="loading" diameter="16" class="btn-spinner"></mat-spinner>
           <mat-icon *ngIf="!loading">save</mat-icon>
           {{ loading ? 'Saving...' : 'Update Password' }}
@@ -164,7 +177,13 @@ const AES_IV  = 'abcdefghijklmnop';
       flex-direction: column;
       gap: 14px;
       width: 100%;
-      max-width: 380px;
+      max-width: 100%;
+    }
+
+    .suffix-icons {
+      display: flex;
+      align-items: center;
+      gap: 4px;
     }
 
     .error-banner {
@@ -205,9 +224,12 @@ const AES_IV  = 'abcdefghijklmnop';
   `]
 })
 export class ChangePasswordDialogComponent {
+  PASSWORD_REQUIREMENTS_TEXT = PASSWORD_REQUIREMENTS_TEXT;
+  PASSWORD_REQUIREMENTS_SHORT = PASSWORD_REQUIREMENTS_SHORT;
+
   form = this.fb.group({
     currentPassword: ['', Validators.required],
-    newPassword:     ['', [Validators.required, Validators.minLength(6)]],
+    newPassword:     ['', [Validators.required, passwordStrengthValidator]],
     confirmPassword: ['', Validators.required],
   }, { validators: passwordMatchValidator });
 
