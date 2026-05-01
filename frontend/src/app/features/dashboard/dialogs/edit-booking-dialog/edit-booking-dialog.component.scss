@@ -1,0 +1,636 @@
+.edit-booking-dialog {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: 90vh;
+  font-family: 'Poppins', sans-serif;
+}
+
+// Dialog Title
+.dialog-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  margin: 0;
+  background: linear-gradient(135deg, #12233a 0%, #1e3a5f 100%);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 8px 8px 0 0;
+
+  .title-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+
+    mat-icon {
+      font-size: 22px;
+      width: 22px;
+      height: 22px;
+    }
+  }
+
+  .lr-badge {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .close-btn {
+    color: #fff;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
+
+// Dialog Content
+.dialog-content {
+  padding: 16px;
+  overflow-y: auto;
+  flex: 1;
+  background: #f8fafc;
+}
+
+// Loading State
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 48px 24px;
+  color: #5c6780;
+  font-size: 14px;
+}
+
+// Form
+.edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+// Payment Mode Section
+.payment-mode-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  flex-wrap: wrap;
+
+  .pm-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #5c6780;
+  }
+
+  .pm-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .pm-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Poppins', sans-serif;
+
+    .pm-key {
+      background: #e2e8f0;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    &:hover {
+      border-color: #0b5ed7;
+      color: #0b5ed7;
+    }
+
+    &.active {
+      background: #0b5ed7;
+      color: #fff;
+      border-color: #0b5ed7;
+
+      .pm-key {
+        background: rgba(255, 255, 255, 0.2);
+        color: #fff;
+      }
+    }
+  }
+}
+
+// Form Section
+.form-section {
+  background: #fff;
+  border-radius: 8px;
+  padding: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #0b5ed7;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+
+// Form Grid
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+
+  &.invoice-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .full-width {
+    grid-column: 1 / -1;
+  }
+
+  .full-width-mobile {
+    @media (max-width: 600px) {
+      grid-column: 1 / -1;
+    }
+  }
+}
+
+.full-width {
+  width: 100%;
+}
+
+// Search Box (inside mat-select)
+.search-box {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 10;
+  border-bottom: 1px solid #e2e8f0;
+
+  .search-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: #9ca3af;
+    margin-right: 8px;
+  }
+
+  .search-input {
+    border: none;
+    outline: none;
+    font-size: 13px;
+    flex: 1;
+    font-family: 'Poppins', sans-serif;
+  }
+}
+
+.search-box-mini {
+  display: flex;
+  align-items: center;
+  padding: 6px 10px;
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 10;
+  border-bottom: 1px solid #e2e8f0;
+
+  .search-icon-mini {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+    color: #9ca3af;
+    margin-right: 6px;
+  }
+
+  .search-input-mini {
+    border: none;
+    outline: none;
+    font-size: 12px;
+    flex: 1;
+    font-family: 'Poppins', sans-serif;
+  }
+}
+
+// Articles Table (Desktop)
+.articles-table-wrap {
+  overflow-x: auto;
+  margin-bottom: 8px;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+}
+
+.articles-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+
+  th {
+    background: #12233a;
+    color: #cfe8ff;
+    padding: 8px 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 6px 4px;
+    border-bottom: 1px solid #e2e8f0;
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  tr:hover td {
+    background: #f0f7ff;
+  }
+}
+
+// mat-select inside article table — matches create booking form exactly
+.mini-select {
+  width: 100%;
+  min-width: 60px;
+  font-size: 11px !important;
+
+  &.mat-mdc-select {
+    display: inline-flex;
+    align-items: center;
+    min-height: 26px;
+  }
+}
+
+// Search box inside stc-panel dropdown
+.stc-search-box {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 10;
+  border-bottom: 1px solid #e2e8f0;
+
+  .search-icon {
+    font-size: 14px;
+    height: 14px;
+    width: 14px;
+    color: #9ca3af;
+    margin-right: 6px;
+  }
+
+  .stc-search-input {
+    border: none;
+    outline: none;
+    font-size: 11px;
+    flex: 1;
+    font-family: 'Poppins', sans-serif;
+  }
+}
+
+.mini-input {
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 4px 6px;
+  font-size: 11px;
+  font-family: 'Poppins', sans-serif;
+  width: 60px;
+  text-align: center;
+
+  &:focus {
+    border-color: #0b5ed7;
+    outline: none;
+  }
+}
+
+.total-cell {
+  font-weight: 700;
+  color: #0b5ed7;
+  white-space: nowrap;
+}
+
+// Articles Cards (Mobile)
+.articles-cards {
+  display: none;
+
+  @media (max-width: 768px) {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+
+.article-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fafbfc;
+  overflow: hidden;
+
+  .article-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: #f1f5f9;
+    font-weight: 700;
+    font-size: 13px;
+    color: #12233a;
+  }
+
+  .article-card-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .card-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #5c6780;
+      text-transform: uppercase;
+    }
+
+    &.total {
+      grid-column: 1 / -1;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 8px;
+      border-top: 1px dashed #e2e8f0;
+
+      .total-value {
+        font-size: 16px;
+        font-weight: 800;
+        color: #0b5ed7;
+      }
+    }
+  }
+
+  .card-select,
+  .card-input {
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 13px;
+    font-family: 'Poppins', sans-serif;
+    background: #fff;
+
+    &:focus {
+      border-color: #0b5ed7;
+      outline: none;
+    }
+  }
+
+  .card-mat-select {
+    width: 100%;
+    font-size: 13px !important;
+  }
+}
+
+.add-article-btn {
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+// Paid Via
+.paid-via-field {
+  max-width: 200px;
+}
+
+// Charges Section
+.charges-section {
+  background: #fff;
+  border-radius: 8px;
+  padding: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.charges-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+
+  .charge-field {
+    width: 100%;
+  }
+}
+
+.charges-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  background: #f8fafc;
+  border-radius: 6px;
+
+  .charge-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #5c6780;
+
+    &.grand-total {
+      font-size: 16px;
+      font-weight: 800;
+      color: #0b5ed7;
+      padding-top: 8px;
+    }
+  }
+}
+
+// Dialog Actions
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 12px 16px;
+  border-top: 1px solid #e2e8f0;
+  background: #fff;
+  flex-wrap: wrap;
+
+  button {
+    min-width: 120px;
+
+    .btn-spinner {
+      display: inline-block;
+      margin-right: 8px;
+    }
+  }
+}
+
+// Responsive Adjustments
+@media (max-width: 960px) {
+  .form-grid {
+    grid-template-columns: repeat(2, 1fr);
+
+    &.invoice-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+}
+
+@media (max-width: 600px) {
+  .dialog-title {
+    padding: 10px 12px;
+    font-size: 14px;
+
+    .lr-badge {
+      font-size: 10px;
+      padding: 2px 8px;
+    }
+  }
+
+  .dialog-content {
+    padding: 12px;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+
+    &.invoice-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .payment-mode-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+
+    .pm-buttons {
+      width: 100%;
+      justify-content: space-between;
+    }
+
+    .pm-btn {
+      flex: 1;
+      justify-content: center;
+      padding: 8px 6px;
+      font-size: 11px;
+
+      .pm-key {
+        font-size: 9px;
+        padding: 1px 4px;
+      }
+    }
+  }
+
+  .section-header {
+    font-size: 13px;
+    margin-bottom: 10px;
+  }
+
+  .charges-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .charges-summary .charge-row.grand-total {
+    font-size: 14px;
+  }
+
+  .dialog-actions {
+    padding: 10px 12px;
+
+    button {
+      flex: 1;
+      min-width: auto;
+    }
+  }
+}
+
+@media (max-width: 400px) {
+  .edit-booking-dialog {
+    max-height: 100vh;
+  }
+
+  .dialog-title {
+    border-radius: 0;
+
+    .title-left {
+      gap: 6px;
+
+      mat-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+      }
+
+      span:not(.lr-badge) {
+        font-size: 13px;
+      }
+    }
+  }
+
+  .form-section {
+    padding: 10px;
+  }
+
+  .article-card .article-card-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+// Mat Form Field Adjustments
+::ng-deep {
+  .edit-booking-dialog {
+    .mat-mdc-form-field {
+      width: 100%;
+
+      .mat-mdc-text-field-wrapper {
+        background: #fff;
+      }
+    }
+
+    .mat-mdc-dialog-surface {
+      border-radius: 8px !important;
+    }
+  }
+
+  // Panel for STC select
+  .stc-panel {
+    max-height: 200px;
+  }
+}

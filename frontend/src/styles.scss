@@ -1,0 +1,1100 @@
+// ============================================================
+// 1UNIQ TRANS — Global Styles & Angular Material Custom Theme
+// ============================================================
+@use '@angular/material' as mat;
+@use '@angular/cdk' as cdk;
+@use 'ag-grid-community/styles' as ag;
+
+// --- AG Grid core + Alpine theme (compiled into bundle via SCSS) ---
+@include ag.grid-styles((theme: alpine));
+
+// --- Custom Palette: Logistics Blue ---
+$logistics-primary: mat.define-palette(mat.$blue-palette, 700, 400, 900);
+$logistics-accent: mat.define-palette(mat.$deep-orange-palette, 600, 400, 800);
+$logistics-warn: mat.define-palette(mat.$red-palette);
+
+$logistics-theme: mat.define-light-theme((color: (primary: $logistics-primary,
+        accent: $logistics-accent,
+        warn: $logistics-warn,
+      ),
+      typography: mat.define-typography-config($font-family: 'Poppins, sans-serif',
+      ),
+      density: -3,
+    ));
+
+@include mat.all-component-themes($logistics-theme);
+@include cdk.overlay();
+
+// Fix CDK visually-hidden for calendar day name headers
+.cdk-visually-hidden {
+  border: 0;
+  clip: rect(0 0 0 0);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  width: 1px;
+  outline: 0;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+// ============================================================
+// CSS Custom Properties (Design Tokens)
+// ============================================================
+:root {
+  // --- Colors ---
+  --bg: #f3f6f9;
+  --sidebar: #12233a;
+  --sidebar-active: #1e3a5f;
+  --primary: #0b5ed7;
+  --accent: #e8441a;
+  --topbar-bg: #f0f4fa;
+  --topbar-border: #d0dae6;
+  --card-bg: #ffffff;
+  --text-primary: #1a2744;
+  --text-secondary: #5c6780;
+  --border: #e2e8f0;
+  --success: #15803d;
+  --warning: #b45309;
+  --danger: #dc2626;
+
+  // --- Shadows ---
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, .08), 0 1px 2px rgba(0, 0, 0, .06);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, .07), 0 2px 4px rgba(0, 0, 0, .06);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, .1), 0 4px 6px rgba(0, 0, 0, .05);
+
+  // --- Radii ---
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+
+  // --- Transitions ---
+  --transition: all 0.25s ease;
+
+  // --- Typography scale (small-size emphasis) ---
+  --fs-xs: 10px;
+  --fs-sm: 11px;
+  --fs-base: 12px;
+  --fs-md: 13px;
+  --fs-lg: 15px;
+  --fs-xl: 17px;
+  --fs-2xl: 20px;
+
+  // --- Spacing ---
+  --sp-xs: 4px;
+  --sp-sm: 8px;
+  --sp-md: 12px;
+  --sp-lg: 16px;
+  --sp-xl: 20px;
+  --sp-2xl: 24px;
+
+  // --- Responsive breakpoints (reference) ---
+  // Mobile:  <= 520px
+  // Tablet:  <= 768px
+  // Desktop: <= 960px
+}
+
+// ============================================================
+// Global Resets & Base
+// ============================================================
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--fs-base);
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+// Utility classes
+.text-uppercase { text-transform: uppercase; }
+.full-width { width: 100%; }
+
+// ============================================================
+// Scrollbar Styling
+// ============================================================
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+// ============================================================
+// Angular Material Overrides — Compact & Consistent
+// ============================================================
+
+// Form fields — compact density
+.mat-mdc-form-field {
+  width: 100%;
+  font-size: var(--fs-base) !important;
+
+  .mat-mdc-text-field-wrapper {
+    border-radius: var(--radius-sm);
+  }
+
+  .mdc-text-field--outlined {
+    --mdc-outlined-text-field-container-shape: var(--radius-sm);
+  }
+
+  // Compact fixed subscript space
+  .mat-mdc-form-field-subscript-wrapper {
+    font-size: var(--fs-xs);
+  }
+}
+
+// Ensure select trigger text is consistent size
+.mat-mdc-select-value-text {
+  font-size: var(--fs-base) !important;
+}
+
+.mat-mdc-select-placeholder {
+  font-size: var(--fs-sm) !important;
+  color: var(--text-secondary) !important;
+}
+
+// Reduce placeholder text sizes globally
+.mat-mdc-form-field .mat-mdc-input-element::placeholder {
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+}
+
+.mat-mdc-floating-label {
+  font-size: var(--fs-base) !important;
+}
+
+// Buttons — standardized sizes
+.mat-mdc-raised-button,
+.mat-mdc-stroked-button,
+.mat-mdc-flat-button {
+  font-size: var(--fs-base) !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em;
+  border-radius: var(--radius-sm) !important;
+}
+
+// Table improvements — consistent across all pages
+.mat-mdc-table {
+  width: 100%;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+
+  .mat-mdc-header-row {
+    background: var(--sidebar);
+
+    .mat-mdc-header-cell {
+      color: #cfe8ff;
+      font-weight: 600;
+      font-size: var(--fs-sm);
+      letter-spacing: 0.03em;
+      white-space: nowrap;
+      padding: 6px var(--sp-md);
+    }
+  }
+
+  .mat-mdc-row {
+    transition: background 0.15s ease;
+
+    &:hover {
+      background: #f0f7ff;
+    }
+
+    &:nth-child(even) {
+      background: #f8fafc;
+    }
+
+    &:nth-child(even):hover {
+      background: #eaf3ff;
+    }
+  }
+
+  .mat-mdc-cell {
+    font-size: var(--fs-base);
+    color: var(--text-primary);
+    white-space: nowrap;
+    padding: 6px var(--sp-md);
+  }
+}
+
+// Paginator
+.mat-mdc-paginator {
+  background: var(--card-bg);
+  border-top: 1px solid var(--border);
+  font-size: var(--fs-sm);
+}
+
+// Snackbar
+.mat-mdc-snack-bar-container {
+  &.snack-success .mdc-snackbar__surface {
+    background: #15803d !important;
+    color: #fff !important;
+  }
+
+  &.snack-error .mdc-snackbar__surface {
+    background: #dc2626 !important;
+    color: #fff !important;
+  }
+
+  &.snack-info .mdc-snackbar__surface {
+    background: #0b5ed7 !important;
+    color: #fff !important;
+  }
+
+  &.snack-warning .mdc-snackbar__surface {
+    background: #b45309 !important;
+    color: #fff !important;
+  }
+}
+
+// Dialog — standardized pattern
+.mat-mdc-dialog-container {
+  .mat-mdc-dialog-title {
+    font-size: var(--fs-lg) !important;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex !important;
+    align-items: center;
+    gap: var(--sp-sm);
+    padding: var(--sp-lg) var(--sp-xl) var(--sp-md) !important;
+    margin: 0 !important;
+
+    mat-icon {
+      color: var(--primary);
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  .mat-mdc-dialog-content {
+    padding: var(--sp-lg) var(--sp-xl) !important;
+    font-size: var(--fs-base);
+  }
+
+  .mat-mdc-dialog-actions {
+    padding: var(--sp-md) var(--sp-xl) var(--sp-lg) !important;
+    gap: var(--sp-sm);
+  }
+}
+
+// Select panel
+.mat-mdc-select-panel {
+  border-radius: var(--radius-sm) !important;
+  font-size: var(--fs-base);
+}
+
+// Said To Contain dropdown panel — wider, properly sized
+.stc-panel {
+  min-width: 200px !important;
+  max-height: 240px !important;
+
+  .mat-mdc-option {
+    font-size: var(--fs-sm) !important;
+    min-height: 32px !important;
+  }
+}
+
+.mat-mdc-option {
+  font-size: var(--fs-base) !important;
+  min-height: 36px !important;
+}
+
+// Placeholder 'Select...' option — grey hint color, consistent across all dropdowns
+.select-placeholder-option {
+  color: var(--text-secondary) !important;
+  font-style: italic;
+}
+
+// Chips / badges — unified across all pages
+.payment-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+
+  &.paid {
+    background: #d1fae5;
+    color: #065f46;
+  }
+
+  &.to-pay {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  &.tbb {
+    background: #e0e7ff;
+    color: #3730a3;
+  }
+}
+
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  background: #e0f2fe;
+  color: #0369a1;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+
+  &.booked {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+
+  &.dispatched {
+    background: #fce7f3;
+    color: #9d174d;
+  }
+}
+
+// ============================================================
+// Utility Classes
+// ============================================================
+.text-primary { color: var(--primary) !important; }
+.text-success { color: var(--success) !important; }
+.text-danger  { color: var(--danger) !important; }
+.text-warning { color: var(--warning) !important; }
+.text-muted   { color: var(--text-secondary) !important; }
+.fw-600 { font-weight: 600; }
+.fw-700 { font-weight: 700; }
+.cursor-pointer { cursor: pointer; }
+.w-100 { width: 100%; }
+
+// ============================================================
+// Reusable Component Patterns (Global)
+// ============================================================
+
+// Card containers
+.page-card {
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  padding: var(--sp-md);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    padding: var(--sp-md);
+  }
+
+  @media (max-width: 520px) {
+    padding: var(--sp-sm);
+    border-radius: var(--radius-md);
+  }
+}
+
+// Page heading — used across all dashboard pages
+.page-heading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  margin: 0 0 var(--sp-md) 0;
+  color: var(--text-primary);
+
+  mat-icon {
+    color: var(--primary);
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+
+  @media (max-width: 520px) {
+    font-size: var(--fs-lg);
+    margin-bottom: var(--sp-sm);
+  }
+}
+
+// Filter row — used across reports, global-search, statements, etc.
+.filter-row,
+.filter-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-md);
+  align-items: center;
+  margin-bottom: var(--sp-lg);
+
+  mat-form-field {
+    min-width: 140px;
+    flex: 1;
+    max-width: 200px;
+
+    .mat-mdc-form-field-subscript-wrapper {
+      display: none;
+    }
+  }
+
+  button[mat-raised-button],
+  button[mat-flat-button] {
+    height: 40px;
+    flex-shrink: 0;
+    margin-top: 0;
+
+    mat-icon {
+      margin-right: 4px;
+    }
+  }
+
+  .filter-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-shrink: 0;
+    margin-top: 0;
+
+    button {
+      height: 40px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    gap: var(--sp-sm);
+
+    mat-form-field {
+      min-width: 120px;
+      max-width: none;
+    }
+
+    button[mat-raised-button],
+    button[mat-flat-button] {
+      height: 48px;
+      font-size: 14px !important;
+    }
+
+    .filter-actions button {
+      height: 48px;
+      font-size: 14px !important;
+    }
+  }
+
+  @media (max-width: 520px) {
+    flex-direction: column;
+    align-items: stretch;
+
+    mat-form-field {
+      min-width: unset;
+      max-width: none;
+      width: 100%;
+    }
+
+    button {
+      width: 100%;
+    }
+
+    button[mat-raised-button],
+    button[mat-flat-button] {
+      margin-top: 0;
+      height: 48px;
+      font-size: 14px !important;
+    }
+
+    .filter-actions {
+      margin-top: 0;
+      flex-direction: column;
+
+      button {
+        width: 100%;
+        height: 48px;
+        font-size: 14px !important;
+      }
+    }
+  }
+}
+
+// Quick date-range chips — 1 Day / 1 Week / 1 Month (used in all report pages)
+.date-range-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: var(--sp-sm);
+
+  .range-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    cursor: pointer;
+    background: #fff;
+    color: var(--text-secondary);
+    transition: var(--transition);
+    white-space: nowrap;
+    user-select: none;
+
+    mat-icon {
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
+    }
+
+    &:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: #eff6ff;
+    }
+
+    &.active {
+      border-color: var(--primary);
+      background: var(--primary);
+      color: #fff;
+    }
+  }
+
+  @media (max-width: 520px) {
+    gap: 5px;
+
+    .range-chip {
+      padding: 3px 10px;
+      font-size: var(--fs-xs);
+    }
+  }
+}
+
+// Action bar — export buttons used across reports
+.action-bar {
+  display: flex;
+  gap: var(--sp-sm);
+  flex-wrap: wrap;
+  margin: var(--sp-md) 0;
+
+  button {
+    font-size: var(--fs-sm) !important;
+  }
+
+  @media (max-width: 520px) {
+    gap: 6px;
+
+    button {
+      flex: 1;
+      min-width: 0;
+      font-size: var(--fs-xs) !important;
+    }
+  }
+}
+
+// Submit row — used across admin and booking forms
+.submit-row {
+  display: flex;
+  gap: var(--sp-sm);
+  align-items: center;
+  padding: var(--sp-sm) 0 0;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    button {
+      height: 48px;
+      font-size: 14px !important;
+    }
+  }
+
+  @media (max-width: 520px) {
+    flex-direction: column;
+    align-items: stretch;
+
+    button {
+      width: 100%;
+      height: 48px;
+      font-size: 14px !important;
+    }
+  }
+}
+
+// Empty state — used across report and data pages
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px var(--sp-xl);
+  color: var(--text-secondary);
+  text-align: center;
+
+  mat-icon {
+    font-size: 44px;
+    width: 44px;
+    height: 44px;
+    opacity: 0.35;
+    margin-bottom: var(--sp-md);
+  }
+
+  p {
+    font-size: var(--fs-md);
+    margin: 0;
+    max-width: 300px;
+  }
+
+  @media (max-width: 520px) {
+    padding: 32px var(--sp-lg);
+
+    mat-icon {
+      font-size: 36px;
+      width: 36px;
+      height: 36px;
+    }
+
+    p {
+      font-size: var(--fs-base);
+    }
+  }
+}
+
+// Section headings inside forms
+.section-title {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 0;
+  border-bottom: 2px solid var(--primary);
+  margin-bottom: var(--sp-sm);
+}
+
+// Form grid helper — unified 4→3→2→1 column pattern
+.form-grid {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(3, 1fr);
+
+  .full-col {
+    grid-column: 1 / -1;
+  }
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 520px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// Reports table container
+.table-scroll-container {
+  overflow: auto;
+  max-height: 55vh;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  position: relative;
+  -webkit-overflow-scrolling: touch;
+
+  @media (max-width: 768px) {
+    max-height: 45vh;
+    border-radius: var(--radius-sm);
+  }
+}
+
+// Stat summary card
+.summary-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-sm);
+  margin-top: var(--sp-lg);
+
+  .stat-card {
+    background: linear-gradient(135deg, #0b5ed7 0%, #0097d7 100%);
+    color: #fff;
+    padding: 10px 14px;
+    border-radius: var(--radius-md);
+    min-width: 120px;
+    flex: 1;
+    box-shadow: var(--shadow-sm);
+
+    .stat-label {
+      font-size: var(--fs-xs);
+      opacity: 0.85;
+      margin-bottom: 2px;
+    }
+
+    .stat-value {
+      font-size: var(--fs-xl);
+      font-weight: 700;
+    }
+
+    &.success {
+      background: linear-gradient(135deg, #15803d, #22c55e);
+    }
+
+    &.warning {
+      background: linear-gradient(135deg, #b45309, #f59e0b);
+    }
+
+    &.danger {
+      background: linear-gradient(135deg, #dc2626, #f87171);
+    }
+
+    @media (max-width: 520px) {
+      min-width: 100px;
+      padding: 8px var(--sp-md);
+
+      .stat-value {
+        font-size: var(--fs-lg);
+      }
+    }
+  }
+}
+
+// Load more row
+.load-more-row {
+  display: flex;
+  justify-content: center;
+  padding: var(--sp-lg);
+}
+
+// Loading overlay
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+// Coming soon page
+.coming-soon-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  text-align: center;
+  gap: var(--sp-md);
+  color: var(--text-secondary);
+
+  mat-icon {
+    font-size: 56px;
+    width: 56px;
+    height: 56px;
+    color: var(--primary);
+    opacity: 0.5;
+  }
+
+  h2 {
+    font-size: var(--fs-2xl);
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  p {
+    font-size: var(--fs-md);
+    max-width: 340px;
+  }
+
+  @media (max-width: 520px) {
+    min-height: 40vh;
+    gap: var(--sp-sm);
+
+    mat-icon {
+      font-size: 44px;
+      width: 44px;
+      height: 44px;
+    }
+
+    h2 {
+      font-size: var(--fs-xl);
+    }
+
+    p {
+      font-size: var(--fs-base);
+      max-width: 260px;
+    }
+  }
+}
+
+// ============================================================
+// Date Picker — Mobile Fixes
+// ============================================================
+.mat-datepicker-content {
+  @media (max-width: 520px) {
+    max-width: 95vw;
+  }
+}
+
+// Calendar header day abbreviations
+.mat-calendar-table-header th {
+  font-size: var(--fs-xs);
+  padding: 0 0 8px 0;
+}
+
+// ============================================================
+// AG Grid — Global Theme & Responsive
+// ============================================================
+.ag-theme-alpine,
+.ag-theme-material {
+  --ag-font-family: 'Poppins', sans-serif;
+  --ag-font-size: 12px;
+  --ag-header-background-color: #12233a;
+  --ag-header-foreground-color: #cfe8ff;
+  --ag-header-cell-hover-background-color: #1e3a5f;
+  --ag-row-hover-color: #f0f7ff;
+  --ag-odd-row-background-color: #f8fafc;
+  --ag-border-color: #e2e8f0;
+  --ag-cell-horizontal-padding: 12px;
+  --ag-row-height: 40px;
+  --ag-header-height: 42px;
+  --ag-borders: solid 1px;
+  --ag-border-radius: 8px;
+  width: 100%;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border);
+
+  .ag-header-cell-label {
+    font-weight: 600;
+    font-size: var(--fs-sm);
+    letter-spacing: 0.03em;
+  }
+
+  .ag-cell {
+    display: flex;
+    align-items: center;
+    font-size: var(--fs-base);
+  }
+
+  .ag-paging-panel {
+    font-size: var(--fs-sm);
+    justify-content: center;
+    border-top: 1px solid var(--border);
+    padding: 8px;
+  }
+
+  @media (max-width: 768px) {
+    --ag-font-size: 11px;
+    --ag-cell-horizontal-padding: 8px;
+    --ag-row-height: 36px;
+    --ag-header-height: 38px;
+  }
+
+  @media (max-width: 520px) {
+    --ag-font-size: 10px;
+    --ag-cell-horizontal-padding: 6px;
+    --ag-row-height: 34px;
+    --ag-header-height: 36px;
+  }
+}
+
+// ============================================================
+// Dialog Patterns — Standardized across all dialogs
+// ============================================================
+.dialog-icon-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-md);
+  padding: var(--sp-lg) var(--sp-xl) var(--sp-md);
+}
+
+.icon-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0b5ed7, #0097d7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  mat-icon {
+    color: #fff;
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.dialog-subtitle {
+  margin: 2px 0 0;
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+}
+
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-radius: var(--radius-sm);
+  padding: 8px var(--sp-md);
+  color: #dc2626;
+  font-size: var(--fs-base);
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+}
+
+// ============================================================
+// Mode Toggle — used in admin pages
+// ============================================================
+.mode-toggle {
+  display: flex;
+  gap: var(--sp-sm);
+  margin-bottom: var(--sp-lg);
+  flex-wrap: wrap;
+
+  @media (max-width: 520px) {
+    flex-direction: column;
+    align-items: stretch;
+
+    button {
+      width: 100%;
+      height: 48px;
+      font-size: 14px !important;
+    }
+  }
+}
+
+// ============================================================
+// Print styles
+// ============================================================
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+  }
+}
+
+// ============================================================
+// Material Datepicker Styling
+// ============================================================
+.mat-datepicker-toggle {
+  .mat-mdc-icon-button {
+    width: 32px !important;
+    height: 32px !important;
+    padding: 4px !important;
+
+    mat-icon, .mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
+  }
+}
+
+.mat-datepicker-content {
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+
+// ============================================================
+// Responsive Table Helper — Horizontal scroll on small screens
+// ============================================================
+.table-scroll-container {
+  @media (max-width: 768px) {
+    -webkit-overflow-scrolling: touch;
+
+    table {
+      min-width: 600px;
+    }
+  }
+
+  @media (max-width: 520px) {
+    max-height: 40vh;
+
+    table {
+      min-width: 500px;
+    }
+  }
+}
+
+// ============================================================
+// Responsive Dialog Overrides
+// ============================================================
+@media (max-width: 520px) {
+  .mat-mdc-dialog-container {
+    .mat-mdc-dialog-title {
+      padding: var(--sp-md) var(--sp-lg) var(--sp-sm) !important;
+      font-size: var(--fs-md) !important;
+    }
+
+    .mat-mdc-dialog-content {
+      padding: var(--sp-md) var(--sp-lg) !important;
+    }
+
+    .mat-mdc-dialog-actions {
+      padding: var(--sp-sm) var(--sp-lg) var(--sp-md) !important;
+      flex-wrap: wrap;
+
+      button {
+        flex: 1;
+        min-width: 0;
+      }
+    }
+  }
+}
+
+// ============================================================
+// Edit Booking Dialog — Fully Responsive
+// ============================================================
+.edit-booking-dialog-panel {
+  .mat-mdc-dialog-container {
+    padding: 0 !important;
+    border-radius: 8px !important;
+    overflow: hidden;
+
+    .mat-mdc-dialog-surface {
+      border-radius: 8px !important;
+      overflow: hidden;
+    }
+  }
+
+  // Full screen on mobile
+  @media (max-width: 600px) {
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    margin: 0 !important;
+
+    .mat-mdc-dialog-container {
+      border-radius: 0 !important;
+
+      .mat-mdc-dialog-surface {
+        border-radius: 0 !important;
+      }
+    }
+  }
+}

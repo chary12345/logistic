@@ -1,0 +1,55 @@
+<div class="page-card">
+  <h2 class="page-heading"><mat-icon>delivery_dining</mat-icon> Delivery</h2>
+
+  <!-- Search Section -->
+  <form [formGroup]="searchForm" class="filter-row" (ngSubmit)="search()">
+    <mat-form-field>
+      <mat-label>LR Number</mat-label>
+      <input matInput formControlName="lrNumber"
+        placeholder="Enter LR Number (leave blank for all)"
+        (keyup.enter)="search()">
+    </mat-form-field>
+    <div class="filter-actions">
+      <button mat-raised-button color="primary" type="submit" [disabled]="loading">
+        <mat-icon>search</mat-icon> Search
+      </button>
+      <button mat-raised-button type="button" (click)="reset()" [disabled]="loading">
+        <mat-icon>refresh</mat-icon> Reset
+      </button>
+    </div>
+  </form>
+
+  <mat-progress-bar *ngIf="loading" mode="indeterminate"></mat-progress-bar>
+
+  <!-- AG Grid -->
+  <div class="grid-wrapper" *ngIf="rowData.length">
+    <ag-grid-angular
+      class="ag-theme-alpine"
+      [rowData]="rowData" [columnDefs]="columnDefs" [defaultColDef]="defaultColDef"
+      [rowSelection]="'multiple'" [suppressRowClickSelection]="true"
+      [pagination]="true" [paginationPageSize]="20" [paginationPageSizeSelector]="[10, 20, 50, 100]"
+      [animateRows]="true" [suppressCellFocus]="true" [domLayout]="'autoHeight'"
+      (gridReady)="onGridReady($event)" (gridSizeChanged)="onGridSizeChanged($event)"
+      (selectionChanged)="onSelectionChanged($event)">
+    </ag-grid-angular>
+  </div>
+
+  <!-- Deliver Action Bar -->
+  <div class="action-bar-bottom" *ngIf="selectedRows.length > 0">
+    <button mat-raised-button color="accent" type="button" (click)="deliverSelected()">
+      <mat-icon>delivery_dining</mat-icon> Deliver Selected ({{ selectedRows.length }})
+    </button>
+  </div>
+
+  <!-- Empty state -->
+  <div *ngIf="!loading && searched && rowData.length === 0" class="empty-state">
+    <mat-icon>delivery_dining</mat-icon>
+    <p>No received consignments pending delivery at your branch.</p>
+  </div>
+
+  <!-- Initial state (before any search) -->
+  <div *ngIf="!loading && !searched" class="empty-state">
+    <mat-icon>search</mat-icon>
+    <p>Enter an LR Number or click <strong>Search</strong> to load all pending deliveries.</p>
+  </div>
+</div>

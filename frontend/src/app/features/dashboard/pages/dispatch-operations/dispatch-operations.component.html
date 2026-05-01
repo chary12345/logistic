@@ -1,0 +1,97 @@
+<div class="page-card">
+  <h2 class="page-heading"><mat-icon>local_shipping</mat-icon> Dispatch</h2>
+
+  <!-- Filters -->
+  <form [formGroup]="filterForm" class="filter-row">
+    <mat-form-field>
+      <mat-label>Region*</mat-label>
+      <mat-select formControlName="region" (selectionChange)="onRegion($event.value)">
+        <mat-option value="">All</mat-option>
+        <mat-option *ngFor="let r of regions" [value]="r">{{ r }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>Sub-Region*</mat-label>
+      <mat-select formControlName="subRegion" (selectionChange)="onSubRegion($event.value)">
+        <mat-option value="">All</mat-option>
+        <mat-option *ngFor="let s of subRegions" [value]="s">{{ s }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>Branch*</mat-label>
+      <mat-select formControlName="branchCode">
+        <mat-option value="">All</mat-option>
+        <mat-option *ngFor="let b of branchOptions" [value]="b.code">{{ b.label }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <div class="filter-actions">
+      <button mat-raised-button color="primary" type="button" (click)="fetchBookings()" [disabled]="loading">
+        <mat-icon>search</mat-icon> Find Bookings
+      </button>
+      <button mat-raised-button type="button" (click)="resetFilters()">
+        <mat-icon>refresh</mat-icon> Reset
+      </button>
+    </div>
+  </form>
+
+  <mat-progress-bar *ngIf="loading" mode="indeterminate"></mat-progress-bar>
+
+  <!-- AG Grid Table -->
+  <div class="grid-wrapper" *ngIf="rowData.length">
+    <ag-grid-angular
+      class="ag-theme-alpine"
+      [rowData]="rowData"
+      [columnDefs]="columnDefs"
+      [defaultColDef]="defaultColDef"
+      [rowSelection]="'multiple'"
+      [suppressRowClickSelection]="true"
+      [pagination]="true"
+      [paginationPageSize]="20"
+      [paginationPageSizeSelector]="[10, 20, 50, 100]"
+      [animateRows]="true"
+      [suppressCellFocus]="true"
+      [domLayout]="'autoHeight'"
+      (gridReady)="onGridReady($event)"
+      (gridSizeChanged)="onGridSizeChanged($event)"
+      (selectionChanged)="onSelectionChanged($event)">
+    </ag-grid-angular>
+  </div>
+
+  <!-- Dispatch Selected Button -->
+  <div class="dispatch-bar" *ngIf="selectedRows.length > 0">
+    <button mat-raised-button color="warn" type="button" (click)="openDispatch()">
+      <mat-icon>local_shipping</mat-icon>
+      Dispatch Selected ({{ selectedRows.length }})
+    </button>
+  </div>
+
+  <!-- Booking Summary -->
+  <div class="summary-section" *ngIf="summaryRows.length > 0">
+    <h3 class="summary-title">BOOKING SUMMARY</h3>
+    <div class="summary-table-wrapper">
+      <table class="summary-table">
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Total Freight</th>
+            <th>GST (SGST+CGST+IGST)</th>
+            <th>Grand Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of summaryRows" [class.total-row]="row.type === 'Total'">
+            <td>{{ row.type }}</td>
+            <td>{{ row.totalFreight | number:'1.2-2' }}</td>
+            <td>{{ row.gst | number:'1.2-2' }}</td>
+            <td>{{ row.grandTotal | number:'1.2-2' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div *ngIf="!loading && rowData.length === 0" class="empty-state">
+    <mat-icon>local_shipping</mat-icon>
+    <p>Use the filters above to fetch bookings ready for dispatch.</p>
+  </div>
+</div>
