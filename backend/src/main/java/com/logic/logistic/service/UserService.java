@@ -10,10 +10,10 @@ import com.logic.logistic.repository.UserRepository;
 @Service
 public class UserService {
 
-	private static final long serialVersionUID=1L;
+    private static final long serialVersionUID = 1L;
 
-	private static Logger logger = LogManager.getLogger();
-	
+    private static Logger logger = LogManager.getLogger();
+
     @Autowired
     private UserRepository userRepository;
 
