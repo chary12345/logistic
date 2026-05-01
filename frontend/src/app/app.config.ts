@@ -9,6 +9,15 @@ import { provideHighcharts } from 'highcharts-angular';
 import { routes } from './app.routes';
 import { errorInterceptor } from './core/interceptors/error.interceptor';
 import { loadingInterceptor } from './core/interceptors/loading.interceptor';
+import * as Highcharts from 'highcharts';
+import Accessibility from 'highcharts/modules/accessibility';
+import Exporting from 'highcharts/modules/exporting';
+import ExportData from 'highcharts/modules/export-data';
+
+// Initialize Highcharts modules safely
+(Accessibility as any)(Highcharts);
+(Exporting as any)(Highcharts);
+(ExportData as any)(Highcharts);
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -28,12 +37,7 @@ export const appConfig: ApplicationConfig = {
       useValue: { duration: 4000, horizontalPosition: 'right', verticalPosition: 'bottom' }
     },
     provideHighcharts({
-      instance: () => import('highcharts'),
-      modules: () => [
-        import('highcharts/modules/accessibility'),
-        import('highcharts/modules/exporting'),
-        import('highcharts/modules/export-data')
-      ]
+      instance: () => Promise.resolve(Highcharts)
     }),
   ]
 };

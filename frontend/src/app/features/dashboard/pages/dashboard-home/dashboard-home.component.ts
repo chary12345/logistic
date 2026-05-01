@@ -60,6 +60,9 @@ export class DashboardHomeComponent implements OnInit, OnDestroy {
   activeVehicles = 0;
 
 
+  // Highcharts instance for template
+  Highcharts: typeof Highcharts = Highcharts;
+
   // Chart options
   bookingTrendOptions: Highcharts.Options = {};
   paymentPieOptions: Highcharts.Options = {};
@@ -123,7 +126,8 @@ export class DashboardHomeComponent implements OnInit, OnDestroy {
         this.activeVehicles = summary.activeVehicles || 0;
         
         this.recentBookings = summary.recentBookings || [];
-
+        this.allBookings = summary.recentBookings || []; // Fallback for calculations if needed
+        
         this.buildCharts(summary);
         this.buildKpiCards();
         this.loading = false;
