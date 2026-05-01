@@ -4,6 +4,7 @@ public class PasswordChangeRequest {
     private String username;
     private String currentPassword;
     private String newPassword;
+    private String group;
 
     // Default Constructor
     public PasswordChangeRequest() {}
@@ -31,5 +32,13 @@ public class PasswordChangeRequest {
 
     public void setNewPassword(String newPassword) {
         this.newPassword = newPassword;
+    }
+
+    public String getGroup() {
+        return group;
+    }
+
+    public void setGroup(String group) {
+        this.group = group;
     }
 }

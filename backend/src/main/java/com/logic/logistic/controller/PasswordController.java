@@ -19,7 +19,8 @@ public class PasswordController {
         boolean isChanged = userService.changeUserPassword(
                 request.getUsername(),
                 request.getCurrentPassword(),
-                request.getNewPassword()
+                request.getNewPassword(),
+                request.getGroup()
         );
 
         if (isChanged) {

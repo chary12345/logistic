@@ -11,12 +11,16 @@ import { MatDividerModule } from '@angular/material/divider';
 import { LoginApiService } from '../../../../core/services/login-api.service';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { SnackbarService } from '../../../../core/services/snackbar.service';
+import * as CryptoJS from 'crypto-js';
 
 function passwordMatchValidator(group: AbstractControl): ValidationErrors | null {
   const newPw  = group.get('newPassword')?.value;
   const confirm = group.get('confirmPassword')?.value;
   return newPw && confirm && newPw !== confirm ? { mismatch: true } : null;
 }
+
+const AES_KEY = '1234567890123456';
+const AES_IV  = 'abcdefghijklmnop';
 
 @Component({
   selector: 'app-change-password-dialog',
@@ -221,16 +225,26 @@ export class ChangePasswordDialogComponent {
     private dialogRef: MatDialogRef<ChangePasswordDialogComponent>
   ) {}
 
+  private encryptPassword(plain: string): string {
+    const key = CryptoJS.enc.Utf8.parse(AES_KEY);
+    const iv  = CryptoJS.enc.Utf8.parse(AES_IV);
+    return CryptoJS.AES.encrypt(plain, key, {
+      iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7
+    }).toString();
+  }
+
   submit(): void {
     this.errorMsg = '';
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
 
     this.loading = true;
     const { currentPassword, newPassword } = this.form.value;
+    
     this.loginSvc.changePassword({
-      username: this.auth.currentUser?.username || '',
-      currentPassword: currentPassword!,
-      newPassword: newPassword!,
+      username: this.auth.currentUser?.userName || '',
+      currentPassword: this.encryptPassword(currentPassword!),
+      newPassword: this.encryptPassword(newPassword!),
+      group: this.auth.companyCode,
     }).subscribe({
       next: (r: any) => {
         this.loading = false;

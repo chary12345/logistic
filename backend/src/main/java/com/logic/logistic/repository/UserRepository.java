@@ -24,7 +24,7 @@ public interface UserRepository extends JpaRepository<UserDto, String> {
     // ✅ Added update query for changing password (without removing anything)
     @Modifying
     @Transactional
-    @Query(value = "UPDATE logistics_logic.user_data SET password = :newPassword WHERE user_name = :username", nativeQuery = true)
+    @Query(value = "UPDATE logistics_logic.user_data SET password = :newPassword WHERE user_id = :username", nativeQuery = true)
     int updatePassword(@Param("username") String username, @Param("newPassword") String newPassword);
     
     

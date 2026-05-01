@@ -295,6 +295,7 @@ export interface PasswordChangeRequest {
   username: string;
   currentPassword: string;
   newPassword: string;
+  group: string;
 }
 
 // ---- Dashboard ----
