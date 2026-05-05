@@ -31,6 +31,7 @@ public class UserService {
             logger.info("Current password is incorrect for user: " + fullUsername);
             return false;
         }
+
         int rowsUpdated = userRepository.updatePassword(fullUsername, newPassword);
 
         if (rowsUpdated > 0) {
