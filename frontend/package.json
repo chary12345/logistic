@@ -23,6 +23,7 @@
     "@types/crypto-js": "^4.2.2",
     "ag-grid-angular": "^31.3.2",
     "ag-grid-community": "^31.3.2",
+    "country-state-city": "^3.2.1",
     "crypto-js": "^4.2.0",
     "highcharts": "^12.6.0",
     "highcharts-angular": "^5.4.0",

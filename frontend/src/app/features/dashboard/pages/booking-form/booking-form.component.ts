@@ -23,13 +23,14 @@ import { ContactService } from '../../../../core/services/contact.service';
 import { BranchService } from '../../../../core/services/branch.service';
 import { SnackbarService } from '../../../../core/services/snackbar.service';
 import { PaymentModeService, PaymentMode } from '../../../../core/services/payment-mode.service';
+import { PartyService, Party } from '../../../../core/services/party.service';
 import { LrReceiptDialogComponent } from '../../dialogs/lr-receipt-dialog/lr-receipt-dialog.component';
 import { BookingConfirmationDialogComponent } from '../../dialogs/booking-confirmation-dialog/booking-confirmation-dialog.component';
 import { ArticleDetailDto, BookingDTO, Contact } from '../../../../shared/models/models';
 
 const ARTICLE_TYPES = [
-  'Auto Parts','Electronics','Garments','Furniture','Food Items',
-  'Chemicals','Machinery','Textiles','Documents','Other'
+  'Auto Parts', 'Electronics', 'Garments', 'Furniture', 'Food Items',
+  'Chemicals', 'Machinery', 'Textiles', 'Documents', 'Other'
 ];
 
 const ARTICLE_OPTIONS = ['Article', 'Weight', 'Fix'];
@@ -54,10 +55,10 @@ export class BookingFormComponent implements OnInit, OnDestroy {
 
   form!: FormGroup;
   paymentMode: PaymentMode = 'TO PAY';
-  loading         = false;
-  loadingBooking  = false;
-  isEditMode      = false;
-  editLR          = '';
+  loading = false;
+  loadingBooking = false;
+  isEditMode = false;
+  editLR = '';
   saidToContainsList: string[] = [];
   consignorSuggestions: Contact[] = [];
   consigneeSuggestions: Contact[] = [];
@@ -68,12 +69,15 @@ export class BookingFormComponent implements OnInit, OnDestroy {
   filteredSaidToContains: string[] = [];
   typeFilterCtrl = new FormControl('');
   filteredArticleTypes: string[] = ARTICLE_TYPES;
-  articleTypes    = ARTICLE_TYPES;
+  articleTypes = ARTICLE_TYPES;
   articleFilterCtrl = new FormControl('');
   filteredArticleOptions: string[] = ARTICLE_OPTIONS;
-  nextLR          = '';
+  nextLR = '';
   hasValidConsignorGST = false;
   hasValidConsigneeGST = false;
+  partiesList: Party[] = [];
+  partySuggestions: Party[] = [];
+  selectedParty: any = null;
 
   private destroy$ = new Subject<void>();
 
@@ -81,17 +85,18 @@ export class BookingFormComponent implements OnInit, OnDestroy {
   get showPaidVia(): boolean { return this.paymentMode === 'PAID'; }
 
   constructor(
-    private fb:             FormBuilder,
-    private route:          ActivatedRoute,
-    private auth:           AuthService,
-    private bookingSvc:     BookingService,
-    private contactSvc:     ContactService,
-    private branchSvc:      BranchService,
-    private snack:          SnackbarService,
-    private dialog:         MatDialog,
+    private fb: FormBuilder,
+    private route: ActivatedRoute,
+    private auth: AuthService,
+    private bookingSvc: BookingService,
+    private contactSvc: ContactService,
+    private branchSvc: BranchService,
+    private snack: SnackbarService,
+    private dialog: MatDialog,
     private paymentModeSvc: PaymentModeService,
-    private router:         Router
-  ) {}
+    private partySvc: PartyService,
+    private router: Router
+  ) { }
 
   ngOnInit(): void {
     this.buildForm();
@@ -136,6 +141,7 @@ export class BookingFormComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe(mode => {
         this.paymentMode = mode;
+        this.updatePartyNameValidation(mode);
       });
 
     // Check for edit mode via ?lr= query param
@@ -155,26 +161,27 @@ export class BookingFormComponent implements OnInit, OnDestroy {
   private buildForm(): void {
     this.form = this.fb.group({
       deliveryDestination: ['', Validators.required],
-      consignorName:    ['', Validators.required],
-      consignorMobile:  ['', [Validators.required, Validators.pattern(/^\d{10}$/)]],
-      consignorGST:     ['', this.gstValidator.bind(this)],
+      partyName: [''],
+      consignorName: ['', Validators.required],
+      consignorMobile: ['', [Validators.required, Validators.pattern(/^\d{10}$/)]],
+      consignorGST: ['', this.gstValidator.bind(this)],
       consignorAddress: ['', Validators.required],
-      consigneeName:    ['', Validators.required],
-      consigneeMobile:  ['', [Validators.required, Validators.pattern(/^\d{10}$/)]],
-      consigneeGST:     ['', this.gstValidator.bind(this)],
+      consigneeName: ['', Validators.required],
+      consigneeMobile: ['', [Validators.required, Validators.pattern(/^\d{10}$/)]],
+      consigneeGST: ['', this.gstValidator.bind(this)],
       consigneeAddress: ['', Validators.required],
-      invoiceNo:        [''],
-      invoiceValue:     [null],
-      ewayBill:         [''],
-      paidVia:          ['CASH'],
-      loadingCharge:    [0, [Validators.min(0)]],
-      lrCharge:         [0, [Validators.min(0)]],
+      invoiceNo: [''],
+      invoiceValue: [null],
+      ewayBill: [''],
+      paidVia: ['CASH'],
+      loadingCharge: [0, [Validators.min(0)]],
+      lrCharge: [0, [Validators.min(0)]],
       // Calculated (readonly)
-      freight:          [{ value: 0, disabled: true }],
-      sgst:             [{ value: 0, disabled: true }],
-      cgst:             [{ value: 0, disabled: true }],
-      igst:             [{ value: 0, disabled: true }],
-      grandTotal:       [{ value: 0, disabled: true }],
+      freight: [{ value: 0, disabled: true }],
+      sgst: [{ value: 0, disabled: true }],
+      cgst: [{ value: 0, disabled: true }],
+      igst: [{ value: 0, disabled: true }],
+      grandTotal: [{ value: 0, disabled: true }],
       articles: this.fb.array([this.makeArticleRow()]),
     });
 
@@ -220,6 +227,10 @@ export class BookingFormComponent implements OnInit, OnDestroy {
         // Set payment mode (backend returns billType)
         if (booking.billType) {
           this.paymentMode = booking.billType as PaymentMode;
+          this.updatePartyNameValidation(this.paymentMode);
+          if (this.paymentMode === 'TBB') {
+            this.selectedParty = { partyName: booking.partyName || booking.consignorName || '' };
+          }
         }
 
         // Find the full destination string that matches the branch code
@@ -229,20 +240,21 @@ export class BookingFormComponent implements OnInit, OnDestroy {
         // Patch main fields (map backend field names to form controls)
         this.form.patchValue({
           deliveryDestination: matchingDest || destCode,
-          consignorName:       booking.consignorName,
-          consignorMobile:     booking.consignorMobile,
-          consignorGST:        booking.consignorGST || '',
-          consignorAddress:    booking.consignorAddress,
-          consigneeName:       booking.consigneeName,
-          consigneeMobile:     booking.consigneeMobile,
-          consigneeGST:        booking.consigneeGST || '',
-          consigneeAddress:    booking.consigneeAddress,
-          invoiceNo:           booking.invoiceNumber,
-          invoiceValue:        booking.invoiceValue,
-          ewayBill:            booking.eWayBillNumber,
-          paidVia:             booking.paidVia || 'CASH',
-          loadingCharge:       booking.loading || 0,
-          lrCharge:            booking.loadingCharge || 0,
+          partyName: booking.partyName || booking.consignorName || '',
+          consignorName: booking.consignorName,
+          consignorMobile: booking.consignorMobile,
+          consignorGST: booking.consignorGST || '',
+          consignorAddress: booking.consignorAddress,
+          consigneeName: booking.consigneeName,
+          consigneeMobile: booking.consigneeMobile,
+          consigneeGST: booking.consigneeGST || '',
+          consigneeAddress: booking.consigneeAddress,
+          invoiceNo: booking.invoiceNumber,
+          invoiceValue: booking.invoiceValue,
+          ewayBill: booking.eWayBillNumber,
+          paidVia: booking.paidVia || 'CASH',
+          loadingCharge: booking.loading || 0,
+          lrCharge: booking.loadingCharge || 0,
         });
 
         // Rebuild articles (backend uses artQty/artAmt as strings)
@@ -253,12 +265,12 @@ export class BookingFormComponent implements OnInit, OnDestroy {
             const qty = +(a.artQty) || 1;
             const amt = +(a.artAmt) || 0;
             this.articles.push(this.fb.group({
-              article:       [a.article || null],
-              artQuantity:   [qty, [Validators.min(0)]],
-              artType:       [(a.artType && a.artType !== '') ? a.artType : null],
+              article: [a.article || null],
+              artQuantity: [qty, [Validators.min(0)]],
+              artType: [(a.artType && a.artType !== '') ? a.artType : null],
               saidToContain: [a.saidToContain || null],
-              artAmount:     [amt, [Validators.min(0)]],
-              total:         [{ value: qty * amt, disabled: true }],
+              artAmount: [amt, [Validators.min(0)]],
+              total: [{ value: qty * amt, disabled: true }],
             }));
           });
         } else {
@@ -277,12 +289,12 @@ export class BookingFormComponent implements OnInit, OnDestroy {
 
   makeArticleRow(): FormGroup {
     return this.fb.group({
-      article:       [null],
-      artQuantity:   [1, [Validators.min(0)]],
-      artType:       [null],
+      article: [null],
+      artQuantity: [1, [Validators.min(0)]],
+      artType: [null],
       saidToContain: [null],
-      artAmount:     [0, [Validators.min(0)]],
-      total:         [{ value: 0, disabled: true }],
+      artAmount: [0, [Validators.min(0)]],
+      total: [{ value: 0, disabled: true }],
     });
   }
 
@@ -292,7 +304,7 @@ export class BookingFormComponent implements OnInit, OnDestroy {
   onArticleChange(i: number): void {
     const row = this.articles.at(i);
     const qty = +row.get('artQuantity')?.value || 0;
-    const amt = +row.get('artAmount')?.value   || 0;
+    const amt = +row.get('artAmount')?.value || 0;
     row.patchValue({ total: qty * amt }, { emitEvent: false });
     this.recalcCharges();
   }
@@ -310,8 +322,8 @@ export class BookingFormComponent implements OnInit, OnDestroy {
       return sum + (+row.get('artQuantity')?.value || 0) * (+row.get('artAmount')?.value || 0);
     }, 0);
     const loading = +this.form.get('loadingCharge')?.value || 0;
-    const lr      = +this.form.get('lrCharge')?.value      || 0;
-    const base    = freight + loading + lr;
+    const lr = +this.form.get('lrCharge')?.value || 0;
+    const base = freight + loading + lr;
 
     // Only calculate SGST and CGST if at least one valid GST number is present
     const hasValidConsignorGST = !!this.form.get('consignorGST')?.value && !this.form.get('consignorGST')?.hasError('invalidGST');
@@ -331,9 +343,9 @@ export class BookingFormComponent implements OnInit, OnDestroy {
 
     this.form.patchValue({
       freight,
-      sgst:       +sgst.toFixed(2),
-      cgst:       +cgst.toFixed(2),
-      igst:       +igst.toFixed(2),
+      sgst: +sgst.toFixed(2),
+      cgst: +cgst.toFixed(2),
+      igst: +igst.toFixed(2),
       grandTotal: +grandTotal.toFixed(2),
     }, { emitEvent: false });
   }
@@ -341,6 +353,7 @@ export class BookingFormComponent implements OnInit, OnDestroy {
   setPaymentMode(mode: PaymentMode): void {
     this.paymentMode = mode;
     this.paymentModeSvc.setPaymentMode(mode);
+    this.updatePartyNameValidation(mode);
   }
 
   @HostListener('window:keydown', ['$event'])
@@ -348,6 +361,90 @@ export class BookingFormComponent implements OnInit, OnDestroy {
     if (e.key === 'F7') { e.preventDefault(); this.setPaymentMode('PAID'); }
     else if (e.key === 'F8') { e.preventDefault(); this.setPaymentMode('TO PAY'); }
     else if (e.key === 'F9') { e.preventDefault(); this.setPaymentMode('TBB'); }
+  }
+
+  updatePartyNameValidation(mode: PaymentMode): void {
+    const partyNameCtrl = this.form?.get('partyName');
+    if (!partyNameCtrl) return;
+    if (mode === 'TBB') {
+      partyNameCtrl.setValidators([Validators.required, this.partySelectedValidator.bind(this)]);
+      this.loadParties();
+    } else {
+      partyNameCtrl.clearValidators();
+      partyNameCtrl.setValue('', { emitEvent: false });
+      this.selectedParty = null;
+      this.partySuggestions = [];
+    }
+    partyNameCtrl.updateValueAndValidity({ emitEvent: false });
+  }
+
+  partySelectedValidator(control: AbstractControl): ValidationErrors | null {
+    if (this.paymentMode !== 'TBB') return null;
+    if (!control.value) return { required: true };
+    if (!this.selectedParty || this.selectedParty.partyName !== control.value) {
+      return { partyNotSelected: true };
+    }
+    return null;
+  }
+
+  loadParties(): void {
+    const cc = this.auth.companyCode;
+    if (!cc) return;
+    this.partySvc.getPartiesByCompanyCode(cc)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: list => {
+          this.partiesList = list || [];
+          if (this.form.get('partyName')?.value) {
+            this.searchParties(this.form.get('partyName')?.value);
+          }
+        },
+        error: () => {
+          this.partiesList = [];
+        }
+      });
+  }
+
+  searchParties(q: string): void {
+    if (!q) {
+      this.partySuggestions = [];
+      this.selectedParty = null;
+      this.form.get('partyName')?.setErrors({ required: true });
+      return;
+    }
+
+    const search = q.toLowerCase().trim();
+    this.partySuggestions = this.partiesList.filter(p =>
+      (p.partyName || '').toLowerCase().includes(search) ||
+      (p.partyCode || '').toLowerCase().includes(search)
+    );
+
+    const exactMatch = this.partiesList.find(p => (p.partyName || '').toLowerCase() === search);
+    if (exactMatch) {
+      this.selectedParty = exactMatch;
+      this.form.get('partyName')?.setErrors(null);
+    } else if (this.selectedParty && this.selectedParty.partyName.toLowerCase() === search) {
+      this.form.get('partyName')?.setErrors(null);
+    } else {
+      this.selectedParty = null;
+      this.form.get('partyName')?.setErrors({ partyNotSelected: true });
+    }
+  }
+
+  fillParty(p: Party): void {
+    this.selectedParty = p;
+    this.form.patchValue({
+      partyName: p.partyName,
+      consignorName: p.partyName,
+      consignorMobile: p.mobileNumber1 || '',
+      consignorGST: '',
+      consignorAddress: p.city || '',
+    });
+    this.partySuggestions = [];
+    this.form.get('partyName')?.setErrors(null);
+    this.form.get('partyName')?.markAsTouched();
+    this.hasValidConsignorGST = !this.form.get('consignorGST')?.hasError('invalidGST') && !!this.form.get('consignorGST')?.value;
+    this.recalcCharges();
   }
 
   private loadSaidToContains(): void {
@@ -399,7 +496,7 @@ export class BookingFormComponent implements OnInit, OnDestroy {
     if (!bc) return;
     this.branchSvc.getNextLR(bc)
       .pipe(takeUntil(this.destroy$))
-      .subscribe({ next: lr => this.nextLR = lr, error: () => {} });
+      .subscribe({ next: lr => this.nextLR = lr, error: () => { } });
   }
 
   private loadBranchDestinations(): void {
@@ -418,7 +515,7 @@ export class BookingFormComponent implements OnInit, OnDestroy {
             this.filterDestinations('');
           }
         },
-        error: () => {}
+        error: () => { }
       });
   }
 
@@ -433,7 +530,7 @@ export class BookingFormComponent implements OnInit, OnDestroy {
     if (!q || q.length < 2) { this.consignorSuggestions = []; return; }
     this.contactSvc.search('consignor', q, this.auth.branchCode)
       .pipe(takeUntil(this.destroy$))
-      .subscribe({ next: r => this.consignorSuggestions = r, error: () => {} });
+      .subscribe({ next: r => this.consignorSuggestions = r, error: () => { } });
   }
 
   fillConsignor(c: Contact): void {
@@ -451,7 +548,7 @@ export class BookingFormComponent implements OnInit, OnDestroy {
     if (!q || q.length < 2) { this.consigneeSuggestions = []; return; }
     this.contactSvc.search('consignee', q, this.auth.branchCode)
       .pipe(takeUntil(this.destroy$))
-      .subscribe({ next: r => this.consigneeSuggestions = r, error: () => {} });
+      .subscribe({ next: r => this.consigneeSuggestions = r, error: () => { } });
   }
 
   fillConsignee(c: Contact): void {
@@ -472,6 +569,7 @@ export class BookingFormComponent implements OnInit, OnDestroy {
     if (this.formDirective) {
       this.formDirective.resetForm({
         deliveryDestination: '',
+        partyName: '',
         consignorName: '',
         consignorMobile: '',
         consignorGST: '',
@@ -491,6 +589,7 @@ export class BookingFormComponent implements OnInit, OnDestroy {
       // Fallback if ViewChild is not yet available
       this.form.reset({
         deliveryDestination: '',
+        partyName: '',
         consignorName: '',
         consignorMobile: '',
         consignorGST: '',
@@ -522,8 +621,11 @@ export class BookingFormComponent implements OnInit, OnDestroy {
     this.hasValidConsigneeGST = false;
 
     this.paymentMode = 'TO PAY';
-    this.isEditMode  = false;
-    this.editLR      = '';
+    this.updatePartyNameValidation('TO PAY');
+    this.selectedParty = null;
+    this.partySuggestions = [];
+    this.isEditMode = false;
+    this.editLR = '';
     this.destinationFilterCtrl.setValue('');
     this.stcFilterCtrl.setValue('');
     this.typeFilterCtrl.setValue('');
@@ -581,40 +683,41 @@ export class BookingFormComponent implements OnInit, OnDestroy {
     }
 
     const articleDetails = raw.articles.map((a: any) => ({
-      article:       a.article,
-      artQty:        String(a.artQuantity),
-      artType:       a.artType,
+      article: a.article,
+      artQty: String(a.artQuantity),
+      artType: a.artType,
       saidToContain: a.saidToContain,
-      artAmt:        String(a.artAmount),
-      total:         String(+a.artQuantity * +a.artAmount),
-      companyCode:   this.auth.companyCode,
+      artAmt: String(a.artAmount),
+      total: String(+a.artQuantity * +a.artAmount),
+      companyCode: this.auth.companyCode,
     }));
 
     const dto: any = {
-      billType:              this.paymentMode,
-      paidVia:               this.showPaidVia ? raw.paidVia : undefined,
+      billType: this.paymentMode,
+      paidVia: this.showPaidVia ? raw.paidVia : undefined,
       destinationBranchCode: branchCodeOnly,
-      consignorName:         raw.consignorName,
-      consignorMobile:       raw.consignorMobile,
-      consignorAddress:      raw.consignorAddress,
-      consigneeName:         raw.consigneeName,
-      consigneeMobile:       raw.consigneeMobile,
-      consigneeAddress:      raw.consigneeAddress,
-      consignorGST:         raw.consignorGST,
-      consigneeGST:         raw.consigneeGST,
-      invoiceNumber:         raw.invoiceNo,
-      invoiceValue:          raw.invoiceValue,
-      eWayBillNumber:        raw.ewayBill,
-      freight:               raw.freight,
-      loading:               raw.loadingCharge,
-      loadingCharge:         raw.lrCharge,
-      sgst:                  raw.sgst,
-      cgst:                  raw.cgst,
-      igst:                  raw.igst,
-      grandTotal:            raw.grandTotal,
-      companyCode:           this.auth.companyCode,
-      branchCode:            this.auth.branchCode,
-      employeeName:          `${this.auth.currentUser?.firstName || ''} ${this.auth.currentUser?.lastName || ''}`.trim(),
+      partyName: this.paymentMode === 'TBB' ? raw.partyName : undefined,
+      consignorName: raw.consignorName,
+      consignorMobile: raw.consignorMobile,
+      consignorAddress: raw.consignorAddress,
+      consigneeName: raw.consigneeName,
+      consigneeMobile: raw.consigneeMobile,
+      consigneeAddress: raw.consigneeAddress,
+      consignorGST: raw.consignorGST,
+      consigneeGST: raw.consigneeGST,
+      invoiceNumber: raw.invoiceNo,
+      invoiceValue: raw.invoiceValue,
+      eWayBillNumber: raw.ewayBill,
+      freight: raw.freight,
+      loading: raw.loadingCharge,
+      loadingCharge: raw.lrCharge,
+      sgst: raw.sgst,
+      cgst: raw.cgst,
+      igst: raw.igst,
+      grandTotal: raw.grandTotal,
+      companyCode: this.auth.companyCode,
+      branchCode: this.auth.branchCode,
+      employeeName: `${this.auth.currentUser?.firstName || ''} ${this.auth.currentUser?.lastName || ''}`.trim(),
       articleDetails,
     };
 
@@ -637,9 +740,9 @@ export class BookingFormComponent implements OnInit, OnDestroy {
 
         // Open the enhanced receipt dialog with print/download options, styled for edit/create
         this.dialog.open(LrReceiptDialogComponent, {
-          data: { 
+          data: {
             booking: saved,
-            isEditMode: this.isEditMode 
+            isEditMode: this.isEditMode
           },
           width: '360px',
           maxWidth: '95vw',

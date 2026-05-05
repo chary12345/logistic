@@ -5,6 +5,7 @@
     "changeOrigin": true,
     "logLevel": "info"
   },
+  "/party": { "target": "http://localhost:8080", "secure": false, "changeOrigin": true },
   "/createBranch": { "target": "http://localhost:8080", "secure": false, "changeOrigin": true },
   "/updateBranch": { "target": "http://localhost:8080", "secure": false, "changeOrigin": true },
   "/BranchesByCompanyCode": { "target": "http://localhost:8080", "secure": false, "changeOrigin": true },
