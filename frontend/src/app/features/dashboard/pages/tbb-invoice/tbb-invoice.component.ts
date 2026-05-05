@@ -11,11 +11,10 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { ContactService } from '../../../../core/services/contact.service';
+import { PartyService, Party } from '../../../../core/services/party.service';
 import { StatementService } from '../../../../core/services/statement.service';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { SnackbarService } from '../../../../core/services/snackbar.service';
-import { Contact } from '../../../../shared/models/models';
 
 @Component({
   selector: 'app-tbb-invoice',
@@ -35,8 +34,8 @@ import { Contact } from '../../../../shared/models/models';
           <mat-label>Party Name (TBB)</mat-label>
           <input matInput type="text" formControlName="consignorName" [matAutocomplete]="cnsgnrAuto" placeholder="Type to search...">
           <mat-autocomplete #cnsgnrAuto="matAutocomplete">
-            <mat-option *ngFor="let c of consignorSuggestions" [value]="c.name">
-              {{ c.name }} ({{ c.mobile }})
+            <mat-option *ngFor="let c of consignorSuggestions" [value]="c.partyName">
+              {{ c.partyName }} ({{ c.mobileNumber1 }})
             </mat-option>
           </mat-autocomplete>
         </mat-form-field>
@@ -226,7 +225,8 @@ import { Contact } from '../../../../shared/models/models';
 export class TbbInvoiceComponent implements OnInit, OnDestroy {
   form!: FormGroup;
   monthsList: { label: string; fromDate: Date; toDate: Date }[] = [];
-  consignorSuggestions: Contact[] = [];
+  partiesList: Party[] = [];
+  consignorSuggestions: Party[] = [];
   loading = false;
   hasSearched = false;
   statementData: any = null;
@@ -235,7 +235,7 @@ export class TbbInvoiceComponent implements OnInit, OnDestroy {
 
   constructor(
     private fb: FormBuilder,
-    private contactSvc: ContactService,
+    private partySvc: PartyService,
     private statementSvc: StatementService,
     private auth: AuthService,
     private snack: SnackbarService
@@ -249,6 +249,8 @@ export class TbbInvoiceComponent implements OnInit, OnDestroy {
       monthIndex: [0, Validators.required] // Default to the first (most recent) month
     });
 
+    this.loadParties();
+
     this.form.get('consignorName')?.valueChanges
       .pipe(takeUntil(this.destroy$), debounceTime(300), distinctUntilChanged())
       .subscribe(val => {
@@ -259,6 +261,21 @@ export class TbbInvoiceComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  private loadParties() {
+    const cc = this.auth.companyCode;
+    if (!cc) return;
+    this.partySvc.getPartiesByCompanyCode(cc)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          this.partiesList = res || [];
+        },
+        error: () => {
+          this.partiesList = [];
+        }
+      });
   }
 
   private generateMonthsList() {
@@ -279,13 +296,12 @@ export class TbbInvoiceComponent implements OnInit, OnDestroy {
   }
 
   searchConsignor(q: string) {
-    if (!q || q.length < 2) { this.consignorSuggestions = []; return; }
-    this.contactSvc.search('consignor', q, this.auth.branchCode)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (res) => this.consignorSuggestions = res,
-        error: () => this.consignorSuggestions = []
-      });
+    if (!q) { this.consignorSuggestions = []; return; }
+    const search = q.toLowerCase().trim();
+    this.consignorSuggestions = this.partiesList.filter(p =>
+      (p.partyName || '').toLowerCase().includes(search) ||
+      (p.partyCode || '').toLowerCase().includes(search)
+    );
   }
 
   /**

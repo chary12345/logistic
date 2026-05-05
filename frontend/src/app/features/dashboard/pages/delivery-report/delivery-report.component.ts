@@ -9,12 +9,14 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { AgGridAngular } from 'ag-grid-angular';
 import { ColDef, GridApi, GridReadyEvent, GridSizeChangedEvent } from 'ag-grid-community';
+import { MatDialog } from '@angular/material/dialog';
 import { Subject, takeUntil } from 'rxjs';
 import { BookingService } from '../../../../core/services/booking.service';
 import { ExportService } from '../../../../core/services/export.service';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { SnackbarService } from '../../../../core/services/snackbar.service';
 import { Booking, BookingSummaryRow } from '../../../../shared/models/models';
+import { LrSearchDialogComponent } from '../../dialogs/lr-search-dialog/lr-search-dialog.component';
 
 @Component({
   selector: 'app-delivery-report',
@@ -165,7 +167,22 @@ export class DeliveryReportComponent implements OnDestroy {
   form = this.fb.group({ fromDate: ['', Validators.required], toDate: ['', Validators.required] });
 
   columnDefs: ColDef[] = [
-    { headerName: 'LR No', field: 'loadingReciept', minWidth: 120, sortable: true, filter: true },
+    { 
+      headerName: 'LR No', 
+      field: 'loadingReciept', 
+      minWidth: 120, 
+      sortable: true, 
+      filter: true,
+      cellRenderer: (p: any) => {
+        if (!p.value) return '';
+        return `<a class="lr-link" style="color: #0b5ed7; font-weight: 600; text-decoration: underline; cursor: pointer;">${p.value}</a>`;
+      },
+      onCellClicked: (params: any) => {
+        if (params.value) {
+          this.openLRDetails(params.value);
+        }
+      }
+    },
     { headerName: 'Delivery Date', field: 'deliveryDate', minWidth: 140, sortable: true,
       valueFormatter: p => this.datePipe.transform(p.value, 'dd/MM/yy HH:mm') || '' },
     { headerName: 'Consignor', field: 'consignorName', minWidth: 120, sortable: true, filter: true },
@@ -195,7 +212,15 @@ export class DeliveryReportComponent implements OnDestroy {
     private bookingSvc: BookingService,
     private auth: AuthService,
     private snack: SnackbarService,
+    private dialog: MatDialog,
   ) {}
+
+  openLRDetails(lr: string): void {
+    this.dialog.open(LrSearchDialogComponent, {
+      width: '500px',
+      data: { lr, hideEdit: true }
+    });
+  }
 
   onGridReady(params: GridReadyEvent): void { this.gridApi = params.api; this.gridApi.sizeColumnsToFit(); }
   onGridSizeChanged(params: GridSizeChangedEvent): void { params.api.sizeColumnsToFit(); }

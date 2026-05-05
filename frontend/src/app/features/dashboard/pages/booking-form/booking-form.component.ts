@@ -28,10 +28,7 @@ import { LrReceiptDialogComponent } from '../../dialogs/lr-receipt-dialog/lr-rec
 import { BookingConfirmationDialogComponent } from '../../dialogs/booking-confirmation-dialog/booking-confirmation-dialog.component';
 import { ArticleDetailDto, BookingDTO, Contact } from '../../../../shared/models/models';
 
-const ARTICLE_TYPES = [
-  'Auto Parts', 'Electronics', 'Garments', 'Furniture', 'Food Items',
-  'Chemicals', 'Machinery', 'Textiles', 'Documents', 'Other'
-];
+const ARTICLE_TYPES: string[] = [];
 
 const ARTICLE_OPTIONS = ['Article', 'Weight', 'Fix'];
 
@@ -68,8 +65,8 @@ export class BookingFormComponent implements OnInit, OnDestroy {
   stcFilterCtrl = new FormControl('');
   filteredSaidToContains: string[] = [];
   typeFilterCtrl = new FormControl('');
-  filteredArticleTypes: string[] = ARTICLE_TYPES;
-  articleTypes = ARTICLE_TYPES;
+  filteredArticleTypes: string[] = [];
+  articleTypes: string[] = [];
   articleFilterCtrl = new FormControl('');
   filteredArticleOptions: string[] = ARTICLE_OPTIONS;
   nextLR = '';
@@ -101,6 +98,7 @@ export class BookingFormComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.buildForm();
     this.loadSaidToContains();
+    this.loadArticleTypes();
     this.loadBranchDestinations();
     this.watchCharges();
 
@@ -477,10 +475,30 @@ export class BookingFormComponent implements OnInit, OnDestroy {
     );
   }
 
+  private loadArticleTypes(): void {
+    const cc = this.auth.companyCode;
+    if (!cc) return;
+    this.bookingSvc.fetchArticleTypeList(cc)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: list => {
+          this.articleTypes = (list || []).map(t => {
+            if (!t) return '';
+            return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
+          });
+          this.filterArticleTypes('');
+        },
+        error: () => {
+          this.articleTypes = [];
+          this.filterArticleTypes('');
+        }
+      });
+  }
+
   private filterArticleTypes(val: string): void {
     const search = (val || '').toLowerCase().trim();
-    this.filteredArticleTypes = ARTICLE_TYPES.filter(t =>
-      t.toLowerCase().includes(search)
+    this.filteredArticleTypes = this.articleTypes.filter(t =>
+      (t || '').toLowerCase().includes(search)
     );
   }
 

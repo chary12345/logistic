@@ -8,6 +8,8 @@ import { HighchartsChartComponent } from 'highcharts-angular';
 import * as Highcharts from 'highcharts';
 import { Subject, forkJoin, of, Observable } from 'rxjs';
 import { takeUntil, catchError } from 'rxjs/operators';
+import { MatDialog } from '@angular/material/dialog';
+import { LrSearchDialogComponent } from '../../dialogs/lr-search-dialog/lr-search-dialog.component';
 
 import { AuthService } from '../../../../core/auth/auth.service';
 import { BookingService } from '../../../../core/services/booking.service';
@@ -86,7 +88,16 @@ export class DashboardHomeComponent implements OnInit, OnDestroy {
     private dashboardSvc: DashboardService,
     private router: Router,
     private cdr: ChangeDetectorRef,
+    private dialog: MatDialog,
   ) {}
+
+  openLRDetails(lr: string | undefined): void {
+    if (!lr) return;
+    this.dialog.open(LrSearchDialogComponent, {
+      width: '500px',
+      data: { lr, hideEdit: true }
+    });
+  }
 
   ngOnInit(): void {
     this.setGreeting();

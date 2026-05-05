@@ -46,5 +46,13 @@ export class BookingService {
   getSaidToContains(companyCode: string): Observable<string[]> {
     return this.http.get<string[]>(`/api/bookings/Get-distinct-saidtocontains/${companyCode}`);
   }
+
+  fetchArticleTypeList(companyCode: string): Observable<string[]> {
+    return this.http.get<string[]>(`/api/bookings/fetchArticleTypeList?companyCode=${encodeURIComponent(companyCode)}`);
+  }
+
+  createArticleType(payload: { articleType: string; companyCode: string }): Observable<any> {
+    return this.http.post<any>('/api/bookings/createArticleType', payload);
+  }
 }
 

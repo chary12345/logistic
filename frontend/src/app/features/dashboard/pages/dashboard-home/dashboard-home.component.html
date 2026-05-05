@@ -135,7 +135,9 @@
           <tbody>
             @for (b of recentBookings; track b.loadingReciept) {
             <tr>
-              <td class="lr-cell">{{ b.loadingReciept }}</td>
+              <td class="lr-cell">
+                <a (click)="openLRDetails(b.loadingReciept)" style="color: #0b5ed7; font-weight: 600; text-decoration: underline; cursor: pointer;">{{ b.loadingReciept }}</a>
+              </td>
               <td>{{ b.bookingDate }}</td>
               <td>{{ b.consignorName }}</td>
               <td>{{ b.consigneeName }}</td>

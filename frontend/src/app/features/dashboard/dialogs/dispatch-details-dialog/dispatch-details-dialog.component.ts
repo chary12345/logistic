@@ -49,7 +49,7 @@ import { Booking, VehicleDTO } from '../../../../shared/models/models';
         </mat-form-field>
         <mat-form-field>
           <mat-label>Driver Phone</mat-label>
-          <input matInput formControlName="driverPhone" maxlength="10">
+          <input matInput type="number" formControlName="driverPhone">
           <mat-error *ngIf="form.get('driverPhone')?.hasError('required') && form.get('driverPhone')?.touched">Required</mat-error>
         </mat-form-field>
         <mat-form-field class="dest-field">

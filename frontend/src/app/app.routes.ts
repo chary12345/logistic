@@ -71,6 +71,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/dashboard/pages/party-manage/party-manage.component').then(m => m.PartyManageComponent)
       },
       {
+        path: 'admin/articles',
+        loadComponent: () => import('./features/dashboard/pages/article-manage/article-manage.component').then(m => m.ArticleManageComponent)
+      },
+      {
         path: 'statements',
         loadComponent: () => import('./features/dashboard/pages/statements/statements.component').then(m => m.StatementsComponent)
       },

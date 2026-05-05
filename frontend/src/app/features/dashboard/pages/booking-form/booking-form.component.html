@@ -111,7 +111,7 @@
 
             <mat-form-field>
               <mat-label>Mobile</mat-label>
-              <input matInput formControlName="consignorMobile" maxlength="10" inputmode="numeric">
+              <input matInput type="number" formControlName="consignorMobile">
               <mat-error
                 *ngIf="form.get('consignorMobile')?.hasError('required') && form.get('consignorMobile')?.touched">Required</mat-error>
               <mat-error
@@ -158,7 +158,7 @@
 
             <mat-form-field>
               <mat-label>Mobile</mat-label>
-              <input matInput formControlName="consigneeMobile" maxlength="10" inputmode="numeric">
+              <input matInput type="number" formControlName="consigneeMobile">
               <mat-error
                 *ngIf="form.get('consigneeMobile')?.hasError('required') && form.get('consigneeMobile')?.touched">Required</mat-error>
               <mat-error

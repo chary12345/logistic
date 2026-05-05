@@ -8,11 +8,13 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { AgGridAngular } from 'ag-grid-angular';
 import { ColDef, GridApi, GridReadyEvent, GridSizeChangedEvent, SelectionChangedEvent } from 'ag-grid-community';
+import { MatDialog } from '@angular/material/dialog';
 import { Subject, takeUntil } from 'rxjs';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { OperationService } from '../../../../core/services/operation.service';
 import { SnackbarService } from '../../../../core/services/snackbar.service';
 import { Booking } from '../../../../shared/models/models';
+import { LrSearchDialogComponent } from '../../dialogs/lr-search-dialog/lr-search-dialog.component';
 
 @Component({
   selector: 'app-delivery-operations',
@@ -39,7 +41,23 @@ export class DeliveryOperationsComponent implements OnDestroy {
 
   columnDefs: ColDef[] = [
     { headerName: '', headerCheckboxSelection: true, checkboxSelection: true, maxWidth: 50, pinned: 'left', sortable: false, filter: false, resizable: false, suppressMovable: true },
-    { headerName: 'LR No', field: 'loadingReciept', minWidth: 130, pinned: 'left', sortable: true, filter: true },
+    { 
+      headerName: 'LR No', 
+      field: 'loadingReciept', 
+      minWidth: 130, 
+      pinned: 'left', 
+      sortable: true, 
+      filter: true,
+      cellRenderer: (p: any) => {
+        if (!p.value) return '';
+        return `<a class="lr-link" style="color: #0b5ed7; font-weight: 600; text-decoration: underline; cursor: pointer;">${p.value}</a>`;
+      },
+      onCellClicked: (params: any) => {
+        if (params.value) {
+          this.openLRDetails(params.value);
+        }
+      }
+    },
     { headerName: 'Consignor', field: 'consignorName', minWidth: 130, sortable: true, filter: true },
     { headerName: 'Consignor Mobile', field: 'consignorMobile', minWidth: 130, sortable: true, filter: true },
     { headerName: 'Consignee', field: 'consigneeName', minWidth: 130, sortable: true, filter: true },
@@ -66,7 +84,15 @@ export class DeliveryOperationsComponent implements OnDestroy {
     private auth: AuthService,
     private opSvc: OperationService,
     private snack: SnackbarService,
+    private dialog: MatDialog,
   ) {}
+
+  openLRDetails(lr: string): void {
+    this.dialog.open(LrSearchDialogComponent, {
+      width: '500px',
+      data: { lr, hideEdit: true }
+    });
+  }
 
   onGridReady(params: GridReadyEvent): void { this.gridApi = params.api; this.gridApi.sizeColumnsToFit(); }
   onGridSizeChanged(params: GridSizeChangedEvent): void { params.api.sizeColumnsToFit(); }

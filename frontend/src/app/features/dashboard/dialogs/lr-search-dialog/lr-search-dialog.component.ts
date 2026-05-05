@@ -64,7 +64,7 @@ import { MatDialog, MatDialogRef } from '@angular/material/dialog';
         </button>
       </ng-container>
 
-      <button mat-raised-button color="accent" *ngIf="booking && booking.consignStatus === 'BOOKED'" (click)="openEdit()">
+      <button mat-raised-button color="accent" *ngIf="booking && booking.consignStatus === 'BOOKED' && !data.hideEdit" (click)="openEdit()">
         <mat-icon>edit</mat-icon> Edit
       </button>
     </mat-dialog-actions>
@@ -112,7 +112,7 @@ export class LrSearchDialogComponent implements OnInit {
   error   = '';
 
   constructor(
-    @Inject(MAT_DIALOG_DATA) public data: { lr: string },
+    @Inject(MAT_DIALOG_DATA) public data: { lr: string, hideEdit?: boolean },
     private bookingSvc: BookingService,
     private exportSvc: ExportService,
     private dialog: MatDialog,

@@ -15,6 +15,10 @@ import { BranchService } from '../../../../core/services/branch.service';
 import { SnackbarService } from '../../../../core/services/snackbar.service';
 import { BranchMap } from '../../../../shared/models/models';
 import { passwordStrengthValidator, PASSWORD_REQUIREMENTS_TEXT, PASSWORD_REQUIREMENTS_SHORT } from '../../../../shared/validators/password.validator';
+import * as CryptoJS from 'crypto-js';
+
+const AES_KEY = '1234567890123456';
+const AES_IV  = 'abcdefghijklmnop';
 
 @Component({
   selector: 'app-employee-manage',
@@ -53,13 +57,18 @@ import { passwordStrengthValidator, PASSWORD_REQUIREMENTS_TEXT, PASSWORD_REQUIRE
           </mat-form-field>
           <mat-form-field appearance="outline">
             <mat-label>Password</mat-label>
-            <input matInput type="password" formControlName="password">
-            <button mat-icon-button matSuffix type="button"
-                    [matTooltip]="PASSWORD_REQUIREMENTS_TEXT"
-                    matTooltipPosition="above"
-                    [attr.aria-label]="'Password requirements'">
-              <mat-icon color="primary">info</mat-icon>
-            </button>
+            <input matInput [type]="hidePassword ? 'password' : 'text'" formControlName="password">
+            <div matSuffix style="display: flex; gap: 4px; align-items: center;">
+              <button mat-icon-button type="button" (click)="hidePassword = !hidePassword" [attr.aria-label]="'Toggle password visibility'">
+                <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+              </button>
+              <button mat-icon-button type="button"
+                      [matTooltip]="PASSWORD_REQUIREMENTS_TEXT"
+                      matTooltipPosition="above"
+                      [attr.aria-label]="'Password requirements'">
+                <mat-icon color="primary">info</mat-icon>
+              </button>
+            </div>
             <mat-hint>{{ PASSWORD_REQUIREMENTS_SHORT }}</mat-hint>
             <mat-error *ngIf="form.get('password')?.hasError('required') && form.get('password')?.touched">Required</mat-error>
             <mat-error *ngIf="form.get('password')?.hasError('weakPassword')">
@@ -76,7 +85,7 @@ import { passwordStrengthValidator, PASSWORD_REQUIREMENTS_TEXT, PASSWORD_REQUIRE
           </mat-form-field>
           <mat-form-field>
             <mat-label>Phone</mat-label>
-            <input matInput formControlName="phone" maxlength="10">
+            <input matInput type="number" formControlName="phone">
           </mat-form-field>
           <mat-form-field>
             <mat-label>Email</mat-label>
@@ -108,6 +117,7 @@ import { passwordStrengthValidator, PASSWORD_REQUIREMENTS_TEXT, PASSWORD_REQUIRE
 export class EmployeeManageComponent implements OnDestroy {
   PASSWORD_REQUIREMENTS_TEXT = PASSWORD_REQUIREMENTS_TEXT;
   PASSWORD_REQUIREMENTS_SHORT = PASSWORD_REQUIREMENTS_SHORT;
+  hidePassword = true;
 
   @ViewChild(FormGroupDirective) formDirective!: FormGroupDirective;
   form = this.fb.group({
@@ -150,6 +160,14 @@ export class EmployeeManageComponent implements OnDestroy {
     };
   }
 
+  private encryptPassword(plain: string): string {
+    const key = CryptoJS.enc.Utf8.parse(AES_KEY);
+    const iv  = CryptoJS.enc.Utf8.parse(AES_IV);
+    return CryptoJS.AES.encrypt(plain, key, {
+      iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7
+    }).toString();
+  }
+
   submit(): void {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.loading = true;
@@ -159,7 +177,7 @@ export class EmployeeManageComponent implements OnDestroy {
       lastName: v.lastName,
       userName: v.username,
       username: v.username,
-      password: v.password,
+      password: this.encryptPassword(v.password || ''),
       role: v.role,
       phone: v.phone,
       email: v.email,

@@ -10,12 +10,14 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { AgGridAngular } from 'ag-grid-angular';
 import { ColDef, GridApi, GridReadyEvent, GridSizeChangedEvent } from 'ag-grid-community';
+import { MatDialog } from '@angular/material/dialog';
 import { Subject, takeUntil } from 'rxjs';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { StatementService } from '../../../../core/services/statement.service';
 import { ExportService } from '../../../../core/services/export.service';
 import { SnackbarService } from '../../../../core/services/snackbar.service';
 import { StatementDto } from '../../../../shared/models/models';
+import { LrSearchDialogComponent } from '../../dialogs/lr-search-dialog/lr-search-dialog.component';
 
 @Component({
   selector: 'app-statements',
@@ -200,7 +202,22 @@ export class StatementsComponent implements OnDestroy {
   });
 
   columnDefs: ColDef[] = [
-    { headerName: 'LR No', field: 'loadingReciept', minWidth: 120, sortable: true, filter: true },
+    { 
+      headerName: 'LR No', 
+      field: 'loadingReciept', 
+      minWidth: 120, 
+      sortable: true, 
+      filter: true,
+      cellRenderer: (p: any) => {
+        if (!p.value) return '';
+        return `<a class="lr-link" style="color: #0b5ed7; font-weight: 600; text-decoration: underline; cursor: pointer;">${p.value}</a>`;
+      },
+      onCellClicked: (params: any) => {
+        if (params.value) {
+          this.openLRDetails(params.value);
+        }
+      }
+    },
     { headerName: 'Date', field: 'bookingDate', minWidth: 110, sortable: true,
       valueFormatter: p => p.value ? new Date(p.value).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '' },
     { headerName: 'Consignor', field: 'consignorName', minWidth: 120, sortable: true, filter: true },
@@ -230,7 +247,15 @@ export class StatementsComponent implements OnDestroy {
     private stmtSvc: StatementService,
     public exportSvc: ExportService,
     private snack: SnackbarService,
+    private dialog: MatDialog,
   ) { }
+
+  openLRDetails(lr: string): void {
+    this.dialog.open(LrSearchDialogComponent, {
+      width: '500px',
+      data: { lr, hideEdit: true }
+    });
+  }
 
   onGridReady(params: GridReadyEvent): void {
     this.gridApi = params.api;

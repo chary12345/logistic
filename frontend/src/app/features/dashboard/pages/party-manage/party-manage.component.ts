@@ -62,7 +62,7 @@ import { Country, State, City } from 'country-state-city';
 
           <mat-form-field>
             <mat-label>Mobile Number</mat-label>
-            <input matInput type="text" formControlName="mobileNumber1" placeholder="e.g. 8999999999" maxlength="10" inputmode="numeric">
+            <input matInput type="number" formControlName="mobileNumber1" placeholder="e.g. 8999999999">
             <mat-error *ngIf="form.get('mobileNumber1')?.hasError('required') && form.get('mobileNumber1')?.touched">Required</mat-error>
             <mat-error *ngIf="form.get('mobileNumber1')?.hasError('pattern') && form.get('mobileNumber1')?.touched">Valid 10-digit number required</mat-error>
           </mat-form-field>
@@ -76,7 +76,13 @@ import { Country, State, City } from 'country-state-city';
           <mat-form-field>
             <mat-label>Country</mat-label>
             <mat-select formControlName="country" (selectionChange)="onCountryChange($event.value)" placeholder="Select Country">
-              <mat-option *ngFor="let c of countries" [value]="c.isoCode">{{ c.name }}</mat-option>
+              <!-- Sticky Search Box -->
+              <div class="select-search-box">
+                <mat-icon class="search-icon">search</mat-icon>
+                <input class="search-input" [value]="countrySearch" (input)="countrySearch = $any($event.target).value" placeholder="Search country..." (keydown)="$event.stopPropagation()">
+              </div>
+              <mat-option *ngFor="let c of filteredCountries" [value]="c.isoCode">{{ c.name }}</mat-option>
+              <mat-option *ngIf="filteredCountries.length === 0" disabled>No countries found</mat-option>
             </mat-select>
             <mat-error *ngIf="form.get('country')?.hasError('required') && form.get('country')?.touched">Required</mat-error>
           </mat-form-field>
@@ -84,7 +90,14 @@ import { Country, State, City } from 'country-state-city';
           <mat-form-field>
             <mat-label>State</mat-label>
             <mat-select formControlName="state" (selectionChange)="onStateChange($event.value)" placeholder="Select State">
-              <mat-option *ngFor="let s of states" [value]="s.isoCode">{{ s.name }}</mat-option>
+              <!-- Sticky Search Box -->
+              <div class="select-search-box">
+                <mat-icon class="search-icon">search</mat-icon>
+                <input class="search-input" [value]="stateSearch" (input)="stateSearch = $any($event.target).value" placeholder="Search state..." (keydown)="$event.stopPropagation()">
+              </div>
+              <mat-option value="" style="display: none;">Select State</mat-option>
+              <mat-option *ngFor="let s of filteredStates" [value]="s.isoCode">{{ s.name }}</mat-option>
+              <mat-option *ngIf="filteredStates.length === 0" disabled>No states found</mat-option>
             </mat-select>
             <mat-error *ngIf="form.get('state')?.hasError('required') && form.get('state')?.touched">Required</mat-error>
           </mat-form-field>
@@ -92,7 +105,14 @@ import { Country, State, City } from 'country-state-city';
           <mat-form-field>
             <mat-label>City</mat-label>
             <mat-select formControlName="city" placeholder="Select City">
-              <mat-option *ngFor="let cy of cities" [value]="cy.name">{{ cy.name }}</mat-option>
+              <!-- Sticky Search Box -->
+              <div class="select-search-box">
+                <mat-icon class="search-icon">search</mat-icon>
+                <input class="search-input" [value]="citySearch" (input)="citySearch = $any($event.target).value" placeholder="Search city..." (keydown)="$event.stopPropagation()">
+              </div>
+              <mat-option value="" style="display: none;">Select City</mat-option>
+              <mat-option *ngFor="let cy of filteredCities" [value]="cy.name">{{ cy.name }}</mat-option>
+              <mat-option *ngIf="filteredCities.length === 0" disabled>No cities found</mat-option>
             </mat-select>
             <mat-error *ngIf="form.get('city')?.hasError('required') && form.get('city')?.touched">Required</mat-error>
           </mat-form-field>
@@ -114,6 +134,33 @@ import { Country, State, City } from 'country-state-city';
     :host ::ng-deep .placeholder-grey .mat-mdc-select-value-text {
       color: grey !important;
     }
+    .select-search-box {
+      display: flex;
+      align-items: center;
+      padding: 8px 12px;
+      position: sticky;
+      top: 0;
+      background: #fff;
+      z-index: 10;
+      border-bottom: 1px solid #e2e8f0;
+
+      .search-icon {
+        font-size: 18px;
+        height: 18px;
+        width: 18px;
+        color: #64748b;
+        margin-right: 8px;
+      }
+
+      .search-input {
+        border: none;
+        outline: none;
+        font-size: 14px;
+        flex: 1;
+        font-family: 'Poppins', sans-serif;
+        color: #1e293b;
+      }
+    }
   `]
 })
 export class PartyManageComponent implements OnInit, OnDestroy {
@@ -122,6 +169,10 @@ export class PartyManageComponent implements OnInit, OnDestroy {
   countries: any[] = [];
   states: any[] = [];
   cities: any[] = [];
+
+  countrySearch = '';
+  stateSearch = '';
+  citySearch = '';
 
   form = this.fb.group({
     partyName: ['', Validators.required],
@@ -132,7 +183,7 @@ export class PartyManageComponent implements OnInit, OnDestroy {
     mobileNumber1: ['', [Validators.required, Validators.pattern(/^\d{10}$/)]],
     address: ['', Validators.required],
     country: ['IN', Validators.required],
-    state: ['TG', Validators.required],
+    state: ['', Validators.required],
     city: ['', Validators.required]
   });
 
@@ -149,7 +200,25 @@ export class PartyManageComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.countries = Country.getAllCountries();
     this.loadStates('IN');
-    this.loadCities('IN', 'TG');
+    this.cities = [];
+  }
+
+  get filteredCountries(): any[] {
+    const q = this.countrySearch.toLowerCase().trim();
+    if (!q) return this.countries;
+    return this.countries.filter(c => c.name.toLowerCase().includes(q));
+  }
+
+  get filteredStates(): any[] {
+    const q = this.stateSearch.toLowerCase().trim();
+    if (!q) return this.states;
+    return this.states.filter(s => s.name.toLowerCase().includes(q));
+  }
+
+  get filteredCities(): any[] {
+    const q = this.citySearch.toLowerCase().trim();
+    if (!q) return this.cities;
+    return this.cities.filter(cy => cy.name.toLowerCase().includes(q));
   }
 
   loadStates(countryCode: string): void {
@@ -164,12 +233,17 @@ export class PartyManageComponent implements OnInit, OnDestroy {
     this.loadStates(countryCode);
     this.form.patchValue({ state: '', city: '' });
     this.cities = [];
+    this.countrySearch = '';
+    this.stateSearch = '';
+    this.citySearch = '';
   }
 
   onStateChange(stateCode: string): void {
     const countryCode = this.form.get('country')?.value || 'IN';
     this.loadCities(countryCode, stateCode);
     this.form.patchValue({ city: '' });
+    this.stateSearch = '';
+    this.citySearch = '';
   }
 
   submit(): void {
@@ -213,11 +287,14 @@ export class PartyManageComponent implements OnInit, OnDestroy {
   reset(): void {
     this.formDirective?.resetForm({
       country: 'IN',
-      state: 'TG',
+      state: '',
       city: ''
     });
     this.loadStates('IN');
-    this.loadCities('IN', 'TG');
+    this.cities = [];
+    this.countrySearch = '';
+    this.stateSearch = '';
+    this.citySearch = '';
   }
 
   ngOnDestroy(): void {
