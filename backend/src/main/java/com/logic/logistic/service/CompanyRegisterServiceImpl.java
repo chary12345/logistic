@@ -51,6 +51,9 @@ public class CompanyRegisterServiceImpl implements CompanyRegisterService {
 	@Autowired
 	private BookingReceiptSequenceRepository sequenceRepo;
 
+	@Autowired
+	private EmailService emailService;
+
 	@Override
 	public String isCompanyCodeExists(String companyCode) {
 		String status = "FAILURE";
@@ -107,6 +110,27 @@ public class CompanyRegisterServiceImpl implements CompanyRegisterService {
 						System.out.println("address created successfully");
 						logger.info("address created successfully");
 						status = "SUCCESS";
+
+						// ── Send branch welcome email (async, non-blocking) ─────────────────
+						if (branchData.getBranchEmail() != null && !branchData.getBranchEmail().isBlank()) {
+							Address addr = branchData.getBranchAddress();
+							emailService.sendBranchWelcomeEmail(
+									branchData.getBranchEmail(),
+									branchData.getBranchCode(),
+									branchData.getBranchName(),
+									branchData.getBranchType(),
+									branchData.getCompanyCode(),
+									addr != null ? addr.getState() : null,
+									addr != null ? addr.getCity() : null,
+									addr != null ? addr.getAreaOrStreetline() : null,
+									addr != null ? addr.getPostalCode() : null,
+									branchData.getBranchPhone(),
+									branchData.getBranchPhoneAlt(),
+									branchData.getGstIn(),
+									branchData.getContactPersonName(),
+									branchData.getBranchCreatedBy());
+						}
+						// ───────────────────────────────────────────────────────────────────
 					}
 				}
 			} else {

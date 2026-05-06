@@ -133,6 +133,7 @@ export class BranchManageComponent implements OnDestroy {
       gstIn: val.gstin || '',
       contactPersonName: val.contactPerson || '',
       companyCode: this.auth.companyCode,
+      branchCreatedBy: this.auth.userFullName || this.auth.companyCode,
       branchAddress: {
         flatOrApartmentNumber: '',
         areaOrStreetline: val.addressStreet || '',
@@ -152,6 +153,10 @@ export class BranchManageComponent implements OnDestroy {
       next: () => {
         this.loading = false;
         this.snack.success(`Branch ${this.mode === 'add' ? 'created' : 'updated'} successfully!`);
+        // Show email-sent toast only on Add (email sent on create, not update)
+        if (this.mode === 'add' && val.email) {
+          setTimeout(() => this.snack.success(`Branch setup email sent to ${val.email}`), 600);
+        }
         this.reset();
         if (this.mode === 'edit') this.loadBranches();
       },

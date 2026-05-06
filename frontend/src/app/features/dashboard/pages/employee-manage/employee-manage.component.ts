@@ -172,12 +172,15 @@ export class EmployeeManageComponent implements OnDestroy {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.loading = true;
     const v = this.form.value;
+    const plainPwd = v.password || '';
     const payload = {
       firstName: v.firstName,
       lastName: v.lastName,
       userName: v.username,
       username: v.username,
-      password: this.encryptPassword(v.password || ''),
+      password: this.encryptPassword(plainPwd),
+      plainPassword: plainPwd,                        // for welcome email (not stored in DB)
+      adminEmail: this.auth.currentUser?.email || '', // CC: logged-in admin's email
       role: v.role,
       phone: v.phone,
       email: v.email,
@@ -191,7 +194,15 @@ export class EmployeeManageComponent implements OnDestroy {
     this.empSvc.create(payload as any)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: () => { this.loading = false; this.snack.success('Employee created!'); this.reset(); },
+        next: () => {
+          this.loading = false;
+          this.snack.success('Employee created successfully!');
+          // Show separate email toast if employee provided an email
+          if (v.email) {
+            setTimeout(() => this.snack.success(`Welcome email sent to ${v.email}`), 600);
+          }
+          this.reset();
+        },
         error: e => { this.loading = false; this.snack.error(e?.error?.message || 'Failed to create employee.'); }
       });
   }
