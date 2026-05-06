@@ -10,6 +10,8 @@ public class User {
 	private String lastName;
 	private String userName;
 	private String password;
+	private String plainPassword; // transient — sent by Angular for email, NOT stored in DB
+	private String adminEmail;    // transient — CC target: logged-in admin email, NOT stored in DB
     private String phone;
 	private String email;
 	private String role;
@@ -34,6 +36,18 @@ public class User {
 	}
 	public void setPassword(String password) {
 		this.password = password;
+	}
+	public String getPlainPassword() {
+		return plainPassword;
+	}
+	public void setPlainPassword(String plainPassword) {
+		this.plainPassword = plainPassword;
+	}
+	public String getAdminEmail() {
+		return adminEmail;
+	}
+	public void setAdminEmail(String adminEmail) {
+		this.adminEmail = adminEmail;
 	}
 	
 	public Date getCreatedDate() {
