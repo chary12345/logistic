@@ -5,7 +5,7 @@ import { LoadingService } from '../services/loading.service';
 
 export const loadingInterceptor: HttpInterceptorFn = (req, next) => {
   const loadingService = inject(LoadingService);
-  
+
   // Skip loading for silent requests like polling or background checks if needed
   if (req.headers.has('X-Skip-Loading') || req.headers.has('x-skip-loading') || req.url.includes('skipLoading=true')) {
     const headers = req.headers.delete('X-Skip-Loading').delete('x-skip-loading');

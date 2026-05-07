@@ -1,5 +1,6 @@
-// Branch manage — uses global: .page-heading, .submit-row, .form-grid, .mode-toggle
+// Branch Management Page Styles
 
+// Edit mode branch selector
 .edit-select-row {
   display: flex;
   align-items: center;
@@ -26,6 +27,244 @@
   margin-top: var(--sp-sm);
 }
 
-:host ::ng-deep .placeholder-grey .mat-mdc-select-value-text {
-  color: grey !important;
+// Delete loading state
+.delete-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-md);
+  padding: 48px var(--sp-xl);
+  color: var(--text-secondary);
+
+  p { margin: 0; font-size: var(--fs-md); }
 }
+
+// Angular Material component styling overrides
+:host ::ng-deep {
+  .placeholder-grey .mat-mdc-select-value-text {
+    color: grey !important;
+  }
+
+  // Custom Tabs
+  .branch-tabs {
+    margin-bottom: var(--sp-md);
+
+    --mat-tab-header-divider-color: transparent !important;
+    --mdc-tab-divider-color: transparent !important;
+
+    .mat-mdc-tab-header,
+    .mat-mdc-tab-header *,
+    .mat-mdc-tab-labels,
+    .mat-mdc-tab-labels * {
+      border-bottom: none !important;
+      box-shadow: none !important;
+    }
+
+    .mat-mdc-tab-header {
+      max-width: fit-content;
+    }
+
+    .mat-mdc-tab-divider {
+      display: none !important;
+    }
+    
+    .mat-mdc-tab-body-wrapper {
+      border-top: none !important;
+    }
+
+    .mat-mdc-tab-labels {
+      justify-content: flex-start;
+      gap: 4px;
+    }
+
+    // Individual tab styling
+    .mat-mdc-tab {
+      position: relative !important;
+      background-color: #f8fafc;
+      border-radius: 6px 6px 0 0;
+      min-width: 120px;
+      padding: 0 16px;
+      height: 48px;
+      transition: background-color 0.2s, color 0.2s;
+      
+      border-top: 1px solid #e2e8f0 !important;
+      border-left: 1px solid #e2e8f0 !important;
+      border-right: 1px solid #e2e8f0 !important;
+      border-bottom: none !important; 
+      box-shadow: none !important;
+
+      &:hover {
+        background-color: #f1f5f9;
+      }
+    }
+
+    // Tab active states
+    .mat-mdc-tab:nth-of-type(1).mdc-tab--active {
+      background-color: #eff6ff !important; 
+      color: var(--primary) !important;
+
+      .mdc-tab-indicator__content--underline {
+        border-color: var(--primary) !important;
+      }
+    }
+
+    .mat-mdc-tab:nth-of-type(2).mdc-tab--active {
+      background-color: #fffbeb !important; 
+      color: #d97706 !important; 
+
+      .mdc-tab-indicator__content--underline {
+        border-color: #d97706 !important;
+      }
+    }
+
+    .mat-mdc-tab:nth-of-type(3).mdc-tab--active {
+      background-color: #fef2f2 !important; 
+      color: var(--danger) !important;
+
+      .mdc-tab-indicator__content--underline {
+        border-color: var(--danger) !important;
+      }
+    }
+
+    .mdc-tab-indicator__content--underline {
+      border-top-width: 3px !important;
+      border-bottom-width: 0 !important;
+      border-left-width: 0 !important;
+      border-right-width: 0 !important;
+    }
+
+    .tab-icon {
+      margin-right: 6px;
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
+
+    .tab-content {
+      padding-top: var(--sp-md);
+    }
+  }
+}
+
+// Delete actions
+.delete-action-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-sm);
+  margin-top: var(--sp-md);
+}
+
+// Warning notice
+.delete-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fef9ee;
+  border: 1px solid #fde68a;
+  border-radius: var(--radius-sm);
+  padding: 8px var(--sp-md);
+  color: var(--warning);
+  font-size: var(--fs-sm);
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+}
+
+// Dropdown filter and options
+.small-width-dropdown {
+  max-width: 400px;
+  width: 100%;
+}
+
+.select-search-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: white;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+
+  .search-icon {
+    color: var(--text-secondary);
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+
+  .select-search-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: var(--fs-md);
+    background: transparent;
+  }
+}
+
+.select-actions {
+  padding: 8px 16px;
+  background: #f8fafc;
+}
+
+.option-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .option-icon {
+    color: var(--text-secondary);
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+
+  .option-code {
+    color: var(--text-secondary);
+    font-size: var(--fs-sm);
+    font-family: 'Courier New', monospace;
+  }
+}
+
+.no-options {
+  padding: 16px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.select-search-box {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 10;
+  border-bottom: 1px solid #e2e8f0;
+
+  .search-icon {
+    font-size: 18px;
+    height: 18px;
+    width: 18px;
+    color: #64748b;
+    margin-right: 8px;
+  }
+
+  .search-input {
+    border: none;
+    outline: none;
+    font-size: 14px;
+    flex: 1;
+    font-family: 'Poppins', sans-serif;
+    color: #1e293b;
+  }
+}
+

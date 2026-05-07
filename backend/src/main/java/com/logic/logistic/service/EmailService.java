@@ -72,9 +72,6 @@ public class EmailService {
         }
     }
 
-    // ────────────────────────────────────────────────────────────────
-    // BRANCH WELCOME EMAIL
-    // ────────────────────────────────────────────────────────────────
     @Async
     public void sendBranchWelcomeEmail(
             String toEmail,
@@ -82,6 +79,7 @@ public class EmailService {
             String branchName,
             String branchType,
             String companyCode,
+            String country,
             String state,
             String city,
             String addressStreet,
@@ -106,7 +104,7 @@ public class EmailService {
             helper.setSubject(companyName + " — New Branch Setup Confirmation: " + branchName);
             helper.setText(buildBranchEmailHtml(
                     branchCode, branchName, branchType, companyCode,
-                    state, city, addressStreet, postalCode,
+                    country, state, city, addressStreet, postalCode,
                     phone, phone2, gstin, contactPerson, createdBy), true);
 
             mailSender.send(message);
@@ -114,6 +112,77 @@ public class EmailService {
 
         } catch (Exception e) {
             logger.error("Failed to send branch welcome email to {}: {}", toEmail, e.getMessage());
+        }
+    }
+
+    @Async
+    public void sendBranchUpdateEmail(
+            String toEmail,
+            String branchCode,
+            String branchName,
+            String branchType,
+            String companyCode,
+            String country,
+            String state,
+            String city,
+            String addressStreet,
+            String postalCode,
+            String phone,
+            String phone2,
+            String gstin,
+            String contactPerson) {
+
+        if (toEmail == null || toEmail.isBlank()) {
+            logger.warn("Branch email is blank, skipping update email.");
+            return;
+        }
+
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromEmail, companyName);
+            helper.setTo(toEmail);
+            helper.setSubject(companyName + " — Branch Information Updated: " + branchName);
+            helper.setText(buildBranchUpdateEmailHtml(
+                    branchCode, branchName, branchType, companyCode,
+                    country, state, city, addressStreet, postalCode,
+                    phone, phone2, gstin, contactPerson), true);
+
+            mailSender.send(message);
+            logger.info("Branch update email sent successfully to: {}", toEmail);
+
+        } catch (Exception e) {
+            logger.error("Failed to send branch update email to {}: {}", toEmail, e.getMessage());
+        }
+    }
+
+    @Async
+    public void sendBranchDeleteEmail(
+            String toEmail,
+            String branchCode,
+            String branchName,
+            String companyCode) {
+
+        if (toEmail == null || toEmail.isBlank()) {
+            logger.warn("Branch email is blank, skipping deletion email.");
+            return;
+        }
+
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromEmail, companyName);
+            helper.setTo(toEmail);
+            helper.setSubject(companyName + " — Branch Deactivation Notice: " + branchName);
+            helper.setText(buildBranchDeleteEmailHtml(branchCode, branchName, companyCode), true);
+
+            mailSender.send(message);
+            logger.info("Branch deletion email sent successfully to: {}", toEmail);
+
+        } catch (Exception e) {
+            logger.error("Failed to send branch deletion email to {}: {}", toEmail, e.getMessage());
         }
     }
 
@@ -273,7 +342,7 @@ public class EmailService {
     // ────────────────────────────────────────────────────────────────
     private String buildBranchEmailHtml(
             String branchCode, String branchName, String branchType,
-            String companyCode, String state, String city,
+            String companyCode, String country, String state, String city,
             String addressStreet, String postalCode,
             String phone, String phone2, String gstin,
             String contactPerson, String createdBy) {
@@ -403,20 +472,313 @@ public class EmailService {
                 today,                   // confirmation date
                 (createdBy != null && !createdBy.isBlank() ? createdBy : "System Administrator"),
                 // Branch Identity rows
-                buildRow("#1b5e20", "Branch Code", branchCode)
+                buildRow("#1b5e20", "Company Code", companyCode)
+                    + buildRow("#1b5e20", "Branch Code", branchCode)
                     + buildRow("#1b5e20", "Branch Name", branchName)
-                    + buildRow("#1b5e20", "Branch Type", branchType != null ? branchType : "-")
-                    + buildRow("#1b5e20", "Company Code", companyCode),
+                    + buildRow("#1b5e20", "Branch Type", branchType != null ? branchType : "-"),
                 // Location rows
-                buildRow("#2e7d32", "State", state != null ? state : "-")
-                    + buildRow("#2e7d32", "City", city != null ? city : "-")
+                buildRow("#2e7d32", "Country", country != null && !country.isBlank() ? (country.substring(0, 1).toUpperCase() + country.substring(1)) : "-")
+                    + buildRow("#2e7d32", "State", state != null && !state.isBlank() ? state : "-")
+                    + buildRow("#2e7d32", "City", city != null && !city.isBlank() ? city : "-")
                     + buildRow("#2e7d32", "Street Address", addressStreet != null && !addressStreet.isBlank() ? addressStreet : "-")
                     + buildRow("#2e7d32", "Postal Code", postalCode != null && !postalCode.isBlank() ? postalCode : "-"),
                 // Contact rows
-                buildRow("#f57f17", "Primary Phone", phone != null && !phone.isBlank() ? phone : "-")
-                    + (phone2 != null && !phone2.isBlank() ? buildRow("#f57f17", "Alternate Phone", phone2) : "")
-                    + (gstin != null && !gstin.isBlank() ? buildRow("#f57f17", "GSTIN", gstin) : "")
-                    + (contactPerson != null && !contactPerson.isBlank() ? buildRow("#f57f17", "Contact Person", contactPerson) : ""),
+                buildRow("#f57f17", "Contact Person", contactPerson != null && !contactPerson.isBlank() ? contactPerson : "-")
+                    + buildRow("#f57f17", "Primary Phone", phone != null && !phone.isBlank() ? phone : "-")
+                    + buildRow("#f57f17", "Alternate Phone", phone2 != null && !phone2.isBlank() ? phone2 : "-")
+                    + buildRow("#f57f17", "GSTIN", gstin != null && !gstin.isBlank() ? gstin : "-"),
+                fromEmail, fromEmail,
+                LocalDate.now().getYear(),
+                companyName
+        );
+    }
+
+    private String buildBranchUpdateEmailHtml(
+            String branchCode, String branchName, String branchType,
+            String companyCode, String country, String state, String city,
+            String addressStreet, String postalCode,
+            String phone, String phone2, String gstin,
+            String contactPerson) {
+
+        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("dd MMM yyyy"));
+
+        return """
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Branch Updated — %s</title>
+            </head>
+            <body style="margin:0;padding:0;background-color:#f0f4f8;font-family:'Segoe UI',Arial,sans-serif;">
+              <table width="100%%" cellpadding="0" cellspacing="0" style="background-color:#f0f4f8;padding:32px 0;">
+                <tr><td align="center">
+                  <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%%;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.10);">
+
+                    <!-- HEADER -->
+                    <tr>
+                      <td style="background:linear-gradient(135deg,#1a237e 0%%,#3f51b5 60%%,#7986cb 100%%);padding:36px 40px 28px 40px;">
+                        <table width="100%%" cellpadding="0" cellspacing="0">
+                          <tr>
+                            <td>
+                              <div style="font-size:22px;font-weight:700;color:#ffffff;letter-spacing:1px;">%s</div>
+                              <div style="font-size:12px;color:rgba(255,255,255,0.75);margin-top:4px;letter-spacing:2px;text-transform:uppercase;">Logistics Management System</div>
+                            </td>
+                            <td align="right">
+                              <div style="background:rgba(255,255,255,0.15);border-radius:8px;padding:8px 14px;display:inline-block;">
+                                <span style="font-size:11px;color:#ffffff;font-weight:600;letter-spacing:1px;">BRANCH DETAILS UPDATED</span>
+                              </div>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+
+                    <!-- STATUS BANNER -->
+                    <tr>
+                      <td style="background:#303f9f;padding:18px 40px;">
+                        <p style="margin:0;font-size:15px;color:#e8eaf6;font-style:italic;">
+                          ✦ &nbsp;Branch <strong style="color:#ffffff;">%s</strong> information has been successfully updated.
+                        </p>
+                      </td>
+                    </tr>
+
+                    <!-- BODY -->
+                    <tr>
+                      <td style="padding:36px 40px 28px 40px;">
+                        <p style="margin:0 0 24px 0;font-size:14px;color:#37474f;line-height:1.7;">
+                          This is an official notification that the profile details for branch <strong>%s</strong>
+                          have been modified and updated under <strong>%s</strong> on <strong>%s</strong>.
+                          Please review the current configured settings below.
+                        </p>
+
+                        <!-- BRANCH IDENTITY -->
+                        <table width="100%%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;border:1px solid #e0e0e0;border-radius:10px;margin-bottom:20px;">
+                          <tr>
+                            <td style="padding:20px 24px 4px 24px;">
+                              <p style="margin:0 0 4px 0;font-size:11px;font-weight:700;color:#1a237e;letter-spacing:2px;text-transform:uppercase;">Branch Identity</p>
+                              <hr style="border:none;border-top:2px solid #d1d1d1;margin:10px 0 16px 0;">
+                            </td>
+                          </tr>
+                          %s
+                          <tr><td style="height:12px;"></td></tr>
+                        </table>
+
+                        <!-- LOCATION DETAILS -->
+                        <table width="100%%" cellpadding="0" cellspacing="0" style="background:#e8eae6;border:1px solid #c5cae9;border-radius:10px;margin-bottom:20px;">
+                          <tr>
+                            <td style="padding:20px 24px 4px 24px;">
+                              <p style="margin:0 0 4px 0;font-size:11px;font-weight:700;color:#3f51b5;letter-spacing:2px;text-transform:uppercase;">Location Details</p>
+                              <hr style="border:none;border-top:2px solid #c5cae9;margin:10px 0 16px 0;">
+                            </td>
+                          </tr>
+                          %s
+                          <tr><td style="height:12px;"></td></tr>
+                        </table>
+
+                        <!-- CONTACT & OPERATIONS -->
+                        <table width="100%%" cellpadding="0" cellspacing="0" style="background:#fff8e1;border:1px solid #ffe082;border-radius:10px;margin-bottom:24px;">
+                          <tr>
+                            <td style="padding:20px 24px 4px 24px;">
+                              <p style="margin:0 0 4px 0;font-size:11px;font-weight:700;color:#f57f17;letter-spacing:2px;text-transform:uppercase;">Contact & Operations</p>
+                              <hr style="border:none;border-top:2px solid #ffe082;margin:10px 0 16px 0;">
+                            </td>
+                          </tr>
+                          %s
+                          <tr><td style="height:12px;"></td></tr>
+                        </table>
+
+                        <!-- CONFIG CHANGE WARNING -->
+                        <table width="100%%" cellpadding="0" cellspacing="0" style="background:#e8f4fd;border-left:4px solid #2196f3;border-radius:6px;margin-bottom:24px;">
+                          <tr>
+                            <td style="padding:14px 18px;">
+                              <p style="margin:0;font-size:13px;color:#0d47a1;line-height:1.6;">
+                                <strong>ℹ Administrative Notice:</strong> This email confirms a successful branch modification.
+                                If you did not initiate this change or if you find any discrepancies, please notify the system administrator immediately.
+                              </p>
+                            </td>
+                          </tr>
+                        </table>
+
+                        <p style="margin:0;font-size:13px;color:#78909c;line-height:1.6;">
+                          For any queries regarding this branch update, please contact the support team at
+                          <a href="mailto:%s" style="color:#3f51b5;text-decoration:none;">%s</a>.
+                        </p>
+                      </td>
+                    </tr>
+
+                    <!-- FOOTER -->
+                    <tr>
+                      <td style="background:#eceff1;padding:20px 40px;border-top:1px solid #e0e0e0;">
+                        <table width="100%%" cellpadding="0" cellspacing="0">
+                          <tr>
+                            <td>
+                              <p style="margin:0;font-size:12px;color:#90a4ae;">© %d %s. All rights reserved.</p>
+                              <p style="margin:4px 0 0 0;font-size:11px;color:#b0bec5;">This is an automated email. Please do not reply directly to this message.</p>
+                            </td>
+                            <td align="right">
+                              <p style="margin:0;font-size:11px;color:#b0bec5;font-weight:600;">POWERED BY 1UNIQ</p>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+
+                  </table>
+                </td></tr>
+              </table>
+            </body>
+            </html>
+            """.formatted(
+                companyName,             // html title
+                companyName,             // header name
+                branchName,              // status banner
+                branchName,              // body branch name
+                companyName,             // confirmation text company
+                today,                   // confirmation date
+                // Branch Identity rows
+                buildRow("#1a237e", "Company Code", companyCode)
+                    + buildRow("#1a237e", "Branch Code", branchCode)
+                    + buildRow("#1a237e", "Branch Name", branchName)
+                    + buildRow("#1a237e", "Branch Type", branchType != null ? branchType : "-"),
+                // Location rows
+                buildRow("#3f51b5", "Country", country != null && !country.isBlank() ? (country.substring(0, 1).toUpperCase() + country.substring(1)) : "-")
+                    + buildRow("#3f51b5", "State", state != null && !state.isBlank() ? state : "-")
+                    + buildRow("#3f51b5", "City", city != null && !city.isBlank() ? city : "-")
+                    + buildRow("#3f51b5", "Street Address", addressStreet != null && !addressStreet.isBlank() ? addressStreet : "-")
+                    + buildRow("#3f51b5", "Postal Code", postalCode != null && !postalCode.isBlank() ? postalCode : "-"),
+                // Contact rows
+                buildRow("#f57f17", "Contact Person", contactPerson != null && !contactPerson.isBlank() ? contactPerson : "-")
+                    + buildRow("#f57f17", "Primary Phone", phone != null && !phone.isBlank() ? phone : "-")
+                    + buildRow("#f57f17", "Alternate Phone", phone2 != null && !phone2.isBlank() ? phone2 : "-")
+                    + buildRow("#f57f17", "GSTIN", gstin != null && !gstin.isBlank() ? gstin : "-"),
+                fromEmail, fromEmail,
+                LocalDate.now().getYear(),
+                companyName
+        );
+    }
+
+    private String buildBranchDeleteEmailHtml(
+            String branchCode, String branchName, String companyCode) {
+
+        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("dd MMM yyyy"));
+
+        return """
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Branch Deactivated — %s</title>
+            </head>
+            <body style="margin:0;padding:0;background-color:#f0f4f8;font-family:'Segoe UI',Arial,sans-serif;">
+              <table width="100%%" cellpadding="0" cellspacing="0" style="background-color:#f0f4f8;padding:32px 0;">
+                <tr><td align="center">
+                  <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%%;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.10);">
+
+                    <!-- HEADER -->
+                    <tr>
+                      <td style="background:linear-gradient(135deg,#b71c1c 0%%,#d32f2f 60%%,#e53935 100%%);padding:36px 40px 28px 40px;">
+                        <table width="100%%" cellpadding="0" cellspacing="0">
+                          <tr>
+                            <td>
+                              <div style="font-size:22px;font-weight:700;color:#ffffff;letter-spacing:1px;">%s</div>
+                              <div style="font-size:12px;color:rgba(255,255,255,0.75);margin-top:4px;letter-spacing:2px;text-transform:uppercase;">Logistics Management System</div>
+                            </td>
+                            <td align="right">
+                              <div style="background:rgba(255,255,255,0.15);border-radius:8px;padding:8px 14px;display:inline-block;">
+                                <span style="font-size:11px;color:#ffffff;font-weight:600;letter-spacing:1px;">BRANCH REMOVED</span>
+                              </div>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+
+                    <!-- STATUS BANNER -->
+                    <tr>
+                      <td style="background:#c62828;padding:18px 40px;">
+                        <p style="margin:0;font-size:15px;color:#ffebee;font-style:italic;">
+                          ⚠ &nbsp;Branch <strong style="color:#ffffff;">%s</strong> has been successfully deactivated and removed.
+                        </p>
+                      </td>
+                    </tr>
+
+                    <!-- BODY -->
+                    <tr>
+                      <td style="padding:36px 40px 28px 40px;">
+                        <p style="margin:0 0 24px 0;font-size:14px;color:#37474f;line-height:1.7;">
+                          This is an official deactivation notice confirming that the branch <strong>%s</strong>
+                          has been deleted and removed from active operations under <strong>%s</strong> on <strong>%s</strong>.
+                        </p>
+
+                        <!-- BRANCH DELETION DETAILS -->
+                        <table width="100%%" cellpadding="0" cellspacing="0" style="background:#fafafa;border:1px solid #e0e0e0;border-radius:10px;margin-bottom:24px;">
+                          <tr>
+                            <td style="padding:20px 24px 4px 24px;">
+                              <p style="margin:0 0 4px 0;font-size:11px;font-weight:700;color:#c62828;letter-spacing:2px;text-transform:uppercase;">Removal Summary</p>
+                              <hr style="border:none;border-top:2px solid #e0e0e0;margin:10px 0 16px 0;">
+                            </td>
+                          </tr>
+                          %s
+                          <tr><td style="height:12px;"></td></tr>
+                        </table>
+
+                        <!-- CRITICAL SECURITY WARNING / ADVISORY -->
+                        <table width="100%%" cellpadding="0" cellspacing="0" style="background:#ffebee;border-left:4px solid #ef5350;border-radius:6px;margin-bottom:24px;">
+                          <tr>
+                            <td style="padding:14px 18px;">
+                              <p style="margin:0 0 8px 0;font-size:13px;font-weight:700;color:#b71c1c;">⚠ Important Operational Advisory:</p>
+                              <p style="margin:0;font-size:13px;color:#c62828;line-height:1.6;">
+                                • Users assigned exclusively to this branch can no longer perform active transactions.<br>
+                                • Booking, Loading, and Dispatch reports will continue to archive historical data for audit trail compliance.<br>
+                                • Active system roles or routes assigned to this branch should be reassigned by the Super Admin.
+                              </p>
+                            </td>
+                          </tr>
+                        </table>
+
+                        <p style="margin:0;font-size:13px;color:#78909c;line-height:1.6;">
+                          If this deletion was performed in error or requires urgent administrative rollback, please contact emergency support at
+                          <a href="mailto:%s" style="color:#d32f2f;text-decoration:none;">%s</a> immediately.
+                        </p>
+                      </td>
+                    </tr>
+
+                    <!-- FOOTER -->
+                    <tr>
+                      <td style="background:#eceff1;padding:20px 40px;border-top:1px solid #e0e0e0;">
+                        <table width="100%%" cellpadding="0" cellspacing="0">
+                          <tr>
+                            <td>
+                              <p style="margin:0;font-size:12px;color:#90a4ae;">© %d %s. All rights reserved.</p>
+                              <p style="margin:4px 0 0 0;font-size:11px;color:#b0bec5;">This is an automated email. Please do not reply directly to this message.</p>
+                            </td>
+                            <td align="right">
+                              <p style="margin:0;font-size:11px;color:#b0bec5;font-weight:600;">POWERED BY 1UNIQ</p>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+
+                  </table>
+                </td></tr>
+              </table>
+            </body>
+            </html>
+            """.formatted(
+                companyName,             // html title
+                companyName,             // header name
+                branchName,              // status banner
+                branchName,              // body branch name
+                companyName,             // confirmation text company
+                today,                   // confirmation date
+                // Branch Identity rows
+                buildRow("#c62828", "Company Code", companyCode)
+                    + buildRow("#c62828", "Branch Code", branchCode)
+                    + buildRow("#c62828", "Branch Name", branchName)
+                    + buildRow("#c62828", "Deactivation Date", today),
                 fromEmail, fromEmail,
                 LocalDate.now().getYear(),
                 companyName

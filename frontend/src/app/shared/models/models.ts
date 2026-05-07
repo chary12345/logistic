@@ -221,6 +221,7 @@ export interface BranchDTO {
 export interface BranchMap {
   branchCode: string;
   branchName: string;
+  branchType?: string;
 }
 
 // ---- Employee / User ----

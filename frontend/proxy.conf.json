@@ -21,5 +21,7 @@
   "/operation": { "target": "http://localhost:8080", "secure": false, "changeOrigin": true },
   "/company": { "target": "http://localhost:8080", "secure": false, "changeOrigin": true },
   "/nextLr": { "target": "http://localhost:8080", "secure": false, "changeOrigin": true },
-  "/getBranchDetails": { "target": "http://localhost:8080", "secure": false, "changeOrigin": true }
+  "/getBranchDetails": { "target": "http://localhost:8080", "secure": false, "changeOrigin": true },
+  "/deleteBranch": { "target": "http://localhost:8080", "secure": false, "changeOrigin": true },
+  "/deleteBranches": { "target": "http://localhost:8080", "secure": false, "changeOrigin": true }
 }

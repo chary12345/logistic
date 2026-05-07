@@ -1,117 +1,256 @@
 <div class="page-card">
   <h2 class="page-heading"><mat-icon>account_balance</mat-icon> Branch Management</h2>
 
-  <!-- Mode Toggle -->
-  <div class="mode-toggle">
-    <button mat-raised-button [color]="mode==='add' ? 'primary' : ''" (click)="setMode('add')">
-      <mat-icon>add_business</mat-icon> Add Branch
-    </button>
-    <button mat-raised-button [color]="mode==='edit' ? 'primary' : ''" (click)="setMode('edit')">
-      <mat-icon>edit</mat-icon> Edit Branch
-    </button>
-  </div>
+  <!-- Tabs for Add | Edit | Delete -->
+  <mat-tab-group (selectedIndexChange)="onTabChange($event)" [selectedIndex]="mode === 'add' ? 0 : mode === 'edit' ? 1 : 2" class="branch-tabs" mat-stretch-tabs="false">
+    
+    <!-- ADD TAB -->
+    <mat-tab>
+      <ng-template mat-tab-label><mat-icon class="tab-icon">add_business</mat-icon> Add</ng-template>
+      <div class="tab-content">
+        <ng-container *ngTemplateOutlet="branchFormTemplate"></ng-container>
+      </div>
+    </mat-tab>
 
-  <!-- Edit: select branch dropdown -->
-  <div *ngIf="mode==='edit'" class="edit-select-row">
-    <mat-form-field>
-      <mat-label>Select Branch to Edit</mat-label>
-      <mat-select [(ngModel)]="selectedBranch" (selectionChange)="loadBranchData($event.value)">
-        <mat-option *ngFor="let b of branches" [value]="b.branchCode">{{ b.branchName }} ({{ b.branchCode
-          }})</mat-option>
-      </mat-select>
-    </mat-form-field>
-    <mat-spinner *ngIf="loadingBranches" diameter="24"></mat-spinner>
-  </div>
+    <!-- EDIT TAB -->
+    <mat-tab>
+      <ng-template mat-tab-label><mat-icon class="tab-icon">edit</mat-icon> Edit</ng-template>
+      <div class="tab-content">
+        <div class="edit-select-row">
+          <mat-form-field>
+            <mat-label>Select Branch to Edit</mat-label>
+            <mat-select [(ngModel)]="selectedBranch" (selectionChange)="loadBranchData($event.value)">
+              <mat-option *ngFor="let b of branches" [value]="b.branchCode">{{ b.branchName }} ({{ b.branchCode }})</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-spinner *ngIf="loadingBranches" diameter="24"></mat-spinner>
+        </div>
+        <ng-container *ngTemplateOutlet="branchFormTemplate"></ng-container>
+      </div>
+    </mat-tab>
 
-  <form [formGroup]="form" (ngSubmit)="submit()" class="branch-form">
-    <div class="form-grid">
+    <!-- DELETE TAB -->
+    <mat-tab>
+      <ng-template mat-tab-label><mat-icon class="tab-icon">delete_outline</mat-icon> Delete</ng-template>
+      <div class="tab-content">
+        <div *ngIf="loadingBranches" class="delete-loading">
+          <mat-spinner diameter="32"></mat-spinner>
+          <p>Loading branches…</p>
+        </div>
 
-      <mat-form-field *ngIf="mode==='add'">
-        <mat-label>Branch Code</mat-label>
-        <input matInput formControlName="branchCode" class="text-uppercase">
-        <mat-hint>Unique code eg. MUM01</mat-hint>
-        <mat-error *ngIf="form.get('branchCode')?.hasError('required')">Required</mat-error>
-        <mat-error *ngIf="form.get('branchCode')?.hasError('pattern')">Only uppercase letters & digits</mat-error>
-        <mat-error *ngIf="form.get('branchCode')?.hasError('taken')">Branch code already taken</mat-error>
-      </mat-form-field>
+        <div *ngIf="!loadingBranches && branches.length === 0" class="empty-state">
+          <mat-icon>account_balance</mat-icon>
+          <p>No branches found for your company.</p>
+        </div>
 
-      <mat-form-field>
-        <mat-label>Branch Name</mat-label>
-        <input matInput formControlName="branchName">
-        <mat-error *ngIf="form.get('branchName')?.hasError('required')">Required</mat-error>
-      </mat-form-field>
+        <div *ngIf="!loadingBranches && branches.length > 0" class="delete-section">
+          <!-- Searchable Multi-Select Dropdown -->
+          <mat-form-field class="small-width-dropdown">
+            <mat-label>Select Branches to Delete</mat-label>
+            <mat-select multiple [(ngModel)]="selectedDeleteCodes">
+              
+              <mat-select-trigger>
+                <span *ngIf="selectedDeleteCodes.length > 0">
+                  {{ selectedDeleteCodes.length }} branch{{ selectedDeleteCodes.length > 1 ? 'es' : '' }} selected
+                </span>
+              </mat-select-trigger>
 
-      <mat-form-field>
-        <mat-label>State</mat-label>
-        <mat-select formControlName="state">
-          <mat-option *ngFor="let s of states" [value]="s">{{ s }}</mat-option>
-        </mat-select>
-        <mat-error *ngIf="form.get('state')?.hasError('required')">Required</mat-error>
-      </mat-form-field>
+              <!-- Sticky Search Header -->
+              <div class="select-search-header" (keydown)="$event.stopPropagation()">
+                <mat-icon class="search-icon">search</mat-icon>
+                <input type="text" placeholder="Search branches..." 
+                       [(ngModel)]="deleteSearchTerm" 
+                       (ngModelChange)="filterDeleteOptions()" 
+                       class="select-search-input">
+                <button mat-icon-button *ngIf="deleteSearchTerm" (click)="deleteSearchTerm=''; filterDeleteOptions()">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </div>
 
-      <mat-form-field>
-        <mat-label>City</mat-label>
-        <input matInput formControlName="city">
-        <mat-error *ngIf="form.get('city')?.hasError('required')">Required</mat-error>
-      </mat-form-field>
+              <!-- Select All / Clear All Options -->
+              <div class="select-actions">
+                <mat-checkbox [checked]="allSelected" (change)="toggleSelectAll()">
+                  {{ allSelected ? 'Deselect All' : 'Select All' }}
+                </mat-checkbox>
+              </div>
 
-      <mat-form-field>
-        <mat-label>Branch Type</mat-label>
-        <mat-select formControlName="branchType" placeholder="Select Branch Type" [ngClass]="{'placeholder-grey': !form.get('branchType')?.value}">
-          <mat-option value="" style="display: none;">Select Branch Type</mat-option>
-          <mat-option value="Branch">Branch</mat-option>
-          <mat-option value="Hub">Hub</mat-option>
-          <mat-option value="Booking Office">Booking Office</mat-option>
-        </mat-select>
-      </mat-form-field>
+              <mat-divider></mat-divider>
 
-      <mat-form-field class="full-col">
-        <mat-label>Street Address</mat-label>
-        <input matInput formControlName="addressStreet">
-      </mat-form-field>
+              <!-- Branch Options -->
+              <mat-option *ngFor="let b of filteredBranches" [value]="b.branchCode">
+                <div class="option-content">
+                  <mat-icon class="option-icon">{{ branchTypeIcon(b.branchType) }}</mat-icon>
+                  <span>{{ b.branchName }}</span>
+                  <span class="option-code">({{ b.branchCode }})</span>
+                </div>
+              </mat-option>
 
-      <mat-form-field>
-        <mat-label>Phone 1</mat-label>
-        <input matInput type="number" formControlName="phone">
-        <mat-error *ngIf="form.get('phone')?.hasError('pattern')">Valid 10-digit</mat-error>
-      </mat-form-field>
+              <div *ngIf="filteredBranches.length === 0" class="no-options">
+                No branches match your search.
+              </div>
+            </mat-select>
+          </mat-form-field>
 
-      <mat-form-field>
-        <mat-label>Phone 2</mat-label>
-        <input matInput type="number" formControlName="phone2">
-      </mat-form-field>
+          <!-- Selected Chips Display -->
+          <div class="selected-chips-container" *ngIf="selectedDeleteCodes.length > 0">
+            <div class="chips-header">
+              <span class="chips-title">Selected Branches ({{ selectedDeleteCodes.length }})</span>
+              <button mat-button color="warn" class="clear-all-btn" (click)="clearSelection()">Clear All</button>
+            </div>
+            
+            <mat-chip-set>
+              <mat-chip *ngFor="let code of selectedDeleteCodes" [removable]="!deleting" (removed)="removeFromSelection(code)">
+                <mat-icon matChipAvatar>{{ branchTypeIcon(getBranchByCode(code)?.branchType) }}</mat-icon>
+                {{ getBranchByCode(code)?.branchName }}
+                <button matChipRemove *ngIf="!deleting">
+                  <mat-icon>cancel</mat-icon>
+                </button>
+              </mat-chip>
+            </mat-chip-set>
 
-      <mat-form-field>
-        <mat-label>Email</mat-label>
-        <input matInput formControlName="email">
-        <mat-error *ngIf="form.get('email')?.hasError('email')">Invalid email</mat-error>
-      </mat-form-field>
+            <!-- Delete Action Button -->
+            <div class="delete-action-row">
+              <button mat-raised-button color="warn" [disabled]="deleting" (click)="confirmDeleteSelected()" class="bulk-delete-btn">
+                <mat-spinner *ngIf="deleting" diameter="20"></mat-spinner>
+                <mat-icon *ngIf="!deleting">delete_forever</mat-icon>
+                {{ deleting ? 'Deleting...' : 'Delete Selected Branches' }}
+              </button>
+              <!-- Danger notice -->
+              <div class="delete-notice">
+                <mat-icon>warning_amber</mat-icon>
+                <span>Deleting branches is permanent and will remove all associated records.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
 
-      <mat-form-field>
-        <mat-label>GSTIN</mat-label>
-        <input matInput formControlName="gstin" maxlength="15">
-      </mat-form-field>
+  <!-- FORM TEMPLATE (Shared for Add & Edit) -->
+  <ng-template #branchFormTemplate>
+    <form [formGroup]="form" (ngSubmit)="submit()" class="branch-form">
+      <div class="form-grid">
+        <mat-form-field *ngIf="mode==='add'">
+          <mat-label>Branch Code</mat-label>
+          <input matInput formControlName="branchCode" class="text-uppercase">
+          <mat-hint>Unique code eg. MUM01</mat-hint>
+          <mat-error *ngIf="form.get('branchCode')?.hasError('required')">Required</mat-error>
+          <mat-error *ngIf="form.get('branchCode')?.hasError('pattern')">Only uppercase letters &amp; digits</mat-error>
+          <mat-error *ngIf="form.get('branchCode')?.hasError('taken')">Branch code already taken</mat-error>
+        </mat-form-field>
 
-      <mat-form-field>
-        <mat-label>Contact Person</mat-label>
-        <input matInput formControlName="contactPerson">
-      </mat-form-field>
+        <mat-form-field>
+          <mat-label>Branch Name</mat-label>
+          <input matInput formControlName="branchName">
+          <mat-error *ngIf="form.get('branchName')?.hasError('required')">Required</mat-error>
+        </mat-form-field>
 
-      <mat-form-field>
-        <mat-label>Postal Code</mat-label>
-        <input matInput formControlName="postalCode" maxlength="6">
-      </mat-form-field>
-    </div>
+        <mat-form-field>
+          <mat-label>Select Branch Type</mat-label>
+          <mat-select formControlName="branchType" placeholder="Select Branch Type" [ngClass]="{'placeholder-grey': !form.get('branchType')?.value}">
+            <mat-option value="" style="display: none;">Select Branch Type</mat-option>
+            <mat-option value="Branch">Branch</mat-option>
+            <mat-option value="Hub">Hub</mat-option>
+            <mat-option value="Booking Office">Booking Office</mat-option>
+          </mat-select>
+          <mat-error *ngIf="form.get('branchType')?.hasError('required')">Required</mat-error>
+        </mat-form-field>
 
-    <div class="submit-row">
-      <button mat-raised-button color="primary" type="submit" [disabled]="loading">
-        <mat-spinner *ngIf="loading" diameter="18"></mat-spinner>
-        <mat-icon *ngIf="!loading">save</mat-icon>
-        {{ loading ? 'Saving...' : (mode==='add' ? 'Create Branch' : 'Update Branch') }}
-      </button>
-      <button mat-stroked-button type="button" (click)="reset()">
-        <mat-icon>clear</mat-icon> Reset
-      </button>
-    </div>
-  </form>
+        <mat-form-field>
+          <mat-label>Country</mat-label>
+          <mat-select formControlName="country" (selectionChange)="onCountryChange($event.value)" placeholder="Select Country">
+            <!-- Sticky Search Box -->
+            <div class="select-search-box">
+              <mat-icon class="search-icon">search</mat-icon>
+              <input class="search-input" [value]="countrySearch" (input)="countrySearch = $any($event.target).value" placeholder="Search country..." (keydown)="$event.stopPropagation()">
+            </div>
+            <mat-option *ngFor="let c of filteredCountries" [value]="c.isoCode">{{ c.name }}</mat-option>
+            <mat-option *ngIf="filteredCountries.length === 0" disabled>No countries found</mat-option>
+          </mat-select>
+          <mat-error *ngIf="form.get('country')?.hasError('required')">Required</mat-error>
+        </mat-form-field>
+
+        <mat-form-field>
+          <mat-label>State</mat-label>
+          <mat-select formControlName="state" (selectionChange)="onStateChange($event.value)" placeholder="Select State" [ngClass]="{'placeholder-grey': !form.get('state')?.value}">
+            <!-- Sticky Search Box -->
+            <div class="select-search-box">
+              <mat-icon class="search-icon">search</mat-icon>
+              <input class="search-input" [value]="stateSearch" (input)="stateSearch = $any($event.target).value" placeholder="Search state..." (keydown)="$event.stopPropagation()">
+            </div>
+            <mat-option value="" style="display: none;">Select State</mat-option>
+            <mat-option *ngFor="let s of filteredStates" [value]="s.isoCode">{{ s.name }}</mat-option>
+            <mat-option *ngIf="filteredStates.length === 0" disabled>No states found</mat-option>
+          </mat-select>
+          <mat-error *ngIf="form.get('state')?.hasError('required')">Required</mat-error>
+        </mat-form-field>
+
+        <mat-form-field>
+          <mat-label>City</mat-label>
+          <mat-select formControlName="city" placeholder="Select City" [ngClass]="{'placeholder-grey': !form.get('city')?.value}">
+            <!-- Sticky Search Box -->
+            <div class="select-search-box">
+              <mat-icon class="search-icon">search</mat-icon>
+              <input class="search-input" [value]="citySearch" (input)="citySearch = $any($event.target).value" placeholder="Search city..." (keydown)="$event.stopPropagation()">
+            </div>
+            <mat-option value="" style="display: none;">Select City</mat-option>
+            <mat-option *ngFor="let cy of filteredCities" [value]="cy.name">{{ cy.name }}</mat-option>
+            <mat-option *ngIf="filteredCities.length === 0" disabled>No cities found</mat-option>
+          </mat-select>
+          <mat-error *ngIf="form.get('city')?.hasError('required')">Required</mat-error>
+        </mat-form-field>
+
+        <mat-form-field>
+          <mat-label>Street Address</mat-label>
+          <input matInput formControlName="addressStreet">
+        </mat-form-field>
+
+        <mat-form-field>
+          <mat-label>Postal Code</mat-label>
+          <input matInput formControlName="postalCode" maxlength="6">
+        </mat-form-field>
+
+        <mat-form-field>
+          <mat-label>Contact Person</mat-label>
+          <input matInput formControlName="contactPerson">
+        </mat-form-field>
+
+        <mat-form-field>
+          <mat-label>Phone 1</mat-label>
+          <input matInput type="number" formControlName="phone">
+          <mat-error *ngIf="form.get('phone')?.hasError('pattern')">Valid 10-digit</mat-error>
+        </mat-form-field>
+
+        <mat-form-field>
+          <mat-label>Phone 2</mat-label>
+          <input matInput type="number" formControlName="phone2">
+          <mat-error *ngIf="form.get('phone2')?.hasError('pattern')">Valid 10-digit</mat-error>
+        </mat-form-field>
+
+        <mat-form-field>
+          <mat-label>Email</mat-label>
+          <input matInput formControlName="email" required>
+          <mat-error *ngIf="form.get('email')?.hasError('required')">Required</mat-error>
+          <mat-error *ngIf="form.get('email')?.hasError('email')">Invalid email</mat-error>
+        </mat-form-field>
+
+        <mat-form-field>
+          <mat-label>GSTIN</mat-label>
+          <input matInput formControlName="gstin" maxlength="15">
+        </mat-form-field>
+      </div>
+
+      <div class="submit-row">
+        <button mat-raised-button color="primary" type="submit" [disabled]="loading || form.invalid" id="submit-branch-btn">
+          <mat-spinner *ngIf="loading" diameter="18"></mat-spinner>
+          <mat-icon *ngIf="!loading">save</mat-icon>
+          {{ loading ? 'Saving...' : (mode==='add' ? 'Create Branch' : 'Update Branch') }}
+        </button>
+        <button mat-stroked-button type="button" (click)="reset()" id="reset-branch-btn">
+          <mat-icon>clear</mat-icon> Reset
+        </button>
+      </div>
+    </form>
+  </ng-template>
 </div>
