@@ -4,6 +4,7 @@ import java.sql.Date;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.logic.logistic.dto.AddressDto;
 import com.logic.logistic.dto.BookingReceiptSequence;
@@ -120,6 +122,7 @@ public class CompanyRegisterServiceImpl implements CompanyRegisterService {
 									branchData.getBranchName(),
 									branchData.getBranchType(),
 									branchData.getCompanyCode(),
+									addr != null ? addr.getCountry() : null,
 									addr != null ? addr.getState() : null,
 									addr != null ? addr.getCity() : null,
 									addr != null ? addr.getAreaOrStreetline() : null,
@@ -285,6 +288,15 @@ public class CompanyRegisterServiceImpl implements CompanyRegisterService {
 			if (updatedAddr.getPostalCode() != null) {
 				address.setPostalCode(updatedAddr.getPostalCode());
 			}
+			if (updatedAddr.getState() != null) {
+				address.setState(updatedAddr.getState());
+			}
+			if (updatedAddr.getCity() != null) {
+				address.setCity(updatedAddr.getCity());
+			}
+			if (updatedAddr.getCountry() != null) {
+				address.setCountry(updatedAddr.getCountry());
+			}
 
 			address.setUpdatedDate(Date.valueOf(LocalDate.now()));
 			addressRepo.save(address);
@@ -292,7 +304,87 @@ public class CompanyRegisterServiceImpl implements CompanyRegisterService {
 
 		branchRepo.save(existing);
 
-		return BranchAndAddressMapper.DtostoBranchMap(existing, address);
+		Branch result = BranchAndAddressMapper.DtostoBranchMap(existing, address);
+
+		if (result.getBranchEmail() != null && !result.getBranchEmail().isBlank()) {
+			Address addr = result.getBranchAddress();
+			emailService.sendBranchUpdateEmail(
+					result.getBranchEmail(),
+					result.getBranchCode(),
+					result.getBranchName(),
+					result.getBranchType(),
+					result.getCompanyCode(),
+					addr != null ? addr.getCountry() : null,
+					addr != null ? addr.getState() : null,
+					addr != null ? addr.getCity() : null,
+					addr != null ? addr.getAreaOrStreetline() : null,
+					addr != null ? addr.getPostalCode() : null,
+					result.getBranchPhone(),
+					result.getBranchPhoneAlt(),
+					result.getGstIn(),
+					result.getContactPersonName());
+		}
+
+		return result;
+	}
+
+	@Override
+	@Transactional
+	public void deleteBranch(String branchCode) {
+		if (branchCode == null || branchCode.trim().isEmpty()) {
+			throw new IllegalArgumentException("Branch code is required");
+		}
+		BranchDTO branch = branchRepo.findById(branchCode)
+				.orElseThrow(() -> new RuntimeException("Branch not found: " + branchCode));
+
+		String email = branch.getBranchEmail();
+		String name = branch.getBranchName();
+		String companyCode = branch.getCompanyCode();
+
+		regionMasterRepo.deleteByBranchCode(branchCode);
+		logger.info("Deleted region_master records for branch: " + branchCode);
+
+		AddressDto address = addressRepo.findByBranchCode(branchCode);
+		if (address != null) {
+			addressRepo.delete(address);
+			logger.info("Deleted address for branch: " + branchCode);
+		}
+
+		branchRepo.delete(branch);
+		logger.info("Deleted branch: " + branchCode);
+
+		if (email != null && !email.isBlank()) {
+			emailService.sendBranchDeleteEmail(email, branchCode, name, companyCode);
+		}
+	}
+
+	@Override
+	@Transactional
+	public Map<String, Object> deleteMultipleBranches(List<String> branchCodes) {
+		Map<String, Object> result = new java.util.HashMap<>();
+		List<String> deleted = new java.util.ArrayList<>();
+		List<String> failed = new java.util.ArrayList<>();
+
+		if (branchCodes == null || branchCodes.isEmpty()) {
+			throw new IllegalArgumentException("No branch codes provided");
+		}
+
+		for (String code : branchCodes) {
+			try {
+				deleteBranch(code);
+				deleted.add(code);
+			} catch (Exception e) {
+				logger.error("Failed to delete branch " + code + ": " + e.getMessage());
+				failed.add(code);
+			}
+		}
+
+		result.put("deleted", deleted);
+		result.put("failed", failed);
+		result.put("deletedCount", deleted.size());
+		result.put("failedCount", failed.size());
+		result.put("status", failed.isEmpty() ? "SUCCESS" : (deleted.isEmpty() ? "FAILURE" : "PARTIAL"));
+		return result;
 	}
 
 }

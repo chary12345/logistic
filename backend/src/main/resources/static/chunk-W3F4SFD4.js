@@ -1,0 +1,1 @@
+import{U as r,Z as o,rc as e}from"./chunk-VIOK3ORE.js";var c=(()=>{class i{constructor(t){this.http=t}login(t){return this.http.post("/api/login",t)}changePassword(t){return this.http.post("/api/change-password",t)}static{this.\u0275fac=function(n){return new(n||i)(o(e))}}static{this.\u0275prov=r({token:i,factory:i.\u0275fac,providedIn:"root"})}}return i})();export{c as a};
