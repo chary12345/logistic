@@ -150,4 +150,85 @@ public class EmployyeServiceImpl implements EmployeecreationService {
 		return bookrepo.findEmployeeNamesByCompanyAndBranch(companyCode, branchCode);
 	}
 
+	@Override
+	public List<UserDto> getEmployeesByCompany(String companyCode) {
+		return userRepository.findByCompanyCode(companyCode);
+	}
+
+	@Override
+	public UserDto getEmployeeByUserId(String userId) {
+		return userRepository.findById(userId).orElse(null);
+	}
+
+	@Override
+	@org.springframework.transaction.annotation.Transactional
+	public UserDto updateEmployee(String userId, User updatedEmployee) {
+		UserDto existing = userRepository.findById(userId)
+				.orElseThrow(() -> new RuntimeException("Employee not found"));
+
+		if (updatedEmployee.getFirstName() != null) {
+			existing.setFirstName(updatedEmployee.getFirstName());
+		}
+		if (updatedEmployee.getLastName() != null) {
+			existing.setLastName(updatedEmployee.getLastName());
+		}
+		if (updatedEmployee.getPhone() != null) {
+			existing.setPhone(updatedEmployee.getPhone());
+		}
+		if (updatedEmployee.getEmail() != null) {
+			existing.setEmail(updatedEmployee.getEmail());
+		}
+		if (updatedEmployee.getRole() != null) {
+			existing.setRole(updatedEmployee.getRole());
+		}
+		if (updatedEmployee.getPassword() != null && !updatedEmployee.getPassword().isBlank()) {
+			existing.setPassword(updatedEmployee.getPassword());
+		}
+		if (updatedEmployee.getCompanyDetails() != null && updatedEmployee.getCompanyDetails().getCompanyBranch() != null) {
+			String branchCode = updatedEmployee.getCompanyDetails().getCompanyBranch().getBranchCode();
+			if (branchCode != null && !branchCode.isBlank()) {
+				existing.setBranchCode(branchCode);
+			}
+		}
+
+		existing.setUpdatedDate(new java.sql.Date(System.currentTimeMillis()));
+		return userRepository.save(existing);
+	}
+
+	@Override
+	@org.springframework.transaction.annotation.Transactional
+	public void deleteEmployee(String userId) {
+		UserDto existing = userRepository.findById(userId)
+				.orElseThrow(() -> new RuntimeException("Employee not found"));
+		userRepository.delete(existing);
+	}
+
+	@Override
+	@org.springframework.transaction.annotation.Transactional
+	public Map<String, Object> deleteMultipleEmployees(List<String> userIds) {
+		Map<String, Object> result = new java.util.HashMap<>();
+		List<String> deleted = new java.util.ArrayList<>();
+		List<String> failed = new java.util.ArrayList<>();
+
+		if (userIds == null || userIds.isEmpty()) {
+			throw new IllegalArgumentException("No employee IDs provided");
+		}
+
+		for (String id : userIds) {
+			try {
+				deleteEmployee(id);
+				deleted.add(id);
+			} catch (Exception e) {
+				failed.add(id);
+			}
+		}
+
+		result.put("deleted", deleted);
+		result.put("failed", failed);
+		result.put("deletedCount", deleted.size());
+		result.put("failedCount", failed.size());
+		result.put("status", failed.isEmpty() ? "SUCCESS" : (deleted.isEmpty() ? "FAILURE" : "PARTIAL"));
+		return result;
+	}
+
 }
