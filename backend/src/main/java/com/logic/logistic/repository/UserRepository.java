@@ -13,19 +13,19 @@ import com.logic.logistic.dto.UserDto;
 
 @Repository
 public interface UserRepository extends JpaRepository<UserDto, String> {
-	
+
     @Query(value = "SELECT * FROM logistics_logic.user_data WHERE user_id = :username", nativeQuery = true)
     UserDto findByUsername(String username);
 
-    
     @Query(value = "SELECT * FROM logistics_logic.user_data WHERE branch_code = :BranchCode", nativeQuery = true)
     List<UserDto> findBycompanyName(String BranchCode);
-    
+
     // ✅ Added update query for changing password (without removing anything)
     @Modifying
     @Transactional
     @Query(value = "UPDATE logistics_logic.user_data SET password = :newPassword WHERE user_id = :username", nativeQuery = true)
     int updatePassword(@Param("username") String username, @Param("newPassword") String newPassword);
-    
-    
+
+    @Query(value = "SELECT * FROM logistics_logic.user_data WHERE company_code = :companyCode", nativeQuery = true)
+    List<UserDto> findByCompanyCode(@Param("companyCode") String companyCode);
 }

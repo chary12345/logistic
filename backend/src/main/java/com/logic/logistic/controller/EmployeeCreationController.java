@@ -13,6 +13,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import com.logic.logistic.dto.UserDto;
 import com.logic.logistic.model.User;
 import com.logic.logistic.service.EmployeecreationService;
 
@@ -73,6 +77,81 @@ public class EmployeeCreationController {
     public List<String> getEmployeesByCompanyAndBranch(@RequestParam String companyCode,
                                                        @RequestParam String branchCode) {
         return employeecreationService.getEmployeesByBranch(companyCode, branchCode);
+    }
+
+    @GetMapping("/employeesByCompany/{companyCode}")
+    public ResponseEntity<Map<String, Object>> getEmployeesByCompany(@PathVariable String companyCode) {
+        Map<String, Object> map = new HashMap<>();
+        try {
+            List<UserDto> employees = employeecreationService.getEmployeesByCompany(companyCode);
+            map.put("status", "SUCCESS");
+            map.put("data", employees);
+            return ResponseEntity.ok(map);
+        } catch (Exception e) {
+            map.put("status", "FAILURE");
+            map.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(map);
+        }
+    }
+
+    @GetMapping("/getEmployeeDetails/{userId}")
+    public ResponseEntity<UserDto> getEmployeeDetails(@PathVariable String userId) {
+        UserDto employee = employeecreationService.getEmployeeByUserId(userId);
+        if (employee != null) {
+            return ResponseEntity.ok(employee);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PutMapping("/updateEmployee/{userId}")
+    public ResponseEntity<Map<String, Object>> updateEmployee(@PathVariable String userId, @RequestBody User updatedEmployee) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            UserDto saved = employeecreationService.updateEmployee(userId, updatedEmployee);
+            response.put("status", "SUCCESS");
+            response.put("data", saved);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("status", "FAILURE");
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    @DeleteMapping("/deleteEmployee/{userId}")
+    public ResponseEntity<Map<String, Object>> deleteEmployee(@PathVariable String userId) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            employeecreationService.deleteEmployee(userId);
+            response.put("status", "SUCCESS");
+            response.put("message", "Employee deleted successfully");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("status", "FAILURE");
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    @PostMapping({"/deleteEmployees", "/api/deleteEmployees"})
+    public ResponseEntity<Map<String, Object>> deleteMultipleEmployees(@RequestBody List<String> userIds) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            if (userIds == null || userIds.isEmpty()) {
+                response.put("status", "FAILURE");
+                response.put("message", "No employee IDs provided");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            }
+            Map<String, Object> result = employeecreationService.deleteMultipleEmployees(userIds);
+            String status = (String) result.get("status");
+            HttpStatus httpStatus = "FAILURE".equals(status) ? HttpStatus.INTERNAL_SERVER_ERROR : HttpStatus.OK;
+            return ResponseEntity.status(httpStatus).body(result);
+        } catch (Exception e) {
+            response.put("status", "FAILURE");
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 
 }

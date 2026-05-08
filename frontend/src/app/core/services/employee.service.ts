@@ -18,4 +18,27 @@ export class EmployeeService {
   getEmployeesByBranch(companyCode: string, branchCode: string): Observable<string[]> {
     return this.http.get<string[]>(`/employeeList?companyCode=${companyCode}&branchCode=${branchCode}`);
   }
+
+  getByCompanyCode(companyCode: string): Observable<{status: string; data: any[]}> {
+    return this.http.get<{status: string; data: any[]}>(`/employeesByCompany/${companyCode}`);
+  }
+
+  getByUserId(userId: string): Observable<any> {
+    return this.http.get<any>(`/getEmployeeDetails/${userId}`);
+  }
+
+  update(userId: string, employee: any): Observable<{status: string; data: any}> {
+    return this.http.put<{status: string; data: any}>(`/updateEmployee/${userId}`, employee);
+  }
+
+  delete(userId: string): Observable<{status: string; message: string}> {
+    return this.http.delete<{status: string; message: string}>(`/deleteEmployee/${userId}`);
+  }
+
+  deleteMultiple(userIds: string[]): Observable<{
+    status: string; deletedCount: number; failedCount: number;
+    deleted: string[]; failed: string[];
+  }> {
+    return this.http.post<any>('/api/deleteEmployees', userIds);
+  }
 }
