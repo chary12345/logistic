@@ -4,6 +4,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.logic.logistic.dto.*;
+import com.logic.logistic.model.*;
+import com.logic.logistic.repository.*;
 import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,21 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import com.logic.logistic.dto.ArticleDetailDto;
-import com.logic.logistic.dto.Booking;
-import com.logic.logistic.dto.BookingReceiptSequence;
-import com.logic.logistic.dto.BookingSearchRequest;
-import com.logic.logistic.dto.LoadingSheetDTO;
 import com.logic.logistic.mapper.LoadingSheetMapper;
-import com.logic.logistic.model.ArticleDetail;
-import com.logic.logistic.model.BookingDTO;
-import com.logic.logistic.model.BookingPageResponse;
-import com.logic.logistic.model.DispatchRequest;
-import com.logic.logistic.model.DispatchResponse;
-import com.logic.logistic.repository.ArticleDetailRepository;
-import com.logic.logistic.repository.BookRepository;
-import com.logic.logistic.repository.BookingReceiptSequenceRepository;
-import com.logic.logistic.repository.LoadingSheetRepository;
 
 import jakarta.transaction.Transactional;
 
@@ -49,11 +38,15 @@ public class BookingService {
 
 	@Autowired
 	private LoadingSheetRepository loadingSheetRepository;
+
+	@Autowired
+	private BookingChargeDetailsRepo bookingChargeRepo;
 	
 	@Transactional
-	public Booking saveBooking(BookingDTO dto) {
+	public BookingResponseDTO saveBooking(BookingDTO dto) {
 		String key =  dto.getBranchCode();
 		Booking save = null;
+		BookingResponseDTO response = new BookingResponseDTO();
 		try {
 			BookingReceiptSequence sequence = sequenceRepo.findById(key).orElseGet(() -> {
 				BookingReceiptSequence s = new BookingReceiptSequence();
@@ -88,14 +81,9 @@ public class BookingService {
 				booking.setConsigneeAddress(dto.getConsigneeAddress());
 			if (dto.getPartyName() != null)
 				booking.setPartyName(dto.getPartyName());
-			booking.setLoading(dto.getLoading());
-			booking.setLoadingCharge(dto.getLoadingCharge());
-			
-			saveBookingArticles(loadingReceipt, dto.getArticleDetails());
-			booking.setSgst(dto.getSgst());
-			booking.setCgst(dto.getCgst());
-			booking.setIgst(dto.getIgst());
-			booking.setFreight(dto.getFreight());
+
+			List<ArticleDetailDto> articleDetailDtos = saveBookingArticles(loadingReceipt, dto.getArticleDetails());
+			BookingChargeDetails bookingChargeDetails = saveBookingCharges(loadingReceipt, dto);
 
 			booking.setBookingDate(LocalDateTime.now());
 			booking.setConsignStatus("BOOKED");
@@ -126,11 +114,15 @@ public class BookingService {
 			save = bookingRepo.save(booking);
 			save.setNextLr(key+"/" + String.format("%03d", newSerial+1));
 			logger.info("booking saved:: " + save.getLoadingReciept());
+
+			response.setBooking(save);
+			response.setArticles(articleDetailDtos);
+			response.setCharges(bookingChargeDetails);
 		} catch (Exception e) {
-			
 			logger.error("Exception in saveBooking: " + e);
 		}
-		return save;
+
+		return response;
 	}
 
 
@@ -168,31 +160,98 @@ public class BookingService {
 	}
 
 
-	public BookingPageResponse getReports(LocalDateTime from, LocalDateTime to, String status, String lastId,
+	public BookingPageResponse getReports(
+			LocalDateTime from,
+			LocalDateTime to,
+			String status,
+			String lastId,
 			String branchCode) {
+
 		int limit = 10;
-		Pageable pageable = PageRequest.of(0, limit, Sort.by("bookingDate").descending());
+
+		Pageable pageable =
+				PageRequest.of(
+						0,
+						limit,
+						Sort.by("bookingDate").descending()
+				);
+
 		List<Booking> bookings;
 
 		if (lastId == null) {
-			bookings = bookingRepo.findFirstPage(from, to, status, pageable, branchCode);
+
+			bookings = bookingRepo.findFirstPage(
+					from,
+					to,
+					status,
+					pageable,
+					branchCode
+			);
+
 		} else {
-			bookings = bookingRepo.findNextPage(from, to, status, lastId, pageable, branchCode);
+
+			bookings = bookingRepo.findNextPage(
+					from,
+					to,
+					status,
+					lastId,
+					pageable,
+					branchCode
+			);
 		}
 
-		BookingPageResponse response = new BookingPageResponse();
-		response.setContent(bookings);
+		List<BookingReportDTO> reportList =
+				new ArrayList<>();
+
+		for (Booking booking : bookings) {
+
+			BookingReportDTO dto =
+					new BookingReportDTO();
+
+			dto.setBooking(booking);
+
+			BookingChargeDetails charges =
+					bookingChargeRepo
+							.findByLoadingReciept(
+									booking.getLoadingReciept()
+							)
+							.orElse(null);
+
+			dto.setCharges(charges);
+
+			reportList.add(dto);
+		}
+
+		BookingPageResponse response =
+				new BookingPageResponse();
+
+		response.setContent(reportList);
+
 		response.setPageSize(limit);
+
 		response.setPageNumber(0);
-		response.setTotalElements(bookings.size());
+
+		response.setTotalElements(reportList.size());
+
 		response.setTotalPages(1);
-		response.setLast(bookings.size() < limit);
+
+		response.setLast(reportList.size() < limit);
+
+		if (!bookings.isEmpty()) {
+
+			response.setLastId(
+					bookings.get(
+							bookings.size() - 1
+					).getLoadingReciept()
+			);
+		}
 
 		return response;
 	}
 
-	public void saveBookingArticles(String lrNumber, List<ArticleDetail> details) {
+	public List<ArticleDetailDto> saveBookingArticles(String lrNumber, List<ArticleDetail> details) {
 		ArrayList<ArticleDetailDto> dtoList = new ArrayList<ArticleDetailDto>();
+		List<ArticleDetailDto> articleDetailDtos=new ArrayList<ArticleDetailDto>();
 		try {
 			for (ArticleDetail detail : details) {
 				ArticleDetailDto dto = new ArticleDetailDto();
@@ -207,11 +266,14 @@ public class BookingService {
 
 				dtoList.add(dto);
 			}
-			articleRepo.saveAll(dtoList);
+			 articleDetailDtos = articleRepo.saveAll(dtoList);
+
 		} catch (Exception e) {
 			logger.error("unable to save article details :: ", e.getMessage());
 		}
-	}
+
+        return articleDetailDtos;
+    }
 
 	public BookingDTO findByLoadingReciept(String lr) {
 		// Fetch articleDetails from table
@@ -290,46 +352,271 @@ public class BookingService {
 		}
 	}
 
-	public BookingPageResponse getGlobalSearchReports(BookingSearchRequest request) {
-	    int limit = 10;
-	    Pageable pageable = PageRequest.of(0, limit, Sort.by("bookingDate").descending());
+	public BookingPageResponse getGlobalSearchReports(
+			BookingSearchRequest request) {
 
-        List<String> branchCodes = bookingRepo.getlistofBranchcodes(
-                normalize(request.getCity()),
-                normalize(request.getState()),
-                normalize(request.getBranchCode()),
-                request.getCompanyCode()
-        );
+		int limit = 10;
 
-	    if (branchCodes.isEmpty()) {
-	        return new BookingPageResponse(); // empty if no branches
-	    }
+		Pageable pageable =
+				PageRequest.of(
+						0,
+						limit,
+						Sort.by("bookingDate").descending()
+				);
 
-	    List<Booking> bookings = bookingRepo.searchBookings(
-	        request.getFromDate(),
-	        request.getToDate(),
-	        request.getStatus(),
-	        request.getLastId(),
-	        branchCodes,
-	        pageable
-	    );
+		List<String> branchCodes =
+				bookingRepo.getlistofBranchcodes(
 
-	    BookingPageResponse response = new BookingPageResponse();
-	    response.setContent(bookings);
-	    response.setPageSize(limit);
-	    response.setPageNumber(request.getPage());
-	    response.setTotalElements(bookings.size());
-	    response.setTotalPages(1);
-	    response.setLast(bookings.size() < limit);
-	    response.setLastId(bookings.isEmpty() ? null : bookings.get(bookings.size() - 1).getLoadingReciept());
+						normalize(request.getCity()),
 
-	    return response;
+						normalize(request.getState()),
+
+						normalize(request.getBranchCode()),
+
+						request.getCompanyCode()
+				);
+
+		if (branchCodes.isEmpty()) {
+
+			return new BookingPageResponse();
+		}
+
+		List<Booking> bookings =
+				bookingRepo.searchBookings(
+
+						request.getFromDate(),
+
+						request.getToDate(),
+
+						request.getStatus(),
+
+						request.getLastId(),
+
+						branchCodes,
+
+						pageable
+				);
+
+		// 🔥 NEW REPORT DTO LIST
+		List<BookingReportDTO> reportList =
+				new ArrayList<>();
+
+		for (Booking booking : bookings) {
+
+			BookingReportDTO dto =
+					new BookingReportDTO();
+
+			// booking
+			dto.setBooking(booking);
+
+			// charges
+			BookingChargeDetails charges =
+					bookingChargeRepo
+							.findByLoadingReciept(
+									booking.getLoadingReciept()
+							)
+							.orElse(null);
+
+			dto.setCharges(charges);
+
+			reportList.add(dto);
+		}
+
+		BookingPageResponse response =
+				new BookingPageResponse();
+
+		response.setContent(reportList);
+
+		response.setPageSize(limit);
+
+		response.setPageNumber(
+				request.getPage()
+		);
+
+		response.setTotalElements(
+				reportList.size()
+		);
+
+		response.setTotalPages(1);
+
+		response.setLast(
+				reportList.size() < limit
+		);
+
+		response.setLastId(
+
+				bookings.isEmpty()
+
+						? null
+
+						: bookings.get(
+						bookings.size() - 1
+				).getLoadingReciept()
+		);
+
+		return response;
 	}
 
 	public List<String> getSaidToContainsByCompany(String companyCode) {
 		 return articleRepo.findDistinctSaidToContainsByCompanyCode(companyCode);
 	}
 
+	public BookingChargeDetails saveBookingCharges(String lrNumber, BookingDTO dto) {
+		BookingChargeDetails chargeData=null;
+		try {
+
+			BookingChargeDetails charges =
+					new BookingChargeDetails();
+
+			charges.setLoadingReciept(lrNumber);
+
+			charges.setLrCharge(dto.getLrCharge());
+
+			charges.setHamali(dto.getHamali());
+
+			charges.setLoading(dto.getLoading());
+
+			charges.setStationary(dto.getStationary());
+
+			charges.setOtherCharges(dto.getOtherCharges());
+
+			charges.setOtherTransportCharges(
+					dto.getOtherTransportCharges()
+			);
+
+			charges.setMiscellaneous(
+					dto.getMiscellaneous()
+			);
+
+			charges.setCrossingAmount(
+					dto.getCrossingAmount()
+			);
+
+			charges.setPodCharges(
+					dto.getPodCharges()
+			);
+
+			charges.setDoorDelivery(
+					dto.getDoorDelivery()
+			);
+
+			charges.setDoorPickup(
+					dto.getDoorPickup()
+			);
+
+			charges.setDdc(dto.getDdc());
+
+			charges.setDcc(dto.getDcc());
+
+			charges.setDemurrage(
+					dto.getDemurrage()
+			);
+
+			charges.setUnloading(
+					dto.getUnloading()
+			);
+
+			charges.setLocalVehicle(
+					dto.getLocalVehicle()
+			);
+
+			charges.setCrossingHire(
+					dto.getCrossingHire()
+			);
+
+			charges.setFreight(
+					dto.getFreight()
+			);
+
+			charges.setSgst(
+					dto.getSgst()
+			);
+
+			charges.setCgst(
+					dto.getCgst()
+			);
+
+			charges.setIgst(
+					dto.getIgst()
+			);
+
+			charges.setLoadingCharge(
+					dto.getLoadingCharge()
+			);
+
+			// TOTAL CALCULATION
+			double totalAmount =
+
+					dto.getLrCharge()
+
+							+ dto.getHamali()
+
+							+ dto.getLoading()
+
+							+ dto.getStationary()
+
+							+ dto.getOtherCharges()
+
+							+ dto.getOtherTransportCharges()
+
+							+ dto.getMiscellaneous()
+
+							+ dto.getCrossingAmount()
+
+							+ dto.getPodCharges()
+
+							+ dto.getDoorDelivery()
+
+							+ dto.getDoorPickup()
+
+							+ dto.getDdc()
+
+							+ dto.getDcc()
+
+							+ dto.getDemurrage()
+
+							+ dto.getUnloading()
+
+							+ dto.getLocalVehicle()
+
+							+ dto.getCrossingHire()
+
+							+ dto.getFreight()
+
+							+ dto.getSgst()
+
+							+ dto.getCgst()
+
+							+ dto.getIgst()
+
+							+ dto.getLoadingCharge();
+
+			charges.setTotalAmount(totalAmount);
+
+			charges.setCreatedDate(
+					LocalDateTime.now()
+			);
+
+			charges.setModifiedDate(
+					LocalDateTime.now()
+			);
+
+			 chargeData = bookingChargeRepo.save(charges);
+
+			logger.info(
+					"booking charges saved :: "
+							+ lrNumber
+			);
+
+		} catch (Exception e) {
+
+			logger.error(
+					"unable to save booking charges :: ",
+					e
+			);
+		}
+        return chargeData;
+    }
 
     private String normalize(String value) {
         return (value == null || value.trim().isEmpty()) ? null : value.trim();
