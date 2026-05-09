@@ -5,7 +5,7 @@ import java.util.List;
 import com.logic.logistic.dto.Booking;
 
 public class BookingPageResponse {
-    private List<Booking> content;
+	private List<BookingReportDTO> content;
     private int pageNumber;
     private int pageSize;
     private long totalElements;
@@ -18,12 +18,15 @@ public class BookingPageResponse {
 	public void setLastId(String lastId) {
 		this.lastId = lastId;
 	}
-	public List<Booking> getContent() {
+
+	public List<BookingReportDTO> getContent() {
 		return content;
 	}
-	public void setContent(List<Booking> content) {
+
+	public void setContent(List<BookingReportDTO> content) {
 		this.content = content;
 	}
+
 	public int getPageNumber() {
 		return pageNumber;
 	}

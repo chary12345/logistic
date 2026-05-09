@@ -39,9 +39,9 @@ public class BookingController {
 	private static org.apache.logging.log4j.Logger logger = LogManager.getLogger();
 
 	@PostMapping("/bookLoad")
-	public ResponseEntity<Booking> createBooking(@RequestBody BookingDTO dto) {
-		Booking saved = bookingService.saveBooking(dto);
-		return ResponseEntity.ok(saved);
+	public ResponseEntity<BookingResponseDTO> createBooking(@RequestBody BookingDTO dto) {
+		BookingResponseDTO bookingResponseDTO = bookingService.saveBooking(dto);
+		return ResponseEntity.ok(bookingResponseDTO);
 	}
 
 	@PutMapping("/updateBookLoad")
