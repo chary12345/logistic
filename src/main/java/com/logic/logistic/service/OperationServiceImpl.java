@@ -220,16 +220,26 @@ public class OperationServiceImpl implements OperationService {
 	}
 
 	@Override
-	public List<Booking> getReceivedLrsForDelivery(String destinationBranchCode) {
+	public List<Booking> getReceivedLrsForDelivery(String destinationBranchCode, String lrNumber) {
 
 		if (destinationBranchCode == null || destinationBranchCode.isEmpty()) {
 			throw new RuntimeException("Destination branch code required");
 		}
-		List<Booking> receivedLrList = bookingRepository
-				.findByConsignStatusAndDestinationBranchCode(
-						"RECEIVED", destinationBranchCode
-				);
-		return receivedLrList;
+
+		// If a specific LR number is provided, filter to that single LR
+		if (lrNumber != null && !lrNumber.trim().isEmpty()) {
+			Booking booking = bookingRepository.findByLoadingReciept(lrNumber.trim());
+			if (booking == null
+					|| !"RECEIVED".equalsIgnoreCase(booking.getConsignStatus())
+					|| !destinationBranchCode.equalsIgnoreCase(booking.getDestinationBranchCode())) {
+				return new ArrayList<>();
+			}
+			return List.of(booking);
+		}
+
+		return bookingRepository.findByConsignStatusAndDestinationBranchCode(
+				"RECEIVED", destinationBranchCode
+		);
 	}
 
 	@Override

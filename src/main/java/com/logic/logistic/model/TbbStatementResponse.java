@@ -5,11 +5,24 @@ import java.util.List;
 public class TbbStatementResponse {
 
     private String consignorName;
-    private int totalLrs;
+    private long totalLrs;
     private double totalFreight;
     private double totalGst;
     private double totalAmount;
     private List<LrStatementDTO> lrStatements;
+
+    public TbbStatementResponse() {
+    }
+
+    public TbbStatementResponse(String consignorName, long totalLrs, double totalFreight, 
+                                double totalGst, double totalAmount, List<LrStatementDTO> lrStatements) {
+        this.consignorName = consignorName;
+        this.totalLrs = totalLrs;
+        this.totalFreight = totalFreight;
+        this.totalGst = totalGst;
+        this.totalAmount = totalAmount;
+        this.lrStatements = lrStatements;
+    }
 
     public String getConsignorName() {
         return consignorName;
@@ -19,11 +32,11 @@ public class TbbStatementResponse {
         this.consignorName = consignorName;
     }
 
-    public int getTotalLrs() {
+    public long getTotalLrs() {
         return totalLrs;
     }
 
-    public void setTotalLrs(int totalLrs) {
+    public void setTotalLrs(long totalLrs) {
         this.totalLrs = totalLrs;
     }
 

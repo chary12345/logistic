@@ -52,9 +52,28 @@ public class LoginServiceImpl implements LoginService {
 					map.put("message", "user is inactive");
 					map.put("loginResponse", "");
 				} else if (userData.getCompanyCode() != null && userData.getBranchCode() != null) {
-					CompanyAndBranch companyAndBranchData = companyrepo
+					com.logic.logistic.model.CompanyAndBranchProjection projection = companyrepo
 							.fetchCompanyAndBranchdetgails(userData.getCompanyCode(), userData.getBranchCode());
-					if (companyAndBranchData.isCompanyActive()) {
+					CompanyAndBranch companyAndBranchData = null;
+					if (projection != null) {
+						companyAndBranchData = new CompanyAndBranch();
+						companyAndBranchData.setCompanyCode(projection.getCompanyCode());
+						companyAndBranchData.setCompanyName(projection.getCompanyName());
+						companyAndBranchData.setGroupName(projection.getGroupName());
+						companyAndBranchData.setPlan(projection.getPlan());
+						companyAndBranchData.setCompanyLogo(projection.getCompanyLogo());
+						companyAndBranchData.setBranchCode(projection.getBranchCode());
+						companyAndBranchData.setBranchName(projection.getBranchName());
+						companyAndBranchData.setBranchType(projection.getBranchType());
+						companyAndBranchData.setCompanyActive(Boolean.TRUE.equals(projection.getIsCompanyActive()));
+					}
+
+					if (companyAndBranchData == null) {
+						status = "FAILURE";
+						map.put("status", status);
+						map.put("message", "Company or Branch details not found");
+						map.put("loginResponse", "");
+					} else if (companyAndBranchData.isCompanyActive()) {
 						status = "FAILURE";
 						map.put("status", status);
 						map.put("message", "your company hasblocked please contact Master Admin");

@@ -13,7 +13,7 @@ public interface OperationService {
 	DispatchedResponseDTO disaptchedListByLsORVehicleNumber(Long lsId, String vehicleNo);
 	void receiveSelectedLrs(ReceiveRequest request);
 
-	List<Booking> getReceivedLrsForDelivery(String destinationBranchCode);
+	List<Booking> getReceivedLrsForDelivery(String destinationBranchCode, String lrNumber);
 
 	void deliverSelectedLrs(List<String> lrIds);
 }
