@@ -9,5 +9,5 @@ public interface CompanyAndBranchProjection {
     String getBranchCode();
     String getBranchName();
     String getBranchType();
-    Integer getIsCompanyActive();
+    Boolean getIsCompanyActive();
 }

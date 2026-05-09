@@ -65,7 +65,7 @@ public class LoginServiceImpl implements LoginService {
 						companyAndBranchData.setBranchCode(projection.getBranchCode());
 						companyAndBranchData.setBranchName(projection.getBranchName());
 						companyAndBranchData.setBranchType(projection.getBranchType());
-						companyAndBranchData.setCompanyActive(projection.getIsCompanyActive() != null && projection.getIsCompanyActive() == 1);
+						companyAndBranchData.setCompanyActive(Boolean.TRUE.equals(projection.getIsCompanyActive()));
 					}
 
 					if (companyAndBranchData == null) {
