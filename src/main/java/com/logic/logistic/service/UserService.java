@@ -17,23 +17,27 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
 
-    public boolean changeUserPassword(String username, String currentPassword, String newPassword) {
-        UserDto user = userRepository.findByUsername(username);
+    public boolean changeUserPassword(String username, String currentPassword, String newPassword, String group) {
+        String fullUsername = username + group;
+        UserDto user = userRepository.findByUsername(fullUsername);
 
         if (user == null) {
-            System.out.println("User not found or incorrect password!");
-            logger.info("User not found or incorrect password!");
+            logger.info("User not found for username: " + fullUsername);
             return false;
         }
 
-        int rowsUpdated = userRepository.updatePassword(username, newPassword);
+        // Validate current password
+        if (!user.getPassword().equalsIgnoreCase(currentPassword)) {
+            logger.info("Current password is incorrect for user: " + fullUsername);
+            return false;
+        }
+
+        int rowsUpdated = userRepository.updatePassword(fullUsername, newPassword);
 
         if (rowsUpdated > 0) {
-            System.out.println("Password updated successfully!");
             logger.info("Password updated successfully!");
             return true;
         } else {
-            System.out.println("Failed to update password!");
             logger.info("Failed to update password!");
             return false;
         }

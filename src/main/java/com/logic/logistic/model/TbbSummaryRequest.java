@@ -1,4 +1,5 @@
 package com.logic.logistic.model;
+
 import java.time.LocalDateTime;
 
 public class TbbSummaryRequest {
@@ -7,11 +8,14 @@ public class TbbSummaryRequest {
     private LocalDateTime fromDate;
     private LocalDateTime toDate;
 
-    // Optional future fields (you can use later)
-    private String branchCode;
-    private Boolean includeGst;
+    public TbbSummaryRequest() {
+    }
 
-    // Getters & Setters
+    public TbbSummaryRequest(String consignorName, LocalDateTime fromDate, LocalDateTime toDate) {
+        this.consignorName = consignorName;
+        this.fromDate = fromDate;
+        this.toDate = toDate;
+    }
 
     public String getConsignorName() {
         return consignorName;
@@ -35,21 +39,5 @@ public class TbbSummaryRequest {
 
     public void setToDate(LocalDateTime toDate) {
         this.toDate = toDate;
-    }
-
-    public String getBranchCode() {
-        return branchCode;
-    }
-
-    public void setBranchCode(String branchCode) {
-        this.branchCode = branchCode;
-    }
-
-    public Boolean getIncludeGst() {
-        return includeGst;
-    }
-
-    public void setIncludeGst(Boolean includeGst) {
-        this.includeGst = includeGst;
     }
 }

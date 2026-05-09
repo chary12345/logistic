@@ -1,6 +1,7 @@
 package com.logic.logistic.service;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 
@@ -27,5 +28,9 @@ public interface CompanyRegisterService {
 	Branch getBranchByCode(String branchCode);
 
 	Branch updateBranch(String branchCode, Branch updatedBranch);
+
+	void deleteBranch(String branchCode);
+
+	Map<String, Object> deleteMultipleBranches(List<String> branchCodes);
 
 }
