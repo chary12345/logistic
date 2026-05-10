@@ -215,13 +215,14 @@ export interface BranchDTO {
   contactPerson?: string;
   postalCode?: string;
   companyCode?: string;
-  isActive?: boolean;
+  branchActive?: boolean;
 }
 
 export interface BranchMap {
   branchCode: string;
   branchName: string;
   branchType?: string;
+  branchActive?: boolean;
 }
 
 // ---- Employee / User ----

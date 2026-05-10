@@ -22,7 +22,6 @@ import { AuthService } from '../../../../core/auth/auth.service';
 import { BranchService } from '../../../../core/services/branch.service';
 import { SnackbarService } from '../../../../core/services/snackbar.service';
 import { BranchDTO, BranchMap } from '../../../../shared/models/models';
-import { BranchDeleteConfirmComponent } from './branch-delete-confirm.component';
 import { Country, State, City } from 'country-state-city';
 
 @Component({
@@ -42,12 +41,12 @@ export class BranchManageComponent implements OnInit, OnDestroy {
   @ViewChild(FormGroupDirective) formDirective!: FormGroupDirective;
   @ViewChildren(FormGroupDirective) formDirectives!: QueryList<FormGroupDirective>;
 
-  mode: 'add' | 'edit' | 'delete' = 'add';
+  mode: 'add' | 'edit' = 'add';
+  loadedBranchSnapshot: any = null;
   branches: BranchMap[] = [];
-  filteredBranches: BranchMap[] = [];   // search-filtered list for the dropdown
+  branchEditSearch = '';
   loadingBranches = false;
   loading = false;
-  deleting = false;
   private destroy$ = new Subject<void>();
 
   countries: any[] = [];
@@ -57,9 +56,6 @@ export class BranchManageComponent implements OnInit, OnDestroy {
   countrySearch = '';
   stateSearch = '';
   citySearch = '';
-
-  selectedDeleteCodes: string[] = [];
-  deleteSearchTerm = '';
 
   form = this.fb.group({
     branchCode: ['', [Validators.required, Validators.pattern(/^[A-Z0-9]{2,10}$/)], [this.branchCodeValidator()]],
@@ -75,6 +71,7 @@ export class BranchManageComponent implements OnInit, OnDestroy {
     gstin: [''],
     contactPerson: [''],
     postalCode: [''],
+    isBranchActive: [true]
   });
 
   selectedBranch = '';
@@ -111,6 +108,32 @@ export class BranchManageComponent implements OnInit, OnDestroy {
     return this.cities.filter(cy => cy.name.toLowerCase().includes(q));
   }
 
+  get filteredBranches(): BranchMap[] {
+    const q = this.branchEditSearch.toLowerCase().trim();
+    if (!q) return this.branches;
+    return this.branches.filter(b => 
+      (b.branchName || '').toLowerCase().includes(q) || 
+      (b.branchCode || '').toLowerCase().includes(q)
+    );
+  }
+
+  private normalizeForComparison(obj: any): string {
+    if (!obj) return '';
+    const normalized: any = {};
+    Object.keys(obj).forEach(key => {
+      const val = obj[key];
+      // Stringify and trim values for comparison
+      normalized[key] = (val === null || val === undefined) ? '' : String(val).trim();
+    });
+    return JSON.stringify(normalized);
+  }
+
+  get isFormChanged(): boolean {
+    if (this.mode === 'add') return true;
+    if (!this.loadedBranchSnapshot) return false;
+    return this.normalizeForComparison(this.form.getRawValue()) !== this.normalizeForComparison(this.loadedBranchSnapshot);
+  }
+
   loadStates(countryCode: string): void {
     this.states = State.getStatesOfCountry(countryCode);
   }
@@ -137,37 +160,43 @@ export class BranchManageComponent implements OnInit, OnDestroy {
   }
 
   onTabChange(index: number): void {
-    this.setMode(index === 0 ? 'add' : index === 1 ? 'edit' : 'delete');
+    this.setMode(index === 0 ? 'add' : 'edit');
   }
 
-  setMode(m: 'add' | 'edit' | 'delete'): void {
+  setMode(m: 'add' | 'edit'): void {
     this.mode = m;
     this.formDirectives?.forEach(fd => {
       fd.resetForm({
         branchType: '',
         country: 'IN',
         state: '',
-        city: ''
+        city: '',
+        isBranchActive: true
       });
     });
     this.form.reset({
       branchType: '',
       country: 'IN',
       state: '',
-      city: ''
+      city: '',
+      isBranchActive: true
     });
     this.selectedBranch = '';
-    this.selectedDeleteCodes = [];
-    this.deleteSearchTerm = '';
+    this.loadedBranchSnapshot = null;
     this.loadStates('IN');
     this.cities = [];
     this.countrySearch = '';
     this.stateSearch = '';
     this.citySearch = '';
-    if (m === 'edit' || m === 'delete') this.loadBranches();
+    this.branchEditSearch = '';
+    if (m === 'edit') {
+      this.loadBranches();
+      this.form.get('isBranchActive')?.disable();
+    }
     if (m === 'add') {
       this.form.get('branchCode')?.enable();
       this.form.get('branchCode')?.setAsyncValidators([this.branchCodeValidator()]);
+      this.form.get('isBranchActive')?.enable();
     }
   }
 
@@ -178,49 +207,10 @@ export class BranchManageComponent implements OnInit, OnDestroy {
       .subscribe({
         next: r => {
           this.branches = r.data || [];
-          this.filteredBranches = [...this.branches];
           this.loadingBranches = false;
         },
         error: () => this.loadingBranches = false
       });
-  }
-
-  // ────────────────────────────────────────────────────────────
-  // Delete mode helpers
-  filterDeleteOptions(): void {
-    const term = this.deleteSearchTerm.toLowerCase().trim();
-    this.filteredBranches = term
-      ? this.branches.filter(b =>
-        b.branchName.toLowerCase().includes(term) ||
-        b.branchCode.toLowerCase().includes(term))
-      : [...this.branches];
-  }
-
-  getBranchByCode(code: string): BranchMap | undefined {
-    return this.branches.find(b => b.branchCode === code);
-  }
-
-  removeFromSelection(code: string): void {
-    this.selectedDeleteCodes = this.selectedDeleteCodes.filter(c => c !== code);
-  }
-
-  get allSelected(): boolean {
-    return this.branches.length > 0 &&
-      this.selectedDeleteCodes.length === this.branches.length;
-  }
-
-  toggleSelectAll(): void {
-    if (this.allSelected) {
-      this.selectedDeleteCodes = [];
-    } else {
-      this.selectedDeleteCodes = this.branches.map(b => b.branchCode);
-    }
-  }
-
-  clearSelection(): void {
-    this.selectedDeleteCodes = [];
-    this.deleteSearchTerm = '';
-    this.filteredBranches = [...this.branches];
   }
 
   branchTypeIcon(type?: string): string {
@@ -229,47 +219,6 @@ export class BranchManageComponent implements OnInit, OnDestroy {
       case 'booking office': return 'storefront';
       default: return 'account_balance';
     }
-  }
-
-  confirmDeleteSelected(): void {
-    if (!this.selectedDeleteCodes.length) return;
-
-    const dialogRef = this.dialog.open(BranchDeleteConfirmComponent, {
-      width: '440px',
-      maxWidth: '96vw',
-      panelClass: 'confirm-delete-dialog-panel',
-    });
-
-    dialogRef.afterClosed().subscribe(confirmed => {
-      if (confirmed) {
-        this.executeBulkDelete(this.selectedDeleteCodes);
-      }
-    });
-  }
-
-  private executeBulkDelete(codes: string[]): void {
-    this.deleting = true;
-    this.branchSvc.deleteMultiple(codes)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (res) => {
-          this.deleting = false;
-          if (res.status === 'SUCCESS') {
-            this.snack.success(`${res.deletedCount} branch${res.deletedCount > 1 ? 'es' : ''} deleted successfully!`);
-            setTimeout(() => this.snack.success('Deactivation notification emails sent successfully!'), 600);
-          } else if (res.status === 'PARTIAL') {
-            this.snack.success(`${res.deletedCount} deleted. ${res.failedCount} failed.`);
-          } else {
-            this.snack.error('Failed to delete branches.');
-          }
-          this.selectedDeleteCodes = [];
-          this.loadBranches();
-        },
-        error: (e: any) => {
-          this.deleting = false;
-          this.snack.error(e?.error?.message || 'Delete operation failed.');
-        }
-      });
   }
 
   loadBranchData(code: string): void {
@@ -320,10 +269,14 @@ export class BranchManageComponent implements OnInit, OnDestroy {
             phone2: b.branchPhoneAlt || '',
             email: b.branchEmail || '',
             gstin: b.gstIn || '',
-            contactPerson: b.contactPersonName || ''
+            contactPerson: b.contactPersonName || '',
+            isBranchActive: b.branchActive ?? true
           });
           this.form.get('branchCode')?.disable();
           this.form.get('branchCode')?.clearAsyncValidators();
+          this.form.get('isBranchActive')?.enable();
+          
+          this.loadedBranchSnapshot = this.form.getRawValue();
         },
         error: () => this.snack.error('Failed to load branch data.')
       });
@@ -344,16 +297,29 @@ export class BranchManageComponent implements OnInit, OnDestroy {
 
   submit(): void {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
-    this.loading = true;
+    
     const val = this.form.getRawValue();
 
-    // Resolve name strings for the payload from codes
+    // Change Detection
+    if (this.mode === 'edit' && this.loadedBranchSnapshot) {
+      const isUnchanged = this.normalizeForComparison(val) === this.normalizeForComparison(this.loadedBranchSnapshot);
+      if (isUnchanged) {
+        this.snack.info('No changes detected. Update was not required.');
+        return;
+      }
+    }
+
+    this.loading = true;
+
+    // Resolve names from codes
     const selectedCountryObj = this.countries.find(c => c.isoCode === val.country);
     const selectedStateObj = this.states.find(s => s.isoCode === val.state);
 
     const dto: any = {
       branchCode: val.branchCode,
       branchName: val.branchName,
+      branchActive: val.isBranchActive ?? true,
+      isBranchActive: val.isBranchActive ?? true,
       branchType: val.branchType || 'Branch',
       branchOpperations: 'Branch',
       branchPhone: val.phone || '',
@@ -401,16 +367,22 @@ export class BranchManageComponent implements OnInit, OnDestroy {
         branchType: '',
         country: 'IN',
         state: '',
-        city: ''
+        city: '',
+        isBranchActive: true
       });
     });
     this.form.reset({
       branchType: '',
       country: 'IN',
       state: '',
-      city: ''
+      city: '',
+      isBranchActive: true
     });
     this.selectedBranch = '';
+    this.loadedBranchSnapshot = null;
+    if (this.mode === 'edit') {
+      this.form.get('isBranchActive')?.disable();
+    }
     this.loadStates('IN');
     this.cities = [];
     this.countrySearch = '';

@@ -48,14 +48,4 @@ export class BranchService {
     return this.http.get(`/nextLr/${branchCode}`, { responseType: 'text' });
   }
 
-  delete(branchCode: string): Observable<{status: string; message: string}> {
-    return this.http.delete<{status: string; message: string}>(`/deleteBranch/${branchCode}`);
-  }
-
-  deleteMultiple(branchCodes: string[]): Observable<{
-    status: string; deletedCount: number; failedCount: number;
-    deleted: string[]; failed: string[];
-  }> {
-    return this.http.post<any>('/api/deleteBranches', branchCodes);
-  }
 }

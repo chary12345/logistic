@@ -20,7 +20,6 @@ import { BranchService } from '../../../../core/services/branch.service';
 import { SnackbarService } from '../../../../core/services/snackbar.service';
 import { BranchMap } from '../../../../shared/models/models';
 import { passwordStrengthValidator, PASSWORD_REQUIREMENTS_TEXT, PASSWORD_REQUIREMENTS_SHORT } from '../../../../shared/validators/password.validator';
-import { EmployeeDeleteConfirmComponent } from './employee-delete-confirm.component';
 import * as CryptoJS from 'crypto-js';
 
 const AES_KEY = '1234567890123456';
@@ -38,8 +37,8 @@ const AES_IV = 'abcdefghijklmnop';
     <div class="page-card">
       <h2 class="page-heading"><mat-icon>group</mat-icon> Employee Management</h2>
 
-      <!-- Tabs for Add | Edit | Delete -->
-      <mat-tab-group (selectedIndexChange)="onTabChange($event)" [selectedIndex]="mode === 'add' ? 0 : mode === 'edit' ? 1 : 2" class="employee-tabs" mat-stretch-tabs="false">
+      <!-- Tabs for Add | Edit -->
+      <mat-tab-group (selectedIndexChange)="onTabChange($event)" [selectedIndex]="mode === 'add' ? 0 : 1" class="employee-tabs" mat-stretch-tabs="false">
         
         <!-- ADD TAB -->
         <mat-tab>
@@ -56,110 +55,26 @@ const AES_IV = 'abcdefghijklmnop';
             <div class="edit-select-row">
               <mat-form-field>
                 <mat-label>Select Employee to Edit</mat-label>
-                <mat-select [(ngModel)]="selectedEmployee" (selectionChange)="loadEmployeeData($event.value)">
-                  <mat-option *ngFor="let emp of employees" [value]="emp.userId">{{ emp.firstName }} {{ emp.lastName }} ({{ emp.userName }})</mat-option>
+                <mat-select [(ngModel)]="selectedEmployee" (selectionChange)="loadEmployeeData($event.value)" placeholder="Select Employee" [ngClass]="{'placeholder-grey': !selectedEmployee}">
+                  <!-- Sticky Search Box -->
+                  <div class="select-search-box">
+                    <mat-icon class="search-icon">search</mat-icon>
+                    <input class="search-input" [value]="employeeEditSearch" (input)="employeeEditSearch = $any($event.target).value" placeholder="Search name or username..." (keydown)="$event.stopPropagation()">
+                  </div>
+                  <mat-option value="" style="display: none;">Select Employee</mat-option>
+                  <mat-option *ngFor="let emp of filteredEmployees" [value]="emp.userId" [ngClass]="{'deactivated-branch-option': emp.employeeActive === false}">
+                    <div class="option-content">
+                      <mat-icon class="option-icon">{{ emp.role === 'Admin' ? 'admin_panel_settings' : 'person' }}</mat-icon>
+                      <span>{{ emp.firstName }} {{ emp.lastName }} ({{ emp.userName }})</span>
+                      <span class="deactivated-lbl" *ngIf="emp.employeeActive === false">(Inactive)</span>
+                    </div>
+                  </mat-option>
+                  <mat-option *ngIf="filteredEmployees.length === 0" disabled>No matching employees found</mat-option>
                 </mat-select>
               </mat-form-field>
               <mat-spinner *ngIf="loadingEmployees" diameter="24"></mat-spinner>
             </div>
             <ng-container *ngTemplateOutlet="employeeFormTemplate"></ng-container>
-          </div>
-        </mat-tab>
-
-        <!-- DELETE TAB -->
-        <mat-tab>
-          <ng-template mat-tab-label><mat-icon class="tab-icon">delete_outline</mat-icon> Delete</ng-template>
-          <div class="tab-content">
-            <div *ngIf="loadingEmployees" class="delete-loading">
-              <mat-spinner diameter="32"></mat-spinner>
-              <p>Loading employees…</p>
-            </div>
-
-            <div *ngIf="!loadingEmployees && employees.length === 0" class="empty-state">
-              <mat-icon>group</mat-icon>
-              <p>No employees found for your company.</p>
-            </div>
-
-            <div *ngIf="!loadingEmployees && employees.length > 0" class="delete-section">
-              <!-- Searchable Multi-Select Dropdown -->
-              <mat-form-field class="small-width-dropdown">
-                <mat-label>Select Employees to Delete</mat-label>
-                <mat-select multiple [(ngModel)]="selectedDeleteIds">
-                  
-                  <mat-select-trigger>
-                    <span *ngIf="selectedDeleteIds.length > 0">
-                      {{ selectedDeleteIds.length }} employee{{ selectedDeleteIds.length > 1 ? 's' : '' }} selected
-                    </span>
-                  </mat-select-trigger>
-
-                  <!-- Sticky Search Header -->
-                  <div class="select-search-header" (keydown)="$event.stopPropagation()">
-                    <mat-icon class="search-icon">search</mat-icon>
-                    <input type="text" placeholder="Search employees..." 
-                           [(ngModel)]="deleteSearchTerm" 
-                           (ngModelChange)="filterDeleteOptions()" 
-                           class="select-search-input">
-                    <button mat-icon-button *ngIf="deleteSearchTerm" (click)="deleteSearchTerm=''; filterDeleteOptions()">
-                      <mat-icon>close</mat-icon>
-                    </button>
-                  </div>
-
-                  <!-- Select All / Clear All Options -->
-                  <div class="select-actions">
-                    <mat-checkbox [checked]="allSelected" (change)="toggleSelectAll()">
-                      {{ allSelected ? 'Deselect All' : 'Select All' }}
-                    </mat-checkbox>
-                  </div>
-
-                  <mat-divider></mat-divider>
-
-                  <!-- Employee Options -->
-                  <mat-option *ngFor="let emp of filteredEmployees" [value]="emp.userId">
-                    <div class="option-content">
-                      <mat-icon class="option-icon">{{ emp.role === 'Admin' ? 'admin_panel_settings' : 'person' }}</mat-icon>
-                      <span>{{ emp.firstName }} {{ emp.lastName }}</span>
-                      <span class="option-code">({{ emp.userName }})</span>
-                    </div>
-                  </mat-option>
-
-                  <div *ngIf="filteredEmployees.length === 0" class="no-options">
-                    No employees match your search.
-                  </div>
-                </mat-select>
-              </mat-form-field>
-
-              <!-- Selected Chips Display -->
-              <div class="selected-chips-container" *ngIf="selectedDeleteIds.length > 0">
-                <div class="chips-header">
-                  <span class="chips-title">Selected Employees ({{ selectedDeleteIds.length }})</span>
-                  <button mat-button color="warn" class="clear-all-btn" (click)="clearSelection()">Clear All</button>
-                </div>
-                
-                <mat-chip-set>
-                  <mat-chip *ngFor="let id of selectedDeleteIds" [removable]="!deleting" (removed)="removeFromSelection(id)">
-                    <mat-icon matChipAvatar>{{ getEmployeeByUserId(id)?.role === 'Admin' ? 'admin_panel_settings' : 'person' }}</mat-icon>
-                    {{ getEmployeeByUserId(id)?.firstName }} {{ getEmployeeByUserId(id)?.lastName }}
-                    <button matChipRemove *ngIf="!deleting">
-                      <mat-icon>cancel</mat-icon>
-                    </button>
-                  </mat-chip>
-                </mat-chip-set>
-
-                <!-- Delete Action Button -->
-                <div class="delete-action-row">
-                  <button mat-raised-button color="warn" [disabled]="deleting" (click)="confirmDeleteSelected()" class="bulk-delete-btn">
-                    <mat-spinner *ngIf="deleting" diameter="20"></mat-spinner>
-                    <mat-icon *ngIf="!deleting">delete_forever</mat-icon>
-                    {{ deleting ? 'Deleting...' : 'Delete Selected Employees' }}
-                  </button>
-                  <!-- Danger notice -->
-                  <div class="delete-notice">
-                    <mat-icon>warning_amber</mat-icon>
-                    <span>Deleting employees is permanent and will revoke all access privileges.</span>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </mat-tab>
       </mat-tab-group>
@@ -170,9 +85,20 @@ const AES_IV = 'abcdefghijklmnop';
           <div class="form-grid">
             <mat-form-field>
               <mat-label>Branch</mat-label>
-              <mat-select formControlName="branchCode">
-                <mat-option *ngFor="let b of branches" [value]="b.branchCode">{{ b.branchName }}</mat-option>
+              <mat-select formControlName="branchCode" placeholder="Select Branch" [ngClass]="{'placeholder-grey': !form.get('branchCode')?.value}">
+                <!-- Sticky Search Box -->
+                <div class="select-search-box">
+                  <mat-icon class="search-icon">search</mat-icon>
+                  <input class="search-input" [value]="branchListSearch" (input)="branchListSearch = $any($event.target).value" placeholder="Search branch name or code..." (keydown)="$event.stopPropagation()">
+                </div>
+                <mat-option value="" style="display: none;">Select Branch</mat-option>
+                <mat-option *ngFor="let b of filteredBranches" [value]="b.branchCode" [disabled]="b.branchActive === false" [ngClass]="{'deactivated-branch-option': b.branchActive === false}">
+                  {{ b.branchName }} ({{b.branchCode}})
+                  <span class="deactivated-lbl" *ngIf="b.branchActive === false">(Deactivated)</span>
+                </mat-option>
+                <mat-option *ngIf="filteredBranches.length === 0" disabled>No branches found</mat-option>
               </mat-select>
+              <mat-error *ngIf="form.get('branchCode')?.hasError('required')">Required</mat-error>
             </mat-form-field>
             <mat-form-field>
               <mat-label>First Name</mat-label>
@@ -222,15 +148,26 @@ const AES_IV = 'abcdefghijklmnop';
             <mat-form-field>
               <mat-label>Phone</mat-label>
               <input matInput type="number" formControlName="phone">
+              <mat-error *ngIf="form.get('phone')?.hasError('required')">Required</mat-error>
+              <mat-error *ngIf="form.get('phone')?.hasError('pattern')">Valid 10-digit number required</mat-error>
             </mat-form-field>
             <mat-form-field>
               <mat-label>Email</mat-label>
               <input matInput formControlName="email">
-              <mat-error *ngIf="form.get('email')?.hasError('email')">Invalid email</mat-error>
+              <mat-error *ngIf="form.get('email')?.hasError('required')">Required</mat-error>
+              <mat-error *ngIf="form.get('email')?.hasError('email')">Invalid email format</mat-error>
             </mat-form-field>
+            </div>
+
+          <!-- Reduced size Status Toggle placed above update button -->
+          <div class="status-toggle-container" *ngIf="mode === 'edit'" style="margin-bottom: 12px;">
+            <mat-checkbox formControlName="isEmployeeActive" color="primary">
+              Active Employee
+            </mat-checkbox>
           </div>
           <div class="submit-row">
-            <button mat-raised-button color="primary" type="submit" [disabled]="loading || form.invalid">
+            <button mat-raised-button color="primary" type="submit" 
+                    [disabled]="loading || form.invalid">
               <mat-spinner *ngIf="loading" diameter="18"></mat-spinner>
               <mat-icon *ngIf="!loading">{{ mode === 'add' ? 'person_add' : 'save' }}</mat-icon>
               {{ loading ? 'Saving...' : (mode === 'add' ? 'Create Employee' : 'Update Employee') }}
@@ -250,7 +187,38 @@ const AES_IV = 'abcdefghijklmnop';
       position: relative;
     }
 
-    // Tabbed layout styles matching branch management
+    :host ::ng-deep .employee-tabs .mat-mdc-tab-header-pagination {
+      display: none !important;
+    }
+
+    .select-search-box {
+      display: flex;
+      align-items: center;
+      padding: 8px 12px;
+      position: sticky;
+      top: 0;
+      background: #fff;
+      z-index: 10;
+      border-bottom: 1px solid #e2e8f0;
+
+      .search-icon {
+        font-size: 18px;
+        height: 18px;
+        width: 18px;
+        color: #64748b;
+        margin-right: 8px;
+      }
+
+      .search-input {
+        border: none;
+        outline: none;
+        font-size: 14px;
+        flex: 1;
+        font-family: 'Poppins', sans-serif;
+        color: #1e293b;
+      }
+    }
+
     .edit-select-row {
       display: flex;
       align-items: center;
@@ -275,18 +243,6 @@ const AES_IV = 'abcdefghijklmnop';
 
     .employee-form {
       margin-top: var(--sp-sm);
-    }
-
-    .delete-loading {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: var(--sp-md);
-      padding: 48px var(--sp-xl);
-      color: var(--text-secondary);
-
-      p { margin: 0; font-size: var(--fs-md); }
     }
 
     :host ::ng-deep {
@@ -359,15 +315,6 @@ const AES_IV = 'abcdefghijklmnop';
           }
         }
 
-        .mat-mdc-tab:nth-of-type(3).mdc-tab--active {
-          background-color: #fef2f2 !important; 
-          color: var(--danger) !important;
-
-          .mdc-tab-indicator__content--underline {
-            border-color: var(--danger) !important;
-          }
-        }
-
         .mdc-tab-indicator__content--underline {
           border-top-width: 3px !important;
           border-bottom-width: 0 !important;
@@ -383,73 +330,24 @@ const AES_IV = 'abcdefghijklmnop';
         }
 
         .tab-content {
-          padding-top: var(--sp-md);
+          padding-top: 24px;
         }
       }
     }
 
-    .delete-action-row {
+    .compact-toggle {
+      grid-column: span 1 !important; 
       display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: var(--sp-sm);
-      margin-top: var(--sp-md);
+      align-items: center; 
+      margin: -12px 0 0 0 !important; 
+      padding: 0 0 0 4px !important; 
+      background-color: transparent !important;
+      border: none !important;
+      height: 32px;
     }
 
-    .delete-notice {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: #fef9ee;
-      border: 1px solid #fde68a;
-      border-radius: var(--radius-sm);
-      padding: 8px var(--sp-md);
-      color: var(--warning);
-      font-size: var(--fs-sm);
-
-      mat-icon {
-        font-size: 16px;
-        width: 16px;
-        height: 16px;
-        flex-shrink: 0;
-      }
-    }
-
-    .small-width-dropdown {
-      max-width: 400px;
-      width: 100%;
-    }
-
-    .select-search-header {
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      background: white;
-      padding: 8px 16px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      border-bottom: 1px solid var(--border);
-
-      .search-icon {
-        color: var(--text-secondary);
-        font-size: 20px;
-        width: 20px;
-        height: 20px;
-      }
-
-      .select-search-input {
-        flex: 1;
-        border: none;
-        outline: none;
-        font-size: var(--fs-md);
-        background: transparent;
-      }
-    }
-
-    .select-actions {
-      padding: 8px 16px;
-      background: #f8fafc;
+    .submit-row {
+      padding-top: 20px !important;
     }
 
     .option-content {
@@ -458,24 +356,35 @@ const AES_IV = 'abcdefghijklmnop';
       gap: 8px;
 
       .option-icon {
-        color: var(--text-secondary);
+        color: #64748b;
         font-size: 18px;
         width: 18px;
         height: 18px;
       }
-
-      .option-code {
-        color: var(--text-secondary);
-        font-size: var(--fs-sm);
-        font-family: 'Courier New', monospace;
-      }
     }
 
-    .no-options {
-      padding: 16px;
-      text-align: center;
-      color: var(--text-secondary);
+    .form-grid {
+      gap: 12px 20px !important;
+    }
+
+    .deactivated-lbl {
+      color: #b91c1c;
+      font-size: 11px;
+      margin-left: 8px;
+      font-weight: 600;
+      background: rgba(185, 28, 28, 0.08);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .deactivated-branch-option {
+      background-color: #fff5f5;
+      color: #b91c1c !important;
       font-style: italic;
+
+      .mat-mdc-option-text {
+        color: #b91c1c !important;
+      }
     }
   `]
 })
@@ -484,28 +393,64 @@ export class EmployeeManageComponent implements OnInit, OnDestroy {
   PASSWORD_REQUIREMENTS_SHORT = PASSWORD_REQUIREMENTS_SHORT;
   hidePassword = true;
 
-  mode: 'add' | 'edit' | 'delete' = 'add';
+  mode: 'add' | 'edit' = 'add';
   branches: BranchMap[] = [];
   employees: any[] = [];
-  filteredEmployees: any[] = [];
   loadingEmployees = false;
   selectedEmployee = '';
-  selectedDeleteIds: string[] = [];
-  deleteSearchTerm = '';
-  deleting = false;
+  loadedEmployeeSnapshot: any = null;
+  employeeEditSearch = '';
+  branchListSearch = '';
+
+  get filteredEmployees(): any[] {
+    const q = this.employeeEditSearch.toLowerCase().trim();
+    if (!q) return this.employees;
+    return this.employees.filter((e: any) =>
+      (e.firstName || '').toLowerCase().includes(q) ||
+      (e.lastName || '').toLowerCase().includes(q) ||
+      (e.userName || '').toLowerCase().includes(q)
+    );
+  }
+
+  get filteredBranches(): any[] {
+    const q = this.branchListSearch.toLowerCase().trim();
+    if (!q) return this.branches;
+    return this.branches.filter((b: any) =>
+      (b.branchName || '').toLowerCase().includes(q) ||
+      (b.branchCode || '').toLowerCase().includes(q)
+    );
+  }
+
+  private normalizeForComparison(obj: any): string {
+    if (!obj) return '';
+    const normalized: any = {};
+    Object.keys(obj).forEach(key => {
+      const val = obj[key];
+      // Stringify and trim values for comparison
+      normalized[key] = (val === null || val === undefined) ? '' : String(val).trim();
+    });
+    return JSON.stringify(normalized);
+  }
+
+  get isFormChanged(): boolean {
+    if (this.mode === 'add') return true;
+    if (!this.loadedEmployeeSnapshot) return false;
+    return this.normalizeForComparison(this.form.getRawValue()) !== this.normalizeForComparison(this.loadedEmployeeSnapshot);
+  }
 
   @ViewChild(FormGroupDirective) formDirective!: FormGroupDirective;
   @ViewChildren(FormGroupDirective) formDirectives!: QueryList<FormGroupDirective>;
 
   form = this.fb.group({
-    branchCode: [''],
+    branchCode: ['', Validators.required],
     firstName: ['', Validators.required],
     lastName: ['', Validators.required],
     username: ['', Validators.required, [this.usernameValidator()]],
     password: ['', [Validators.required, passwordStrengthValidator]],
     role: ['', Validators.required],
-    phone: [''],
-    email: ['', Validators.email],
+    phone: ['', [Validators.required, Validators.pattern(/^\d{10}$/)]],
+    email: ['', [Validators.required, Validators.email]],
+    isEmployeeActive: [true]
   });
 
   loading = false;
@@ -527,31 +472,37 @@ export class EmployeeManageComponent implements OnInit, OnDestroy {
   }
 
   onTabChange(index: number): void {
-    this.setMode(index === 0 ? 'add' : index === 1 ? 'edit' : 'delete');
+    this.setMode(index === 0 ? 'add' : 'edit');
   }
 
-  setMode(m: 'add' | 'edit' | 'delete'): void {
+  setMode(m: 'add' | 'edit'): void {
     this.mode = m;
     this.formDirectives?.forEach(fd => {
-      fd.resetForm({ role: '' });
+      fd.resetForm({ role: '', isEmployeeActive: true });
     });
-    this.form.reset({ role: '' });
+    this.form.reset({ role: '', isEmployeeActive: true });
     this.selectedEmployee = '';
-    this.selectedDeleteIds = [];
-    this.deleteSearchTerm = '';
+    this.loadedEmployeeSnapshot = null;
+    this.employeeEditSearch = '';
+    this.branchListSearch = '';
 
-    if (m === 'edit' || m === 'delete') {
+    if (m === 'edit') {
       this.loadEmployees();
+      this.form.get('isEmployeeActive')?.disable();
     }
 
     if (m === 'add') {
       this.form.get('username')?.enable();
       this.form.get('username')?.setAsyncValidators([this.usernameValidator()]);
+      this.form.get('password')?.enable();
       this.form.get('password')?.setValidators([Validators.required, passwordStrengthValidator]);
+      this.form.get('isEmployeeActive')?.enable();
     } else if (m === 'edit') {
-      this.form.get('username')?.disable();
-      this.form.get('username')?.clearAsyncValidators();
-      this.form.get('password')?.setValidators([passwordStrengthValidator]);
+      this.form.get('username')?.enable();
+      this.form.get('username')?.setAsyncValidators([this.usernameValidator()]);
+
+      this.form.get('password')?.disable();
+      this.form.get('password')?.clearValidators();
     }
 
     this.form.get('username')?.updateValueAndValidity();
@@ -565,7 +516,6 @@ export class EmployeeManageComponent implements OnInit, OnDestroy {
       .subscribe({
         next: r => {
           this.employees = r.data || [];
-          this.filteredEmployees = [...this.employees];
           this.loadingEmployees = false;
         },
         error: () => this.loadingEmployees = false
@@ -577,103 +527,41 @@ export class EmployeeManageComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (emp: any) => {
+          // Find valid matching branch
+          const rawCode = (emp.branchCode || '').toString().trim().toLowerCase();
+          const match = this.branches.find(b => (b.branchCode || '').toString().trim().toLowerCase() === rawCode);
+          const validBranchCode = match ? match.branchCode : '';
+
           this.form.patchValue({
-            branchCode: emp.branchCode || '',
+            branchCode: validBranchCode,
             firstName: emp.firstName || '',
             lastName: emp.lastName || '',
             username: emp.userName || '',
-            password: '', // Leave password blank on load
+            password: '••••••••',
             role: emp.role || '',
             phone: emp.phone || '',
             email: emp.email || '',
+            isEmployeeActive: emp.employeeActive ?? true
           });
-          this.form.get('username')?.disable();
-          this.form.get('username')?.clearAsyncValidators();
+          this.form.get('username')?.enable();
+          this.form.get('username')?.setAsyncValidators([this.usernameValidator()]);
+          this.form.get('isEmployeeActive')?.enable();
+          
+          this.loadedEmployeeSnapshot = this.form.getRawValue();
         },
         error: () => this.snack.error('Failed to load employee details.')
-      });
-  }
-
-  filterDeleteOptions(): void {
-    const term = this.deleteSearchTerm.toLowerCase().trim();
-    this.filteredEmployees = term
-      ? this.employees.filter(emp =>
-        emp.firstName.toLowerCase().includes(term) ||
-        emp.lastName.toLowerCase().includes(term) ||
-        emp.userName.toLowerCase().includes(term)
-      )
-      : [...this.employees];
-  }
-
-  getEmployeeByUserId(userId: string): any {
-    return this.employees.find(emp => emp.userId === userId);
-  }
-
-  removeFromSelection(userId: string): void {
-    this.selectedDeleteIds = this.selectedDeleteIds.filter(id => id !== userId);
-  }
-
-  get allSelected(): boolean {
-    return this.employees.length > 0 &&
-      this.selectedDeleteIds.length === this.employees.length;
-  }
-
-  toggleSelectAll(): void {
-    if (this.allSelected) {
-      this.selectedDeleteIds = [];
-    } else {
-      this.selectedDeleteIds = this.employees.map(emp => emp.userId);
-    }
-  }
-
-  clearSelection(): void {
-    this.selectedDeleteIds = [];
-    this.deleteSearchTerm = '';
-    this.filteredEmployees = [...this.employees];
-  }
-
-  confirmDeleteSelected(): void {
-    if (!this.selectedDeleteIds.length) return;
-
-    const dialogRef = this.dialog.open(EmployeeDeleteConfirmComponent, {
-      width: '440px',
-      maxWidth: '96vw',
-    });
-
-    dialogRef.afterClosed().subscribe(confirmed => {
-      if (confirmed) {
-        this.executeBulkDelete(this.selectedDeleteIds);
-      }
-    });
-  }
-
-  private executeBulkDelete(ids: string[]): void {
-    this.deleting = true;
-    this.empSvc.deleteMultiple(ids)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (res) => {
-          this.deleting = false;
-          if (res.status === 'SUCCESS') {
-            this.snack.success(`${res.deletedCount} employee${res.deletedCount > 1 ? 's' : ''} deleted successfully!`);
-          } else if (res.status === 'PARTIAL') {
-            this.snack.success(`${res.deletedCount} deleted. ${res.failedCount} failed.`);
-          } else {
-            this.snack.error('Failed to delete employees.');
-          }
-          this.selectedDeleteIds = [];
-          this.loadEmployees();
-        },
-        error: (e: any) => {
-          this.deleting = false;
-          this.snack.error(e?.error?.message || 'Delete operation failed.');
-        }
       });
   }
 
   private usernameValidator(): AsyncValidatorFn {
     return (ctrl: AbstractControl) => {
       if (!ctrl.value) return of(null);
+
+      // Skip if editing same value
+      if (this.mode === 'edit' && this.loadedEmployeeSnapshot && ctrl.value === this.loadedEmployeeSnapshot.username) {
+        return of(null);
+      }
+
       return of(ctrl.value).pipe(
         debounceTime(400),
         switchMap(v => this.empSvc.validateUsername(v, this.auth.companyCode)),
@@ -694,29 +582,43 @@ export class EmployeeManageComponent implements OnInit, OnDestroy {
 
   submit(): void {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
+
+    const val = this.form.getRawValue();
+
+    // Change Detection
+    if (this.mode === 'edit' && this.loadedEmployeeSnapshot) {
+      const isUnchanged = this.normalizeForComparison(val) === this.normalizeForComparison(this.loadedEmployeeSnapshot);
+      if (isUnchanged) {
+        this.snack.info('No changes detected. Update was not required.');
+        return;
+      }
+    }
+
     this.loading = true;
-    const v = this.form.getRawValue();
-    const plainPwd = v.password || '';
+    const plainPwd = val.password || '';
 
     const payload: any = {
-      firstName: v.firstName,
-      lastName: v.lastName,
-      userName: v.username,
-      username: v.username,
-      role: v.role,
-      phone: v.phone,
-      email: v.email,
+      firstName: val.firstName,
+      lastName: val.lastName,
+      userName: val.username,
+      username: val.username,
+      role: val.role,
+      phone: val.phone,
+      email: val.email,
+      isEmployeeActive: val.isEmployeeActive ?? true,
+      employeeActive: val.isEmployeeActive ?? true,
       companyDetails: {
         companyCode: this.auth.companyCode,
         companyBranch: {
-          branchCode: v.branchCode || this.auth.branchCode
+          branchCode: val.branchCode || this.auth.branchCode
         }
       }
     };
 
-    if (plainPwd) {
+    // Encrypt password on initial creation only
+    if (plainPwd && this.mode === 'add') {
       payload.password = this.encryptPassword(plainPwd);
-      payload.plainPassword = plainPwd; // for welcome email
+      payload.plainPassword = plainPwd;
     }
 
     // CC admin email on creation
@@ -732,8 +634,10 @@ export class EmployeeManageComponent implements OnInit, OnDestroy {
       next: () => {
         this.loading = false;
         this.snack.success(`Employee ${this.mode === 'add' ? 'created' : 'updated'} successfully!`);
-        if (this.mode === 'add' && v.email) {
-          setTimeout(() => this.snack.success(`Welcome email sent to ${v.email}`), 600);
+        if (this.mode === 'add' && val.email) {
+          setTimeout(() => this.snack.success(`Welcome email sent to ${val.email}`), 600);
+        } else if (this.mode === 'edit' && val.email) {
+          setTimeout(() => this.snack.success(`Profile update email sent to ${val.email}`), 600);
         }
         this.reset();
         if (this.mode === 'edit') {
@@ -746,10 +650,14 @@ export class EmployeeManageComponent implements OnInit, OnDestroy {
 
   reset(): void {
     this.formDirectives?.forEach(fd => {
-      fd.resetForm({ role: '' });
+      fd.resetForm({ role: '', isEmployeeActive: true });
     });
-    this.form.reset({ role: '' });
+    this.form.reset({ role: '', isEmployeeActive: true });
     this.selectedEmployee = '';
+    this.loadedEmployeeSnapshot = null;
+    if (this.mode === 'edit') {
+      this.form.get('isEmployeeActive')?.disable();
+    }
   }
 
   ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }

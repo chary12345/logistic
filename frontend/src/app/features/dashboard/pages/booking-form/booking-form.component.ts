@@ -26,7 +26,7 @@ import { PaymentModeService, PaymentMode } from '../../../../core/services/payme
 import { PartyService, Party } from '../../../../core/services/party.service';
 import { LrReceiptDialogComponent } from '../../dialogs/lr-receipt-dialog/lr-receipt-dialog.component';
 import { BookingConfirmationDialogComponent } from '../../dialogs/booking-confirmation-dialog/booking-confirmation-dialog.component';
-import { ArticleDetailDto, BookingDTO, Contact } from '../../../../shared/models/models';
+import { ArticleDetailDto, BookingDTO, BranchMap, Contact } from '../../../../shared/models/models';
 
 const ARTICLE_TYPES: string[] = [];
 
@@ -59,8 +59,8 @@ export class BookingFormComponent implements OnInit, OnDestroy {
   saidToContainsList: string[] = [];
   consignorSuggestions: Contact[] = [];
   consigneeSuggestions: Contact[] = [];
-  destinationSuggestions: string[] = [];
-  filteredDestinations: string[] = [];
+  destinationSuggestions: BranchMap[] = [];
+  filteredDestinations: BranchMap[] = [];
   destinationFilterCtrl = new FormControl('');
   stcFilterCtrl = new FormControl('');
   filteredSaidToContains: string[] = [];
@@ -232,12 +232,14 @@ export class BookingFormComponent implements OnInit, OnDestroy {
         }
 
         // Find the full destination string that matches the branch code
+        // Find the branch object by code
         const destCode = booking.destinationBranchCode;
-        const matchingDest = this.destinationSuggestions.find(d => d.includes(`(${destCode})`));
+        const matchingDest = this.destinationSuggestions.find(d => d.branchCode === destCode);
+        const destStr = matchingDest ? `${matchingDest.branchName} (${matchingDest.branchCode})` : destCode;
 
         // Patch main fields (map backend field names to form controls)
         this.form.patchValue({
-          deliveryDestination: matchingDest || destCode,
+          deliveryDestination: destStr,
           partyName: booking.partyName || booking.consignorName || '',
           consignorName: booking.consignorName,
           consignorMobile: booking.consignorMobile,
@@ -528,8 +530,7 @@ export class BookingFormComponent implements OnInit, OnDestroy {
         next: (res) => {
           if (res.status === 'SUCCESS' && Array.isArray(res.data)) {
             this.destinationSuggestions = res.data
-              .filter(b => b.branchCode !== myBranch) // Filter out my branch
-              .map(b => `${b.branchName} (${b.branchCode})`);
+              .filter(b => b.branchCode !== myBranch); // Filter out my branch
             this.filterDestinations('');
           }
         },
@@ -538,9 +539,10 @@ export class BookingFormComponent implements OnInit, OnDestroy {
   }
 
   private filterDestinations(val: string): void {
-    const search = val.toLowerCase();
+    const search = (val || '').toLowerCase().trim();
     this.filteredDestinations = this.destinationSuggestions.filter(d =>
-      d.toLowerCase().includes(search)
+      (d.branchName || '').toLowerCase().includes(search) ||
+      (d.branchCode || '').toLowerCase().includes(search)
     );
   }
 

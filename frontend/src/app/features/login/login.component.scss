@@ -225,16 +225,24 @@ form {
 .error-msg {
   display: flex;
   align-items: center;
-  gap: 5px;
-  background: #fef2f2;
-  border: 1px solid #fca5a5;
+  gap: 8px;
+  background: #fff5f5;
+  border: 1.5px solid #f87171;
   border-radius: var(--radius-sm);
-  padding: 6px var(--sp-md);
-  color: #b91c1c;
+  padding: 10px var(--sp-md);
+  color: #dc2626;
   font-size: var(--fs-sm);
-  margin-bottom: 6px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  animation: slideInShake 0.4s cubic-bezier(.25,.8,.25,1);
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.08);
 
-  mat-icon { font-size: 14px; width: 14px; height: 14px; flex-shrink: 0; }
+  mat-icon { font-size: 18px; width: 18px; height: 18px; flex-shrink: 0; }
+}
+
+@keyframes slideInShake {
+  0% { opacity: 0; transform: translateY(-10px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
 .login-btn {

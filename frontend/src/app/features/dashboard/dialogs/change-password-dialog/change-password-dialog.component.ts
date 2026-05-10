@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, Validators, AbstractControl, ValidationErrors, FormControl, FormGroupDirective, NgForm } from '@angular/forms';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -9,16 +9,46 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { ErrorStateMatcher } from '@angular/material/core';
 import { LoginApiService } from '../../../../core/services/login-api.service';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { SnackbarService } from '../../../../core/services/snackbar.service';
 import * as CryptoJS from 'crypto-js';
 import { passwordStrengthValidator, PASSWORD_REQUIREMENTS_TEXT, PASSWORD_REQUIREMENTS_SHORT } from '../../../../shared/validators/password.validator';
 
+// Custom ErrorStateMatcher for cross-field validation
+export class CrossFieldErrorMatcher implements ErrorStateMatcher {
+  constructor(private errorKey: string) {}
+  isErrorState(control: FormControl | null, form: FormGroupDirective | NgForm | null): boolean {
+    const isSubmitted = !!(form && form.submitted);
+    const isControlInvalid = !!(control && control.invalid && (control.dirty || control.touched));
+    // Check parent group error
+    const hasParentError = !!(form && form.form && form.form.hasError(this.errorKey) && (control?.dirty || control?.touched));
+    return isControlInvalid || hasParentError || !!(isSubmitted && (control?.invalid || (form && form.invalid)));
+  }
+}
+
 function passwordMatchValidator(group: AbstractControl): ValidationErrors | null {
-  const newPw  = group.get('newPassword')?.value;
-  const confirm = group.get('confirmPassword')?.value;
-  return newPw && confirm && newPw !== confirm ? { mismatch: true } : null;
+  const currentPw = group.get('currentPassword')?.value;
+  const newPw     = group.get('newPassword')?.value;
+  const confirm   = group.get('confirmPassword')?.value;
+  
+  const errors: ValidationErrors = {};
+  let hasError = false;
+
+  // Ensure new differs from current
+  if (currentPw && newPw && currentPw === newPw) {
+    errors['sameAsCurrent'] = true;
+    hasError = true;
+  }
+
+  // Ensure confirm matches new
+  if (newPw && confirm && newPw !== confirm) {
+    errors['mismatch'] = true;
+    hasError = true;
+  }
+
+  return hasError ? errors : null;
 }
 
 const AES_KEY = '1234567890123456';
@@ -61,6 +91,9 @@ const AES_IV  = 'abcdefghijklmnop';
               <mat-icon>{{ showCurrent ? 'visibility_off' : 'visibility' }}</mat-icon>
             </button>
             <mat-error *ngIf="form.get('currentPassword')?.hasError('required')">Current password is required</mat-error>
+            <mat-error *ngIf="form.get('currentPassword')?.hasError('invalidCurrent')">
+              Incorrect current password entered
+            </mat-error>
           </mat-form-field>
 
           <mat-form-field appearance="outline" subscriptSizing="dynamic">
@@ -68,7 +101,8 @@ const AES_IV  = 'abcdefghijklmnop';
             <input matInput
                    [type]="showNew ? 'text' : 'password'"
                    formControlName="newPassword"
-                   autocomplete="new-password">
+                   autocomplete="new-password"
+                   [errorStateMatcher]="sameAsCurrentMatcher">
             <span matSuffix class="suffix-icons">
               <button mat-icon-button type="button"
                       [matTooltip]="PASSWORD_REQUIREMENTS_TEXT"
@@ -87,6 +121,9 @@ const AES_IV  = 'abcdefghijklmnop';
             <mat-error *ngIf="form.get('newPassword')?.hasError('weakPassword')">
               {{ PASSWORD_REQUIREMENTS_TEXT }}
             </mat-error>
+            <mat-error *ngIf="form.hasError('sameAsCurrent')">
+              New password cannot be the same as current password
+            </mat-error>
           </mat-form-field>
 
           <mat-form-field appearance="outline" subscriptSizing="dynamic">
@@ -94,12 +131,13 @@ const AES_IV  = 'abcdefghijklmnop';
             <input matInput
                    [type]="showConfirm ? 'text' : 'password'"
                    formControlName="confirmPassword"
-                   autocomplete="new-password">
+                   autocomplete="new-password"
+                   [errorStateMatcher]="mismatchMatcher">
             <button mat-icon-button matSuffix type="button"
                     (click)="showConfirm = !showConfirm">
               <mat-icon>{{ showConfirm ? 'visibility_off' : 'visibility' }}</mat-icon>
             </button>
-            <mat-error *ngIf="form.hasError('mismatch') && form.get('confirmPassword')?.touched">
+            <mat-error *ngIf="form.hasError('mismatch')">
               Passwords do not match
             </mat-error>
           </mat-form-field>
@@ -233,6 +271,9 @@ export class ChangePasswordDialogComponent {
     confirmPassword: ['', Validators.required],
   }, { validators: passwordMatchValidator });
 
+  sameAsCurrentMatcher = new CrossFieldErrorMatcher('sameAsCurrent');
+  mismatchMatcher      = new CrossFieldErrorMatcher('mismatch');
+
   loading     = false;
   errorMsg    = '';
   showCurrent = false;
@@ -274,13 +315,22 @@ export class ChangePasswordDialogComponent {
           this.snack.success('Password changed successfully!');
           this.dialogRef.close(true);
         } else {
-          this.errorMsg = r.message || 'Failed to change password.';
+          this.handleError(r.message || 'Failed to change password.');
         }
       },
       error: (e: any) => {
         this.loading = false;
-        this.errorMsg = e?.error?.message || 'Error changing password. Please try again.';
+        const msg = e?.error?.message || 'Error changing password. Please try again.';
+        this.handleError(msg);
       }
     });
+  }
+
+  private handleError(msg: string): void {
+    this.errorMsg = msg;
+    if (msg.toLowerCase().includes('current password')) {
+      this.form.get('currentPassword')?.setErrors({ invalidCurrent: true });
+      this.form.get('currentPassword')?.markAsTouched();
+    }
   }
 }

@@ -53,8 +53,12 @@
               </div>
 
               <!-- Options -->
-              <mat-option *ngFor="let d of filteredDestinations" [value]="d">
-                {{ d }}
+              <mat-option *ngFor="let d of filteredDestinations" 
+                          [value]="d.branchName + ' (' + d.branchCode + ')'"
+                          [disabled]="d.branchActive === false"
+                          [ngClass]="{'deactivated-branch-option': d.branchActive === false}">
+                {{ d.branchName }} ({{ d.branchCode }})
+                <span class="deactivated-lbl" *ngIf="d.branchActive === false">(Deactivated)</span>
               </mat-option>
 
               <!-- No results -->

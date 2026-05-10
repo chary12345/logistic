@@ -30,15 +30,4 @@ export class EmployeeService {
   update(userId: string, employee: any): Observable<{status: string; data: any}> {
     return this.http.put<{status: string; data: any}>(`/updateEmployee/${userId}`, employee);
   }
-
-  delete(userId: string): Observable<{status: string; message: string}> {
-    return this.http.delete<{status: string; message: string}>(`/deleteEmployee/${userId}`);
-  }
-
-  deleteMultiple(userIds: string[]): Observable<{
-    status: string; deletedCount: number; failedCount: number;
-    deleted: string[]; failed: string[];
-  }> {
-    return this.http.post<any>('/api/deleteEmployees', userIds);
-  }
 }

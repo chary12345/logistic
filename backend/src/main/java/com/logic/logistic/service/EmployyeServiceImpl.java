@@ -40,8 +40,8 @@ public class EmployyeServiceImpl implements EmployeecreationService {
 	public String addNewEmployee(User employee) {
 		String status = null;
 
-		UserDto findUser = userRepository.findByUsername(
-				employee.getUserName() + employee.getCompanyDetails().getCompanyCode());
+		UserDto findUser = userRepository.findByUserNameAndCompanyCode(
+				employee.getUserName(), employee.getCompanyDetails().getCompanyCode());
 
 		if (findUser == null) {
 			List<UserDto> branchUsers = userRepository
@@ -136,9 +136,9 @@ public class EmployyeServiceImpl implements EmployeecreationService {
 	}
 
 	@Override
-	public String existsByUserName(String userId) {
+	public String existsByUserName(String userName, String companyCode) {
 		String status = "FAILURE";
-		UserDto findByUsername = userRepository.findByUsername(userId);
+		UserDto findByUsername = userRepository.findByUserNameAndCompanyCode(userName, companyCode);
 		if (findByUsername == null) {
 			status = "SUCCESS";
 		}
@@ -166,69 +166,108 @@ public class EmployyeServiceImpl implements EmployeecreationService {
 		UserDto existing = userRepository.findById(userId)
 				.orElseThrow(() -> new RuntimeException("Employee not found"));
 
-		if (updatedEmployee.getFirstName() != null) {
+		java.util.Map<String, String[]> changes = new java.util.LinkedHashMap<>();
+
+		if (updatedEmployee.getFirstName() != null && !java.util.Objects.equals(existing.getFirstName(), updatedEmployee.getFirstName())) {
+			changes.put("First Name", new String[]{existing.getFirstName(), updatedEmployee.getFirstName()});
 			existing.setFirstName(updatedEmployee.getFirstName());
 		}
-		if (updatedEmployee.getLastName() != null) {
+		if (updatedEmployee.getLastName() != null && !java.util.Objects.equals(existing.getLastName(), updatedEmployee.getLastName())) {
+			changes.put("Last Name", new String[]{existing.getLastName(), updatedEmployee.getLastName()});
 			existing.setLastName(updatedEmployee.getLastName());
 		}
-		if (updatedEmployee.getPhone() != null) {
+		
+		// Update username with uniqueness check
+		if (updatedEmployee.getUserName() != null && !updatedEmployee.getUserName().isBlank() && !java.util.Objects.equals(existing.getUserName(), updatedEmployee.getUserName())) {
+
+			UserDto collision = userRepository.findByUserNameAndCompanyCode(updatedEmployee.getUserName(), existing.getCompanyCode());
+			if (collision != null) {
+				throw new RuntimeException("The username '" + updatedEmployee.getUserName() + "' is already taken by another account in your company.");
+			}
+			changes.put("Username", new String[]{existing.getUserName(), updatedEmployee.getUserName()});
+			existing.setUserName(updatedEmployee.getUserName());
+		}
+		
+		if (updatedEmployee.getPhone() != null && !java.util.Objects.equals(existing.getPhone(), updatedEmployee.getPhone())) {
+			changes.put("Phone Number", new String[]{existing.getPhone(), updatedEmployee.getPhone()});
 			existing.setPhone(updatedEmployee.getPhone());
 		}
-		if (updatedEmployee.getEmail() != null) {
+		if (updatedEmployee.getEmail() != null && !java.util.Objects.equals(existing.getEmail(), updatedEmployee.getEmail())) {
+			changes.put("Email Address", new String[]{existing.getEmail(), updatedEmployee.getEmail()});
 			existing.setEmail(updatedEmployee.getEmail());
 		}
-		if (updatedEmployee.getRole() != null) {
+		if (updatedEmployee.getRole() != null && !java.util.Objects.equals(existing.getRole(), updatedEmployee.getRole())) {
+			changes.put("User Role", new String[]{existing.getRole(), updatedEmployee.getRole()});
 			existing.setRole(updatedEmployee.getRole());
 		}
 		if (updatedEmployee.getPassword() != null && !updatedEmployee.getPassword().isBlank()) {
 			existing.setPassword(updatedEmployee.getPassword());
+			changes.put("Account Password", new String[]{"********", "(Updated to a new secure password)"});
 		}
+		
+		// Status Update detection
+		if (existing.isEmployeeActive() != updatedEmployee.isEmployeeActive()) {
+			changes.put("Account Status", new String[]{existing.isEmployeeActive() ? "ACTIVE" : "DEACTIVATED", updatedEmployee.isEmployeeActive() ? "ACTIVE" : "DEACTIVATED"});
+			existing.setEmployeeActive(updatedEmployee.isEmployeeActive());
+		}
+		
 		if (updatedEmployee.getCompanyDetails() != null && updatedEmployee.getCompanyDetails().getCompanyBranch() != null) {
-			String branchCode = updatedEmployee.getCompanyDetails().getCompanyBranch().getBranchCode();
-			if (branchCode != null && !branchCode.isBlank()) {
-				existing.setBranchCode(branchCode);
+			String newBranchCode = updatedEmployee.getCompanyDetails().getCompanyBranch().getBranchCode();
+			if (newBranchCode != null && !newBranchCode.isBlank() && !java.util.Objects.equals(existing.getBranchCode(), newBranchCode)) {
+				
+				String oldBranchName = null;
+				try {
+					BranchDTO b = branchRepo.getBranchBybranchCode(existing.getBranchCode());
+					if (b != null) oldBranchName = b.getBranchName();
+				} catch (Exception e) {}
+				
+				String newBranchName = null;
+				try {
+					BranchDTO b = branchRepo.getBranchBybranchCode(newBranchCode);
+					if (b != null) newBranchName = b.getBranchName();
+				} catch (Exception e) {}
+				
+				String oldVal = (oldBranchName != null ? oldBranchName : "") + " (" + existing.getBranchCode() + ")";
+				String newVal = (newBranchName != null ? newBranchName : "") + " (" + newBranchCode + ")";
+				
+				changes.put("Assigned Branch", new String[]{oldVal, newVal});
+				existing.setBranchCode(newBranchCode);
 			}
 		}
 
 		existing.setUpdatedDate(new java.sql.Date(System.currentTimeMillis()));
-		return userRepository.save(existing);
-	}
-
-	@Override
-	@org.springframework.transaction.annotation.Transactional
-	public void deleteEmployee(String userId) {
-		UserDto existing = userRepository.findById(userId)
-				.orElseThrow(() -> new RuntimeException("Employee not found"));
-		userRepository.delete(existing);
-	}
-
-	@Override
-	@org.springframework.transaction.annotation.Transactional
-	public Map<String, Object> deleteMultipleEmployees(List<String> userIds) {
-		Map<String, Object> result = new java.util.HashMap<>();
-		List<String> deleted = new java.util.ArrayList<>();
-		List<String> failed = new java.util.ArrayList<>();
-
-		if (userIds == null || userIds.isEmpty()) {
-			throw new IllegalArgumentException("No employee IDs provided");
-		}
-
-		for (String id : userIds) {
+		UserDto saved = userRepository.save(existing);
+		
+		// Send profile update email async
+		if (saved.getEmail() != null && !saved.getEmail().isBlank()) {
+			String branchName = null;
 			try {
-				deleteEmployee(id);
-				deleted.add(id);
-			} catch (Exception e) {
-				failed.add(id);
-			}
+				BranchDTO branchDTO = branchRepo.getBranchBybranchCode(saved.getBranchCode());
+				if (branchDTO != null) branchName = branchDTO.getBranchName();
+			} catch (Exception e) {}
+
+			String companyFullName = null;
+			try {
+				CompanyDto companyDto = companyRegisterrepo.getCompanyByID(saved.getCompanyCode());
+				if (companyDto != null) companyFullName = companyDto.getCompanyFullName();
+			} catch (Exception e) {}
+
+			emailService.sendEmployeeUpdateEmail(
+				saved.getEmail(),
+				saved.getFirstName() + " " + saved.getLastName(),
+				saved.getUserName(),
+				saved.getCompanyCode(),
+				companyFullName,
+				saved.getBranchCode(),
+				branchName,
+				saved.getRole(),
+				saved.getPhone(),
+				saved.isEmployeeActive(),
+				changes
+			);
 		}
 
-		result.put("deleted", deleted);
-		result.put("failed", failed);
-		result.put("deletedCount", deleted.size());
-		result.put("failedCount", failed.size());
-		result.put("status", failed.isEmpty() ? "SUCCESS" : (deleted.isEmpty() ? "FAILURE" : "PARTIAL"));
-		return result;
+		
+		return saved;
 	}
-
 }

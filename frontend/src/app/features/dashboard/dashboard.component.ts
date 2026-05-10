@@ -20,6 +20,7 @@ import { SnackbarService } from '../../core/services/snackbar.service';
 import { PaymentModeService, PaymentMode } from '../../core/services/payment-mode.service';
 import { ChangePasswordDialogComponent } from './dialogs/change-password-dialog/change-password-dialog.component';
 import { LrSearchDialogComponent } from './dialogs/lr-search-dialog/lr-search-dialog.component';
+import { LogoutConfirmationDialogComponent } from './dialogs/logout-confirmation-dialog/logout-confirmation-dialog.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -122,8 +123,19 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   logout(): void {
-    this.auth.logout();
-    this.router.navigate(['/login']);
+    const dialogRef = this.dialog.open(LogoutConfirmationDialogComponent, {
+      maxWidth: '95vw',
+      disableClose: false,
+      autoFocus: false,
+      panelClass: 'logout-dialog-panel'
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result === true) {
+        this.auth.logout();
+        this.router.navigate(['/login']);
+      }
+    });
   }
 
   // Getters for auto-expanding the correct sidebar panel based on current route
