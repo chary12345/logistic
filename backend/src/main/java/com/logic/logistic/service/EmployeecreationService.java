@@ -10,7 +10,7 @@ public interface EmployeecreationService {
 
 	String addNewEmployee(User employee);
 
-	String existsByUserName(String string);
+	String existsByUserName(String userName, String companyCode);
 
 	List<String> getEmployeesByBranch(String companyCode, String branchCode);
 
@@ -19,9 +19,5 @@ public interface EmployeecreationService {
 	UserDto getEmployeeByUserId(String userId);
 
 	UserDto updateEmployee(String userId, User updatedEmployee);
-
-	void deleteEmployee(String userId);
-
-	Map<String, Object> deleteMultipleEmployees(List<String> userIds);
 
 }

@@ -27,7 +27,7 @@ public class BranchDTO {
 	private String branchCreatedBy;
 	private Date createDate;
 	private Date updateDate;
-	private boolean isBranchActive;
+	private boolean isBranchActive = true;
 	public String getBranchCode() {
 		return branchCode;
 	}

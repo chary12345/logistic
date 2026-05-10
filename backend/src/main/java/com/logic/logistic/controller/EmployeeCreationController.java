@@ -60,7 +60,7 @@ public class EmployeeCreationController {
 		Map<String, String> map = new HashMap<String, String>();
 		String username = request.get("username");
 	    String companyCode = request.get("companyCode");
-    	String existsByUserName = employeecreationService.existsByUserName(username+companyCode);
+    	String existsByUserName = employeecreationService.existsByUserName(username, companyCode);
     	if ("SUCCESS".equalsIgnoreCase(existsByUserName)) {
 			map.put("status", "");
 			return ResponseEntity.ok(map);
@@ -112,41 +112,6 @@ public class EmployeeCreationController {
             response.put("status", "SUCCESS");
             response.put("data", saved);
             return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            response.put("status", "FAILURE");
-            response.put("message", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-        }
-    }
-
-    @DeleteMapping("/deleteEmployee/{userId}")
-    public ResponseEntity<Map<String, Object>> deleteEmployee(@PathVariable String userId) {
-        Map<String, Object> response = new HashMap<>();
-        try {
-            employeecreationService.deleteEmployee(userId);
-            response.put("status", "SUCCESS");
-            response.put("message", "Employee deleted successfully");
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            response.put("status", "FAILURE");
-            response.put("message", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-        }
-    }
-
-    @PostMapping({"/deleteEmployees", "/api/deleteEmployees"})
-    public ResponseEntity<Map<String, Object>> deleteMultipleEmployees(@RequestBody List<String> userIds) {
-        Map<String, Object> response = new HashMap<>();
-        try {
-            if (userIds == null || userIds.isEmpty()) {
-                response.put("status", "FAILURE");
-                response.put("message", "No employee IDs provided");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-            }
-            Map<String, Object> result = employeecreationService.deleteMultipleEmployees(userIds);
-            String status = (String) result.get("status");
-            HttpStatus httpStatus = "FAILURE".equals(status) ? HttpStatus.INTERNAL_SERVER_ERROR : HttpStatus.OK;
-            return ResponseEntity.status(httpStatus).body(result);
         } catch (Exception e) {
             response.put("status", "FAILURE");
             response.put("message", e.getMessage());
