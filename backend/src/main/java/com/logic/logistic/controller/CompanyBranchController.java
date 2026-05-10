@@ -177,46 +177,4 @@ public class CompanyBranchController {
 	     }
 	 }
 
-	 @DeleteMapping("/deleteBranch/{branchCode}")
-	 public ResponseEntity<Map<String, Object>> deleteBranch(@PathVariable String branchCode) {
-	     Map<String, Object> response = new HashMap<>();
-	     try {
-	         companyRegisterService.deleteBranch(branchCode);
-	         response.put("status", "SUCCESS");
-	         response.put("message", "Branch deleted successfully");
-	         return ResponseEntity.ok(response);
-	     } catch (RuntimeException e) {
-	         response.put("status", "NOT_FOUND");
-	         response.put("message", e.getMessage());
-	         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
-	     } catch (Exception e) {
-	         logger.error("Exception in deleteBranch: " + e);
-	         response.put("status", "FAILURE");
-	         response.put("message", e.getMessage());
-	         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-	     }
-	 }
-
-	 @PostMapping({"/deleteBranches", "/api/deleteBranches"})
-	 public ResponseEntity<Map<String, Object>> deleteMultipleBranches(@RequestBody java.util.List<String> branchCodes) {
-	     try {
-	         if (branchCodes == null || branchCodes.isEmpty()) {
-	             Map<String, Object> err = new HashMap<>();
-	             err.put("status", "FAILURE");
-	             err.put("message", "No branch codes provided");
-	             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err);
-	         }
-	         Map<String, Object> result = companyRegisterService.deleteMultipleBranches(branchCodes);
-	         String status = (String) result.get("status");
-	         HttpStatus httpStatus = "FAILURE".equals(status)
-	                 ? HttpStatus.INTERNAL_SERVER_ERROR : HttpStatus.OK;
-	         return ResponseEntity.status(httpStatus).body(result);
-	     } catch (Exception e) {
-	         logger.error("Exception in deleteMultipleBranches: " + e);
-	         Map<String, Object> err = new HashMap<>();
-	         err.put("status", "FAILURE");
-	         err.put("message", e.getMessage());
-	         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(err);
-	     }
-	 }
 }

@@ -29,8 +29,4 @@ public interface CompanyRegisterService {
 
 	Branch updateBranch(String branchCode, Branch updatedBranch);
 
-	void deleteBranch(String branchCode);
-
-	Map<String, Object> deleteMultipleBranches(List<String> branchCodes);
-
 }
