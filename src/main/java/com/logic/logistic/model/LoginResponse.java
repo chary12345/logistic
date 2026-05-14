@@ -1,6 +1,7 @@
 package com.logic.logistic.model;
 
 import java.sql.Date;
+import java.util.List;
 
 public class LoginResponse {
 
@@ -14,7 +15,7 @@ public class LoginResponse {
 	private Date updatedDate;
 	private Date expiryDate;
 	private String logo;
-	private String permissions;
+	private List<String> permissions;
 	private String blockReason;
 	private boolean blockUser;
 	private String blockedBy;
@@ -79,12 +80,15 @@ public class LoginResponse {
 	public void setLogo(String logo) {
 		this.logo = logo;
 	}
-	public String getPermissions() {
+
+	public List<String> getPermissions() {
 		return permissions;
 	}
-	public void setPermissions(String permissions) {
+
+	public void setPermissions(List<String> permissions) {
 		this.permissions = permissions;
 	}
+
 	public String getBlockReason() {
 		return blockReason;
 	}
