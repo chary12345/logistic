@@ -75,6 +75,12 @@ public class Booking {
     
     @Column(name = "eway_bill_number")
     private String eWayBillNumber;
+
+    @Column(name = "eway_bill_numbers", length = 1000)
+    private String eWayBillNumbers;
+
+    @Column(name = "remarks", length = 1000)
+    private String remarks;
     
     @Column(name = "branch_code")
     private String BranchCode;
@@ -302,6 +308,22 @@ public class Booking {
 
 	public void seteWayBillNumber(String eWayBillNumber) {
 		this.eWayBillNumber = eWayBillNumber;
+	}
+
+	public String geteWayBillNumbers() {
+		return eWayBillNumbers;
+	}
+
+	public void seteWayBillNumbers(String eWayBillNumbers) {
+		this.eWayBillNumbers = eWayBillNumbers;
+	}
+
+	public String getRemarks() {
+		return remarks;
+	}
+
+	public void setRemarks(String remarks) {
+		this.remarks = remarks;
 	}
 
 	public String getDestinationBranchCode() {
