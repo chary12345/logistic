@@ -20,7 +20,13 @@
     "lib": [
       "ES2022",
       "dom"
-    ]
+    ],
+    "types": ["node", "undici-types"],
+    "baseUrl": "./",
+    "paths": {
+      "undici-types": ["./node_modules/undici-types"],
+      "trusted-types": ["./node_modules/@types/trusted-types"]
+    }
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,

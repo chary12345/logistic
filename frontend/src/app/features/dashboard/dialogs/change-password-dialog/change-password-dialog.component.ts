@@ -18,7 +18,7 @@ import { passwordStrengthValidator, PASSWORD_REQUIREMENTS_TEXT, PASSWORD_REQUIRE
 
 // Custom ErrorStateMatcher for cross-field validation
 export class CrossFieldErrorMatcher implements ErrorStateMatcher {
-  constructor(private errorKey: string) {}
+  constructor(private errorKey: string) { }
   isErrorState(control: FormControl | null, form: FormGroupDirective | NgForm | null): boolean {
     const isSubmitted = !!(form && form.submitted);
     const isControlInvalid = !!(control && control.invalid && (control.dirty || control.touched));
@@ -30,9 +30,9 @@ export class CrossFieldErrorMatcher implements ErrorStateMatcher {
 
 function passwordMatchValidator(group: AbstractControl): ValidationErrors | null {
   const currentPw = group.get('currentPassword')?.value;
-  const newPw     = group.get('newPassword')?.value;
-  const confirm   = group.get('confirmPassword')?.value;
-  
+  const newPw = group.get('newPassword')?.value;
+  const confirm = group.get('confirmPassword')?.value;
+
   const errors: ValidationErrors = {};
   let hasError = false;
 
@@ -52,7 +52,7 @@ function passwordMatchValidator(group: AbstractControl): ValidationErrors | null
 }
 
 const AES_KEY = '1234567890123456';
-const AES_IV  = 'abcdefghijklmnop';
+const AES_IV = 'abcdefghijklmnop';
 
 @Component({
   selector: 'app-change-password-dialog',
@@ -267,30 +267,30 @@ export class ChangePasswordDialogComponent {
 
   form = this.fb.group({
     currentPassword: ['', Validators.required],
-    newPassword:     ['', [Validators.required, passwordStrengthValidator]],
+    newPassword: ['', [Validators.required, passwordStrengthValidator]],
     confirmPassword: ['', Validators.required],
   }, { validators: passwordMatchValidator });
 
   sameAsCurrentMatcher = new CrossFieldErrorMatcher('sameAsCurrent');
-  mismatchMatcher      = new CrossFieldErrorMatcher('mismatch');
+  mismatchMatcher = new CrossFieldErrorMatcher('mismatch');
 
-  loading     = false;
-  errorMsg    = '';
+  loading = false;
+  errorMsg = '';
   showCurrent = false;
-  showNew     = false;
+  showNew = false;
   showConfirm = false;
 
   constructor(
-    private fb:        FormBuilder,
-    private loginSvc:  LoginApiService,
-    private auth:      AuthService,
-    private snack:     SnackbarService,
+    private fb: FormBuilder,
+    private loginSvc: LoginApiService,
+    private auth: AuthService,
+    private snack: SnackbarService,
     private dialogRef: MatDialogRef<ChangePasswordDialogComponent>
-  ) {}
+  ) { }
 
   private encryptPassword(plain: string): string {
     const key = CryptoJS.enc.Utf8.parse(AES_KEY);
-    const iv  = CryptoJS.enc.Utf8.parse(AES_IV);
+    const iv = CryptoJS.enc.Utf8.parse(AES_IV);
     return CryptoJS.AES.encrypt(plain, key, {
       iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7
     }).toString();
@@ -302,7 +302,7 @@ export class ChangePasswordDialogComponent {
 
     this.loading = true;
     const { currentPassword, newPassword } = this.form.value;
-    
+
     this.loginSvc.changePassword({
       username: this.auth.currentUser?.userName || '',
       currentPassword: this.encryptPassword(currentPassword!),
