@@ -77,6 +77,8 @@ export interface BookingDTO {
   companyCode?: string;
   employeeName?: string;
   partyName?: string;
+  remarks?: string;
+  eWayBillNumbers?: string[];
 }
 
 export interface Booking {
@@ -116,6 +118,8 @@ export interface Booking {
   modifiedDate?: string;
   nextLr?: string;
   partyName?: string;
+  remarks?: string;
+  eWayBillNumbers?: string[];
 }
 
 export interface BookingPageResponse {

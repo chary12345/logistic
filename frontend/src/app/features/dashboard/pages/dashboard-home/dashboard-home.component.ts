@@ -137,7 +137,7 @@ export class DashboardHomeComponent implements OnInit, OnDestroy {
         this.tbbCount = summary.tbbCount || 0;
         this.activeVehicles = summary.activeVehicles || 0;
         
-        this.recentBookings = summary.recentBookings || [];
+        this.recentBookings = (summary.recentBookings || []).slice(0, 5);
         this.allBookings = summary.recentBookings || []; // Fallback for calculations if needed
         
         this.buildCharts(summary);

@@ -103,7 +103,7 @@
       <div class="table-header">
         <h3>
           <mat-icon>history</mat-icon>
-          Recent Bookings
+          Recent Operations
         </h3>
         <button class="view-all-btn" routerLink="/dashboard/reports/booking">
           View All <mat-icon>arrow_forward</mat-icon>
@@ -113,7 +113,7 @@
       @if (recentBookings.length === 0) {
       <div class="empty-state">
         <mat-icon>inbox</mat-icon>
-        <p>No bookings found for this month</p>
+        <p>No operations found for this month</p>
       </div>
       }
 
@@ -180,7 +180,7 @@
           <span>Receive</span>
         </a>
         <a class="action-tile" routerLink="/dashboard/operations/delivery">
-          <mat-icon>delivery_dining</mat-icon>
+          <mat-icon>local_shipping</mat-icon>
           <span>Delivery</span>
         </a>
         <a class="action-tile" routerLink="/dashboard/reports/booking">

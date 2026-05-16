@@ -15,7 +15,6 @@
   }
 }
 
-// Edit mode banner
 .edit-banner {
   display: flex;
   align-items: center;
@@ -62,7 +61,6 @@
   }
 }
 
-// Inline loading
 .loading-inline {
   display: flex;
   align-items: center;
@@ -75,7 +73,6 @@
   font-size: var(--fs-base);
 }
 
-// Payment Mode Banner
 .pm-banner {
   display: flex;
   align-items: center;
@@ -159,7 +156,6 @@
   }
 }
 
-// Layout
 .booking-grid {
   display: grid;
   grid-template-columns: 1fr 220px;
@@ -300,7 +296,6 @@
   }
 }
 
-// Autocomplete wrapper
 .autocomplete-wrap {
   position: relative;
   min-width: 0;
@@ -318,7 +313,6 @@
   }
 }
 
-// autocomplete suggestion list
 .suggestion-list {
   position: absolute;
   top: calc(100% - 14px);
@@ -345,7 +339,6 @@
   }
 }
 
-// Delivery destination select search box
 .dest-search-box {
   display: flex;
   align-items: center;
@@ -374,7 +367,6 @@
   }
 }
 
-// Said To Contain search box (inside mini mat-select dropdown)
 .stc-search-box {
   display: flex;
   align-items: center;
@@ -403,7 +395,6 @@
   }
 }
 
-// Table scroll container for mobile responsiveness
 .table-scroll-container {
   width: 100%;
   overflow-x: auto;
@@ -412,7 +403,6 @@
   margin-bottom: var(--sp-xs);
   background: #fff;
 
-  // Custom scrollbar
   &::-webkit-scrollbar {
     height: 6px;
   }
@@ -425,7 +415,6 @@
   }
 }
 
-// Article table
 .articles-table {
   width: 100%;
   border-collapse: collapse;
@@ -453,7 +442,6 @@
     background: #f0f7ff;
   }
 
-  // Fix mat-select dropdown display inside table cells
   .mat-mdc-form-field {
     width: 100%;
   }
@@ -464,7 +452,6 @@
   min-width: 60px;
   font-size: var(--fs-sm) !important;
 
-  // Ensure the select trigger is visible & properly sized in table
   &.mat-mdc-select {
     display: inline-flex;
     align-items: center;
@@ -503,7 +490,6 @@
   font-size: var(--fs-sm);
 }
 
-// Paid Via
 .paid-via-wrap {
   margin-top: var(--sp-sm);
   max-width: 180px;
@@ -517,7 +503,6 @@
   }
 }
 
-// Submit
 .submit-btn {
   height: 34px;
   padding: 0 16px;
@@ -555,7 +540,6 @@
   }
 }
 
-// Charges panel
 .charges-col {
   position: sticky;
   top: 12px;
@@ -613,7 +597,6 @@
   margin: 4px 0;
 }
 
-// Responsive
 @media (max-width: 960px) {
   .booking-grid {
     grid-template-columns: 1fr;
@@ -694,7 +677,6 @@
   }
 }
 
-// Article table responsive (mobile-friendly horizontal scroll)
 @media (max-width: 768px) {
   .articles-table {
     th, td {
@@ -716,7 +698,6 @@
   }
 }
 
-// Deactivated Styles
 :host ::ng-deep {
   .deactivated-branch-option {
     background-color: #fff5f5 !important; 
@@ -741,5 +722,91 @@
     background: rgba(185, 28, 28, 0.08);
     padding: 2px 6px;
     border-radius: 4px;
+  }
+}
+
+.ewaybill-wrap {
+  position: relative;
+  
+  .mat-mdc-form-field {
+    width: 100%;
+  }
+
+  .multi-bills-badge {
+    position: absolute;
+    top: -8px;
+    right: -4px;
+    background: var(--primary);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    z-index: 1;
+    pointer-events: none;
+  }
+}
+
+.remarks-section {
+  margin-top: var(--sp-xs);
+  
+  textarea {
+    resize: vertical;
+    min-height: 60px;
+    font-family: 'Poppins', sans-serif;
+  }
+}
+
+.dest-field {
+  .mat-mdc-form-field-icon-suffix {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding-right: 12px !important;
+  }
+  
+  button[mat-icon-button] {
+    width: 32px;
+    height: 32px;
+    line-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+      color: #64748b;
+    }
+
+    &:hover mat-icon {
+      color: #ef4444;
+    }
+  }
+}
+
+.remarks-section {
+  margin-top: var(--sp-xs);
+  
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 16px;
+  }
+
+  .remarks-col {
+    grid-column: span 4; // Matches standard field width
+    
+    @media (max-width: 768px) {
+      grid-column: span 12;
+    }
+  }
+  
+  textarea {
+    resize: vertical;
+    min-height: 60px;
+    font-family: 'Poppins', sans-serif;
   }
 }

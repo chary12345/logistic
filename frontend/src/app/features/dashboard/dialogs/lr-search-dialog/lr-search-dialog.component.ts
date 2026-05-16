@@ -48,7 +48,12 @@ import { MatDialog, MatDialogRef } from '@angular/material/dialog';
           <div class="detail-row"><span class="label">Consignor</span><span class="value">{{ booking.consignorName }} · {{ booking.consignorMobile }}</span></div>
           <div class="detail-row"><span class="label">Consignee</span><span class="value">{{ booking.consigneeName }} · {{ booking.consigneeMobile }}</span></div>
           <div class="detail-row"><span class="label">Invoice No.</span><span class="value">{{ booking.invoiceNumber || '—' }}</span></div>
-          <div class="detail-row"><span class="label">E-Waybill</span><span class="value">{{ booking.eWayBillNumber || '—' }}</span></div>
+          <div class="detail-row"><span class="label">E-Waybill</span>
+            <span class="value">
+              {{ booking.eWayBillNumbers && booking.eWayBillNumbers.length > 0 ? booking.eWayBillNumbers.join(', ') : (booking.eWayBillNumber || '—') }}
+            </span>
+          </div>
+          <div class="detail-row span-2"><span class="label">Remarks</span><span class="value">{{ booking.remarks || '—' }}</span></div>
         </div>
       </div>
     </mat-dialog-content>
@@ -78,6 +83,7 @@ import { MatDialog, MatDialogRef } from '@angular/material/dialog';
     .detail-row { display:flex; flex-direction:column; }
     .label { font-size:10px; color:#5c6780; font-weight:600; text-transform:uppercase; margin-bottom:2px; }
     .value { font-size:12px; color:#1a2744; font-weight:500; word-break:break-word; }
+    .span-2 { grid-column: span 2; }
     .fw-700 { font-weight:700; color:#0b5ed7; }
     .payment-badge { display:inline-block; padding:2px 8px; border-radius:12px; font-size:10px; font-weight:700; }
     .paid { background:#d1fae5; color:#065f46; }

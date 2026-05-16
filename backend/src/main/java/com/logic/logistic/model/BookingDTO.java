@@ -78,6 +78,8 @@ public class BookingDTO {
     private String employeeName;
     private String paidVia;
 	private String partyName;
+	private String remarks;
+	private List<String> eWayBillNumbers;
 
     
 	public String getConsignorName() {
@@ -393,5 +395,21 @@ public class BookingDTO {
 
 	public void setTotalAmount(double totalAmount) {
 		this.totalAmount = totalAmount;
+	}
+
+	public String getRemarks() {
+		return remarks;
+	}
+
+	public void setRemarks(String remarks) {
+		this.remarks = remarks;
+	}
+
+	public List<String> geteWayBillNumbers() {
+		return eWayBillNumbers;
+	}
+
+	public void seteWayBillNumbers(List<String> eWayBillNumbers) {
+		this.eWayBillNumbers = eWayBillNumbers;
 	}
 }

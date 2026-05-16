@@ -1,6 +1,5 @@
 <div class="booking-page">
 
-  <!-- Edit Mode Banner -->
   <div class="edit-banner" *ngIf="isEditMode">
     <div class="edit-banner-info">
       <mat-icon>edit_note</mat-icon>
@@ -11,13 +10,11 @@
     </button>
   </div>
 
-  <!-- Loading overlay while fetching edit data -->
   <div class="loading-inline" *ngIf="loadingBooking">
     <mat-spinner diameter="32"></mat-spinner>
     <span>Loading booking data...</span>
   </div>
 
-  <!-- Payment Mode Banner -->
   <div class="pm-banner" [class]="'pm-' + paymentMode.toLowerCase().replace(' ','-')">
     <div class="pm-mode-label">Payment Mode:</div>
     <div class="pm-keys">
@@ -36,36 +33,34 @@
   <form [formGroup]="form" (ngSubmit)="submit()">
     <div class="booking-grid">
 
-      <!-- LEFT: Form Fields -->
       <div class="form-col">
 
-        <!-- Delivery Destination -->
         <div class="page-card">
           <div class="section-title">📍 Delivery Destination</div>
           <mat-form-field class="dest-field">
             <mat-label>Select destination</mat-label>
             <mat-select formControlName="deliveryDestination">
-              <!-- Search box inside select -->
               <div class="dest-search-box" (keydown)="$event.stopPropagation()" (click)="$event.stopPropagation()">
                 <mat-icon class="search-icon">search</mat-icon>
                 <input [formControl]="destinationFilterCtrl" placeholder="Search for destination branch here.."
                   autocomplete="off" class="dest-search-input">
               </div>
 
-              <!-- Options -->
-              <mat-option *ngFor="let d of filteredDestinations" 
-                          [value]="d.branchName + ' (' + d.branchCode + ')'"
-                          [disabled]="d.branchActive === false"
-                          [ngClass]="{'deactivated-branch-option': d.branchActive === false}">
+              <mat-option *ngFor="let d of filteredDestinations" [value]="d.branchName + ' (' + d.branchCode + ')'"
+                [disabled]="d.branchActive === false"
+                [ngClass]="{'deactivated-branch-option': d.branchActive === false}">
                 {{ d.branchName }} ({{ d.branchCode }})
                 <span class="deactivated-lbl" *ngIf="d.branchActive === false">(Deactivated)</span>
               </mat-option>
 
-              <!-- No results -->
               <mat-option *ngIf="filteredDestinations.length === 0" disabled>
                 No branches found
               </mat-option>
             </mat-select>
+            <button type="button" mat-icon-button matSuffix *ngIf="form.get('deliveryDestination')?.value"
+              (click)="form.get('deliveryDestination')?.setValue(''); $event.stopPropagation()" aria-label="Clear">
+              <mat-icon>close</mat-icon>
+            </button>
             <mat-error
               *ngIf="form.get('deliveryDestination')?.hasError('required') && form.get('deliveryDestination')?.touched">
               Destination is required
@@ -73,7 +68,6 @@
           </mat-form-field>
         </div>
 
-        <!-- Consignor -->
         <div class="page-card">
           <div class="section-title">👤 Consignor (From)</div>
           <div class="form-grid" [class.tbb-grid]="paymentMode === 'TBB'">
@@ -140,7 +134,6 @@
           </div>
         </div>
 
-        <!-- Consignee -->
         <div class="page-card">
           <div class="section-title">📦 Consignee (To)</div>
           <div class="form-grid">
@@ -187,16 +180,15 @@
           </div>
         </div>
 
-        <!-- Article Details -->
         <div class="page-card">
           <div class="section-title">📋 Article Details</div>
           <div class="table-scroll-container">
             <table class="mat-mdc-table articles-table" formArrayName="articles">
               <thead>
                 <tr>
-                  <th>Article</th>
+                  <th>Charge Type</th>
                   <th>Qty</th>
-                  <th>Type</th>
+                  <th>Packing Type</th>
                   <th>Said To Contain</th>
                   <th>Rate (₹)</th>
                   <th>Total</th>
@@ -236,17 +228,29 @@
                     </mat-select>
                   </td>
                   <td>
-                    <mat-select formControlName="saidToContain" class="mini-select" placeholder="Select..."
-                      panelClass="stc-panel">
-                      <div class="stc-search-box" (keydown)="$event.stopPropagation()"
-                        (click)="$event.stopPropagation()">
-                        <mat-icon class="search-icon">search</mat-icon>
-                        <input [formControl]="stcFilterCtrl" placeholder="Search..." autocomplete="off"
-                          class="stc-search-input">
-                      </div>
-                      <mat-option *ngFor="let s of filteredSaidToContains" [value]="s">{{ s }}</mat-option>
-                      <mat-option *ngIf="filteredSaidToContains.length === 0" disabled>No match</mat-option>
-                    </mat-select>
+                    <div class="stc-field-wrap">
+                      <mat-select formControlName="saidToContain" class="mini-select" placeholder="Select..."
+                        panelClass="stc-panel">
+                        <div class="stc-search-box" (keydown)="$event.stopPropagation()"
+                          (click)="$event.stopPropagation()">
+                          <mat-icon class="search-icon">search</mat-icon>
+                          <input [formControl]="stcFilterCtrl" placeholder="Search or type..." autocomplete="off"
+                            class="stc-search-input">
+                        </div>
+                        <mat-option *ngIf="stcFilterCtrl.value && !saidToContainsList.includes(stcFilterCtrl.value)"
+                          [value]="stcFilterCtrl.value" class="custom-stc-opt">
+                          Use: "<strong>{{ stcFilterCtrl.value }}</strong>"
+                        </mat-option>
+                        <mat-option
+                          *ngIf="row.get('saidToContain')?.value && !saidToContainsList.includes(row.get('saidToContain')?.value) && row.get('saidToContain')?.value !== stcFilterCtrl.value"
+                          [value]="row.get('saidToContain')?.value">
+                          {{ row.get('saidToContain')?.value }}
+                        </mat-option>
+                        <mat-option *ngFor="let s of filteredSaidToContains" [value]="s">{{ s }}</mat-option>
+                        <mat-option *ngIf="filteredSaidToContains.length === 0 && !stcFilterCtrl.value" disabled>No
+                          match</mat-option>
+                      </mat-select>
+                    </div>
                   </td>
                   <td>
                     <input type="number" formControlName="artAmount" class="mini-input" min="0"
@@ -269,10 +273,22 @@
           </button>
         </div>
 
-        <!-- Invoice / E-Waybill -->
         <div class="page-card">
           <div class="section-title">🧾 Invoice & E-Waybill</div>
           <div class="form-grid invoice-grid">
+            <div class="ewaybill-wrap">
+              <mat-form-field>
+                <mat-label>E-Waybill No. (12 digits)</mat-label>
+                <input matInput formControlName="ewayBill" maxlength="12" inputmode="numeric">
+                <button type="button" mat-icon-button matSuffix (click)="openEwayBillDialog()"
+                  matTooltip="Add Multiple Bills" color="primary">
+                  <mat-icon>add_circle_outline</mat-icon>
+                </button>
+              </mat-form-field>
+              <div class="multi-bills-badge" *ngIf="ewayBillList.length > 1">
+                +{{ ewayBillList.length - 1 }} more
+              </div>
+            </div>
             <mat-form-field>
               <mat-label>Invoice No.</mat-label>
               <input matInput formControlName="invoiceNo">
@@ -282,13 +298,8 @@
               <input matInput type="number" formControlName="invoiceValue" inputmode="numeric">
               <span matTextPrefix>₹&nbsp;</span>
             </mat-form-field>
-            <mat-form-field>
-              <mat-label>E-Waybill No. (12 digits)</mat-label>
-              <input matInput formControlName="ewayBill" maxlength="12" inputmode="numeric">
-            </mat-form-field>
           </div>
 
-          <!-- Paid Via (conditional) -->
           <div *ngIf="showPaidVia" class="paid-via-wrap">
             <label class="paid-via-label">Paid Via*</label>
             <mat-form-field>
@@ -300,9 +311,19 @@
           </div>
         </div>
 
+        <div class="page-card remarks-section">
+          <div class="section-title">📝 Remarks / Special Instructions</div>
+          <div class="form-grid">
+            <mat-form-field class="remarks-col">
+              <mat-label>Remarks</mat-label>
+              <textarea matInput formControlName="remarks" placeholder="Add any special instructions or remarks here..."
+                rows="2"></textarea>
+            </mat-form-field>
+          </div>
+        </div>
+
       </div>
 
-      <!-- RIGHT: Charges Panel -->
       <div class="charges-col">
         <div class="charges-card page-card">
           <div class="section-title">💰 Charges</div>
@@ -346,10 +367,9 @@
         </div>
       </div>
 
-      <!-- Submit (direct child of grid so order works on mobile) -->
       <div class="submit-row">
         <button mat-raised-button color="primary" type="submit" class="submit-btn"
-          [disabled]="loading || loadingBooking">
+          [disabled]="loading || loadingBooking || (isEditMode && !isFormChanged)">
           <mat-spinner *ngIf="loading" diameter="18" class="btn-spinner"></mat-spinner>
           <mat-icon *ngIf="!loading">{{ isEditMode ? 'save' : 'add_task' }}</mat-icon>
           {{ loading ? (isEditMode ? 'Updating...' : 'Saving...') : (isEditMode ? 'Update Booking' : 'Create Booking')

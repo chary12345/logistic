@@ -79,9 +79,8 @@ export class ExportService {
       doc.setFont('helvetica', 'normal');
       doc.text(copyLabel, 200, startY + 8, { align: 'right' });
 
-      // Outer Box for the whole copy
       const boxY = startY + 16;
-      const boxH = 76;
+      const boxH = 82; // Increased height
       doc.setDrawColor(0);
       doc.setLineWidth(0.3);
       doc.rect(10, boxY, 190, boxH);
@@ -163,16 +162,50 @@ export class ExportService {
       // --- ROW 5 (Articles, Invoice) ---
       let by = boxY + 50;
       let totalQty = 0;
+      // Support artQty or artQuantity
       if (booking['articleDetails'] && Array.isArray(booking['articleDetails'])) {
-        totalQty = booking['articleDetails'].reduce((sum, a) => sum + (Number(a.artQty) || 0), 0);
+        totalQty = booking['articleDetails'].reduce((sum, a) => sum + (Number(a.artQty || a.artQuantity) || 0), 0);
       }
       doc.text(`Quantity: ${totalQty}`, 12, by);
-      doc.text(`Invoice No: ${booking['invoiceNumber'] || '—'}`, 12, by + 6);
-      doc.text(`Invoice Value: Rs. ${booking['invoiceValue'] || '—'}`, 12, by + 12);
-      doc.text(`E-Way Bill: ${booking['eWayBillNumber'] || '—'}`, 12, by + 18);
+      
+      const stcList = booking['articleDetails'] && Array.isArray(booking['articleDetails'])
+        ? Array.from(new Set(booking['articleDetails'].map(a => a.saidToContain).filter(s => !!s)))
+        : [];
+      const stcStr = stcList.length > 0 ? stcList.join(', ') : '—';
+      doc.text(`Said to Contain: ${stcStr}`, 12, by + 6);
+
+      doc.text(`Invoice No: ${booking['invoiceNumber'] || '—'}`, 12, by + 12);
+      doc.text(`Invoice Value: Rs. ${booking['invoiceValue'] || '—'}`, 12, by + 18);
+      
+      // Handle multiple eWayBills
+      let billsArray: string[] = [];
+      if (booking['eWayBillNumbers']) {
+        if (Array.isArray(booking['eWayBillNumbers'])) {
+          billsArray = booking['eWayBillNumbers'].filter(b => !!b);
+        } else if (typeof booking['eWayBillNumbers'] === 'string') {
+          billsArray = booking['eWayBillNumbers'].split(',').map(s => s.trim()).filter(s => !!s);
+        }
+      }
+      if (billsArray.length === 0 && booking['eWayBillNumber']) {
+        billsArray = String(booking['eWayBillNumber']).split(',').map(s => s.trim()).filter(s => !!s);
+      }
+
+      if (billsArray.length > 0) {
+        doc.text(`E-Way Bill:`, 12, by + 24);
+        let billY = by + 24;
+        for (let i = 0; i < billsArray.length; i += 2) {
+          const pair = billsArray.slice(i, i + 2).join(', ');
+          doc.text(pair, 30, billY);
+          if (i + 2 < billsArray.length) {
+            billY += 4;
+          }
+        }
+      } else {
+        doc.text(`E-Way Bill: —`, 12, by + 24);
+      }
       
       doc.text(`Delivery At: Godown`, 82, by);
-      doc.text(`Remarks: ${booking['remarks'] || ''}`, 82, by + 18);
+      doc.text(`Remarks: ${booking['remarks'] || '—'}`, 82, by + 24);
 
       // Signature
       doc.setFont('helvetica', 'bold');

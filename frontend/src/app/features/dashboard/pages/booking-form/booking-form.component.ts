@@ -16,6 +16,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatDialog } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { Subject, debounceTime, takeUntil, map, startWith } from 'rxjs';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { BookingService } from '../../../../core/services/booking.service';
@@ -26,6 +27,7 @@ import { PaymentModeService, PaymentMode } from '../../../../core/services/payme
 import { PartyService, Party } from '../../../../core/services/party.service';
 import { LrReceiptDialogComponent } from '../../dialogs/lr-receipt-dialog/lr-receipt-dialog.component';
 import { BookingConfirmationDialogComponent } from '../../dialogs/booking-confirmation-dialog/booking-confirmation-dialog.component';
+import { EwaybillDialogComponent } from '../../dialogs/ewaybill-dialog/ewaybill-dialog.component';
 import { ArticleDetailDto, BookingDTO, BranchMap, Contact } from '../../../../shared/models/models';
 
 const ARTICLE_TYPES: string[] = [];
@@ -41,7 +43,7 @@ const GST_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[A-Z0-9]{1}Z[A-Z0-9]{1}$/
     CommonModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule,
     MatSelectModule, MatButtonModule, MatIconModule,
     MatProgressSpinnerModule, MatTableModule,
-    MatTooltipModule, MatDividerModule,
+    MatTooltipModule, MatDividerModule, MatAutocompleteModule,
   ],
   templateUrl: './booking-form.component.html',
   styleUrls: ['./booking-form.component.scss']
@@ -61,6 +63,7 @@ export class BookingFormComponent implements OnInit, OnDestroy {
   consigneeSuggestions: Contact[] = [];
   destinationSuggestions: BranchMap[] = [];
   filteredDestinations: BranchMap[] = [];
+  loadedBookingSnapshot: any = null;
   destinationFilterCtrl = new FormControl('');
   stcFilterCtrl = new FormControl('');
   filteredSaidToContains: string[] = [];
@@ -75,6 +78,7 @@ export class BookingFormComponent implements OnInit, OnDestroy {
   partiesList: Party[] = [];
   partySuggestions: Party[] = [];
   selectedParty: any = null;
+  ewayBillList: string[] = [];
 
   private destroy$ = new Subject<void>();
 
@@ -171,6 +175,8 @@ export class BookingFormComponent implements OnInit, OnDestroy {
       invoiceNo: [''],
       invoiceValue: [null],
       ewayBill: [''],
+      ewayBillList: [[]],
+      remarks: [''],
       paidVia: ['CASH'],
       loadingCharge: [0, [Validators.min(0)]],
       lrCharge: [0, [Validators.min(0)]],
@@ -251,11 +257,24 @@ export class BookingFormComponent implements OnInit, OnDestroy {
           consigneeAddress: booking.consigneeAddress,
           invoiceNo: booking.invoiceNumber,
           invoiceValue: booking.invoiceValue,
-          ewayBill: booking.eWayBillNumber,
+          ewayBill: booking.eWayBillNumber || '',
+          remarks: booking.remarks || '',
           paidVia: booking.paidVia || 'CASH',
           loadingCharge: booking.loading || 0,
           lrCharge: booking.loadingCharge || 0,
         });
+
+        // Handle multiple e-waybills if stored as array or comma-separated
+        if (booking.eWayBillNumbers) {
+          this.ewayBillList = Array.isArray(booking.eWayBillNumbers) ? booking.eWayBillNumbers : [];
+        } else if (booking.eWayBillNumber && booking.eWayBillNumber.includes(',')) {
+          this.ewayBillList = booking.eWayBillNumber.split(',').map((s: string) => s.trim());
+        } else if (booking.eWayBillNumber) {
+          this.ewayBillList = [booking.eWayBillNumber];
+        } else {
+          this.ewayBillList = [];
+        }
+        this.form.patchValue({ ewayBillList: this.ewayBillList });
 
         // Rebuild articles (backend uses artQty/artAmt as strings)
         while (this.articles.length > 0) this.articles.removeAt(0);
@@ -278,6 +297,7 @@ export class BookingFormComponent implements OnInit, OnDestroy {
         }
 
         this.recalcCharges();
+        this.loadedBookingSnapshot = this.normalizeForComparison(this.form.getRawValue());
         this.snack.info(`Editing LR: ${lr}`);
       },
       error: () => {
@@ -511,6 +531,35 @@ export class BookingFormComponent implements OnInit, OnDestroy {
     );
   }
 
+  private normalizeForComparison(data: any): string {
+    if (!data) return '';
+    const cloned = JSON.parse(JSON.stringify(data));
+    const walk = (obj: any) => {
+      if (Array.isArray(obj)) {
+        obj.forEach(item => walk(item));
+        return;
+      }
+      if (obj && typeof obj === 'object') {
+        Object.keys(obj).forEach(key => {
+          if (typeof obj[key] === 'object') {
+            walk(obj[key]);
+          } else {
+            const val = obj[key];
+            obj[key] = (val === null || val === undefined) ? '' : String(val).trim();
+          }
+        });
+      }
+    };
+    walk(cloned);
+    return JSON.stringify(cloned);
+  }
+
+  get isFormChanged(): boolean {
+    if (!this.isEditMode) return true;
+    if (!this.loadedBookingSnapshot) return false;
+    return this.normalizeForComparison(this.form.getRawValue()) !== this.loadedBookingSnapshot;
+  }
+
   private loadNextLR(): void {
     const bc = this.auth.branchCode;
     if (!bc) return;
@@ -601,6 +650,8 @@ export class BookingFormComponent implements OnInit, OnDestroy {
         invoiceNo: '',
         invoiceValue: null,
         ewayBill: '',
+        ewayBillList: [],
+        remarks: '',
         paidVia: 'CASH',
         loadingCharge: 0,
         lrCharge: 0,
@@ -621,6 +672,8 @@ export class BookingFormComponent implements OnInit, OnDestroy {
         invoiceNo: '',
         invoiceValue: null,
         ewayBill: '',
+        ewayBillList: [],
+        remarks: '',
         paidVia: 'CASH',
         loadingCharge: 0,
         lrCharge: 0,
@@ -639,6 +692,7 @@ export class BookingFormComponent implements OnInit, OnDestroy {
     // Reset GST validation flags
     this.hasValidConsignorGST = false;
     this.hasValidConsigneeGST = false;
+    this.ewayBillList = [];
 
     this.paymentMode = 'TO PAY';
     this.updatePartyNameValidation('TO PAY');
@@ -651,8 +705,8 @@ export class BookingFormComponent implements OnInit, OnDestroy {
     this.typeFilterCtrl.setValue('');
     this.articleFilterCtrl.setValue('');
     this.loadNextLR();
-    this.consignorSuggestions = [];
     this.consigneeSuggestions = [];
+    this.loadedBookingSnapshot = null;
 
     // Clear the editLr query param if present
     this.router.navigate([], {
@@ -669,28 +723,26 @@ export class BookingFormComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const isNoChanges = this.isEditMode && this.form.pristine;
-    this.recalcCharges();
+    if (this.isEditMode && !this.isFormChanged) {
+      this.snack.info('No changes detected. Update was not required.');
+      return;
+    }
 
+    this.recalcCharges();
     const raw = this.form.getRawValue();
 
-    // Show confirmation or info dialog depending on state
+    // Show confirmation dialog for creation or if form is dirty in edit mode
     this.dialog.open(BookingConfirmationDialogComponent, {
       data: {
         grandTotal: raw.grandTotal,
         isEditMode: this.isEditMode,
-        isNoChanges: isNoChanges
+        isNoChanges: false // We already handled pristine check above
       },
       width: '420px',
       maxWidth: '95vw',
       disableClose: false,
     }).afterClosed().subscribe((confirmed: boolean) => {
-      // If user clicked Cancel, or if the dialog was just an "Info" dialog (isNoChanges), stop here.
-      if (!confirmed || isNoChanges) {
-        return;
-      }
-
-      // User clicked "Confirm" - proceed with booking creation/update
+      if (!confirmed) return;
       this.proceedWithBooking(raw);
     });
   }
@@ -728,6 +780,8 @@ export class BookingFormComponent implements OnInit, OnDestroy {
       invoiceNumber: raw.invoiceNo,
       invoiceValue: raw.invoiceValue,
       eWayBillNumber: raw.ewayBill,
+      eWayBillNumbers: raw.ewayBillList || [],
+      remarks: raw.remarks,
       freight: raw.freight,
       loading: raw.loadingCharge,
       loadingCharge: raw.lrCharge,
@@ -750,30 +804,74 @@ export class BookingFormComponent implements OnInit, OnDestroy {
     apiCall$.subscribe({
       next: (saved: any) => {
         this.loading = false;
+        
+        // The backend returns BookingResponseDTO for create, and Booking entity for update.
+        // We ensure articles and charges are always available for the PDF generator.
+        let bookingData: any;
+        if (!this.isEditMode && saved.booking) {
+          bookingData = { 
+            ...saved.booking, 
+            articleDetails: saved.articles || [],
+            ...saved.charges
+          };
+        } else {
+          // In edit mode, 'saved' is the updated Booking entity.
+          // We attach the articles from our local 'raw' form data so the PDF is fully populated.
+          bookingData = { 
+            ...saved,
+            articleDetails: raw.articles.map((a: any) => ({
+              artQty: String(a.artQuantity),
+              saidToContain: a.saidToContain,
+              article: a.article,
+              artType: a.artType,
+              artAmt: String(a.artAmount),
+              total: String(+a.artQuantity * +a.artAmount)
+            }))
+          };
+        }
+        
         const msg = this.isEditMode
-          ? `Booking updated! LR: ${saved.loadingReciept || this.editLR}`
-          : `Booking created! LR: ${saved.loadingReciept}`;
+          ? `Booking updated! LR: ${bookingData.loadingReciept || this.editLR}`
+          : `Booking created! LR: ${bookingData.loadingReciept}`;
         this.snack.success(msg);
 
         // Immediately refresh the LR number in the dashboard header
         this.branchSvc.notifyLrUpdated();
 
-        // Open the enhanced receipt dialog with print/download options, styled for edit/create
+        // Open the enhanced receipt dialog with print/download options
         this.dialog.open(LrReceiptDialogComponent, {
           data: {
-            booking: saved,
+            booking: bookingData,
             isEditMode: this.isEditMode
           },
           width: '360px',
           maxWidth: '95vw',
           disableClose: false,
         }).afterClosed().subscribe(() => {
+          this.loadedBookingSnapshot = null;
           this.resetForm();
         });
       },
       error: (e: any) => {
         this.loading = false;
         this.snack.error(e?.error?.message || 'Error saving booking. Please try again.');
+      }
+    });
+  }
+
+  openEwayBillDialog(): void {
+    const dialogRef = this.dialog.open(EwaybillDialogComponent, {
+      width: '450px',
+      data: { bills: this.ewayBillList }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.ewayBillList = result;
+        this.form.patchValue({ ewayBillList: result });
+        if (result.length > 0) {
+          this.form.patchValue({ ewayBill: result[0] }); // Keep first one in main field for visibility
+        }
       }
     });
   }
