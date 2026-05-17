@@ -13,6 +13,7 @@ public class PartyResponseDTO {
     private String partyType;
     private String mobileNumber1;
     private String city;
+    private String gstNumber;
 
     public Long getId() {
         return id;
@@ -101,4 +102,12 @@ public class PartyResponseDTO {
     public void setCity(String city) {
         this.city = city;
     }
-}
+
+    public String getGstNumber() {
+        return gstNumber;
+    }
+
+    public void setGstNumber(String gstNumber) {
+        this.gstNumber = gstNumber;
+    }
+}

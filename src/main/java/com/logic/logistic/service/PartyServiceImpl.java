@@ -27,7 +27,6 @@ public class PartyServiceImpl implements  PartyService{
             throw new RuntimeException("Party already exists for this company");
         }
 
-        // Map DTO → Entity
         PartyEntity party = new PartyEntity();
 
         party.setCompanyCode(request.getCompanyCode());
@@ -36,7 +35,6 @@ public class PartyServiceImpl implements  PartyService{
         party.setDisplayName(request.getDisplayName());
         party.setPartyCode(request.getPartyCode());
         party.setPartyType(request.getPartyType());
-        //party.setIsTbb(request.getTbb());
         party.setTbb(true);
 
         party.setContactPerson(request.getContactPerson());
@@ -61,10 +59,8 @@ public class PartyServiceImpl implements  PartyService{
         party.setIssueDate(request.getIssueDate());
         party.setCreatedAt(LocalDateTime.now());
 
-        // Save
         PartyEntity saved = partyRepository.save(party);
 
-        // Response
         PartyResponseDTO response = new PartyResponseDTO();
         response.setId(saved.getId());
         response.setPartyName(saved.getPartyName());
@@ -100,18 +96,15 @@ public class PartyServiceImpl implements  PartyService{
 
         List<PartyEntity> parties;
 
-        //  If search text empty → get all
         if (partyName == null || partyName.trim().isEmpty()) {
             parties = partyRepository.findByCompanyCode(companyCode);
         } else {
             parties = partyRepository.searchParties(companyCode, partyName);
         }
 
-        //  Mapping
         return parties.stream().map(this::mapToDTO).toList();
     }
 
-    //  Reusable Mapping Method
     private PartyResponseDTO mapToDTO(PartyEntity p) {
 
         PartyResponseDTO dto = new PartyResponseDTO();
@@ -121,7 +114,6 @@ public class PartyServiceImpl implements  PartyService{
         dto.setCompanyCode(p.getCompanyCode());
         dto.setBranchCode(p.getBranchCode());
 
-        // Handle boolean properly
         dto.setTbb(p.getTbb());
 
         dto.setDisplayName(p.getDisplayName());
@@ -130,8 +122,9 @@ public class PartyServiceImpl implements  PartyService{
 
         dto.setMobileNumber1(p.getMobileNumber1());
         dto.setCity(p.getCity());
+        dto.setGstNumber(p.getGstNumber());
 
-        dto.setMessage("SUCCESS"); // optional
+        dto.setMessage("SUCCESS");
 
         return dto;
     }

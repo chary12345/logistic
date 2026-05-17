@@ -13,7 +13,7 @@ import com.logic.logistic.model.BranchMap;
 public interface BranchRepo extends JpaRepository<BranchDTO, String>{
 	@Query(value = "select * from logistics_logic.branch_data where branch_code= :branchCode",nativeQuery = true)
 	BranchDTO getBranchBybranchCode(String branchCode);
-	@Query(value = "select branch_Code as branchCode,branch_Name as branchName,branch_Type as branchType  from logistics_logic.branch_data where company_code= :companyCode",nativeQuery = true)
+	@Query(value = "select branch_Code as branchCode,branch_Name as branchName,branch_Type as branchType, is_branch_active as isBranchActive from logistics_logic.branch_data where company_code= :companyCode",nativeQuery = true)
 	List<BranchMap> getbranchesListByCompanyCode(String companyCode);
 
 }

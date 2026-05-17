@@ -1,6 +1,6 @@
 package com.logic.logistic.model;
 import jakarta.validation.constraints.Pattern;
-import org.apache.logging.log4j.core.config.plugins.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotBlank;
 
 
 import java.time.LocalDate;
@@ -45,6 +45,8 @@ public class PartyRequestDTO {
     private String country;
     private String pincode;
 
+    @NotBlank(message = "GST number is required")
+    @Pattern(regexp = "^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[A-Z0-9]{1}Z[A-Z0-9]{1}$", message = "Invalid GST format")
     private String gstNumber;
     private String panNumber;
 

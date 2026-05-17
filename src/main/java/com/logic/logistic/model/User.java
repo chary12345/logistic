@@ -23,7 +23,15 @@ public class User {
 	private String permissions;
 	private String blockReason;
 	private boolean blockUser;
+	private boolean isEmployeeActive = true;
 	private String blockedBy;
+
+	public boolean isEmployeeActive() {
+		return isEmployeeActive;
+	}
+	public void setEmployeeActive(boolean isEmployeeActive) {
+		this.isEmployeeActive = isEmployeeActive;
+	}
 	
 	public String getUserName() {
 		return userName;

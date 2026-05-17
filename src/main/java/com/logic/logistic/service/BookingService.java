@@ -111,6 +111,24 @@ public class BookingService {
 				booking.setEmployeeName(dto.getEmployeeName());
 			if (dto.getPaidVia() != null)
 				booking.setPaidVia(dto.getPaidVia());
+			
+			if (dto.getRemarks() != null)
+				booking.setRemarks(dto.getRemarks());
+			
+			if (dto.geteWayBillNumbers() != null && !dto.geteWayBillNumbers().isEmpty()) {
+				booking.seteWayBillNumbers(String.join(",", dto.geteWayBillNumbers()));
+				// Set first bill for compatibility
+				booking.seteWayBillNumber(dto.geteWayBillNumbers().get(0));
+			}
+
+			// Sync charges to booking
+			booking.setFreight(dto.getFreight());
+			booking.setLoading(dto.getLoading());
+			booking.setLoadingCharge(dto.getLoadingCharge());
+			booking.setSgst(dto.getSgst());
+			booking.setCgst(dto.getCgst());
+			booking.setIgst(dto.getIgst());
+
 			save = bookingRepo.save(booking);
 			save.setNextLr(key+"/" + String.format("%03d", newSerial+1));
 			logger.info("booking saved:: " + save.getLoadingReciept());
@@ -288,6 +306,11 @@ public class BookingService {
 
 			BeanUtils.copyProperties(bookingByLr, dto);
 
+			if (bookingByLr.geteWayBillNumbers() != null) {
+				dto.seteWayBillNumbers(java.util.Arrays.asList(bookingByLr.geteWayBillNumbers().split(",")));
+			}
+			dto.setRemarks(bookingByLr.getRemarks());
+
 			dto.setArticleDetails(articleDetails);
 		}
 		return dto;
@@ -326,12 +349,22 @@ public class BookingService {
 		existing.setSgst(dto.getSgst());
 		existing.setCgst(dto.getCgst());
 		existing.setIgst(dto.getIgst());
+		existing.setLoading(dto.getLoading());
+		existing.setLoadingCharge(dto.getLoadingCharge());
 		existing.setInvoiceNumber(dto.getInvoiceNumber());
 		existing.setInvoiceValue(dto.getInvoiceValue());
-		existing.seteWayBillNumber(dto.geteWayBillNumber());
 		existing.setDestinationBranchCode(dto.getDestinationBranchCode());
 		existing.setBillType(dto.getBillType());
+		existing.setRemarks(dto.getRemarks());
+		
+		if (dto.geteWayBillNumbers() != null && !dto.geteWayBillNumbers().isEmpty()) {
+			existing.seteWayBillNumbers(String.join(",", dto.geteWayBillNumbers()));
+			existing.seteWayBillNumber(dto.geteWayBillNumbers().get(0));
+		}
+
 		existing.setModifiedDate(LocalDateTime.now());
+
+		saveBookingCharges(lr, dto);
 
 		articleRepo.deleteByLoadingReciept(lr);
 

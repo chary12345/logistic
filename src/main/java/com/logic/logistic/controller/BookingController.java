@@ -93,7 +93,7 @@ public class BookingController {
 	    return ResponseEntity.ok(response);
 	}
 
-	 @GetMapping("Get-ditinct-saidtocontains/{companyCode}")
+	 @GetMapping("Get-distinct-saidtocontains/{companyCode}")
 	    public List<String> getSaidToContainsByCompany(@PathVariable String companyCode) {
 	        return bookingService.getSaidToContainsByCompany(companyCode);
 	    }
