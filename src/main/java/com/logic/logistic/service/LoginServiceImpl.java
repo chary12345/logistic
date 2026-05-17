@@ -129,6 +129,8 @@ public class LoginServiceImpl implements LoginService {
 		return permissionService.saveOrUpdatePermissions(dto);
 	}
 
+
+
 	private LoginResponse mapDtoToLoginResponse(UserDto userDto, LoginResponse loginResponse) {
 		if (userDto != null) {
 			// Manually checking for null before assigning

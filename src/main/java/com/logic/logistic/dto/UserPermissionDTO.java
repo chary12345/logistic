@@ -9,51 +9,53 @@ public class UserPermissionDTO {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
+    @Column(name = "user_name")
     private String userName;
-
+    @Column(name = "company_code")
     private String companyCode;
 
+    @Column(name = "role")
     private String role;
 
-    // HOME
+    @Column(name = "home")
     private Boolean home = false;
 
-    // OPERATIONS
+    @Column(name = "booking")
     private Boolean booking = false;
-
+    @Column(name = "dispatch")
     private Boolean dispatch = false;
 
     @Column(name = "receive_op")
     private Boolean receive = false;
-
+    @Column(name = "delivery")
     private Boolean delivery = false;
 
-    // REPORTS
+    @Column(name = "booking_report")
     private Boolean bookingReport = false;
-
+    @Column(name = "dispatch_report")
     private Boolean dispatchReport = false;
-
+    @Column(name = "receive_report")
     private Boolean receiveReport = false;
-
+    @Column(name = "delivery_report")
     private Boolean deliveryReport = false;
 
-    // STATEMENTS
+    @Column(name = "view_statements")
     private Boolean viewStatements = false;
-
+    @Column(name = "tbb_invoice")
     private Boolean tbbInvoice = false;
 
-    // ADMINISTRATION
+    @Column(name = "branches")
     private Boolean branches = false;
-
+    @Column(name = "employees")
     private Boolean employees = false;
-
+    @Column(name = "vehicles")
     private Boolean vehicles = false;
-
+    @Column(name = "parties")
     private Boolean parties = false;
 
-
+    @Column(name = "charges")
     private Boolean charges = false;
+    @Column(name = "roles_and_permissions")
     private Boolean rolesAndPermissions = false;
     @Transient
     private Boolean globalSearch = false;
