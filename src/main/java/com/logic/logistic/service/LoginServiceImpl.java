@@ -3,6 +3,8 @@ package com.logic.logistic.service;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.logic.logistic.dto.UserPermissionDTO;
+import jakarta.transaction.Transactional;
 import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -26,6 +28,9 @@ public class LoginServiceImpl implements LoginService {
 
 	@Autowired
 	private CompanyRegisterrepo companyrepo;
+
+	@Autowired
+	private PermissionService permissionService;
 
 	@Override
 	public Map<String, Object> userLogin(LoginRequest request) {
@@ -112,6 +117,11 @@ public class LoginServiceImpl implements LoginService {
 				} else {
 					loginResponse.setCompanyAndBranchDeatils(companyAndBranchData);
 					loginResponse = mapDtoToLoginResponse(userData, loginResponse);
+
+					// Fetch permissions by role (added in upstream/develop)
+					Map<String, Boolean> permissionsByRole = permissionService.getPermissionsByRole(userData);
+					loginResponse.setPermissions(permissionsByRole);
+
 					status = "SUCCESS";
 					map.put("status", status);
 					map.put("loginResponse", loginResponse);
@@ -137,6 +147,15 @@ public class LoginServiceImpl implements LoginService {
 		return map;
 	}
 
+	@Override
+	@Transactional
+	public UserPermissionDTO saveOrUpdatePermissions(UserPermissionDTO dto) {
+
+		return permissionService.saveOrUpdatePermissions(dto);
+	}
+
+
+
 	private LoginResponse mapDtoToLoginResponse(UserDto userDto, LoginResponse loginResponse) {
 		if (userDto != null) {
 			// Manually checking for null before assigning
@@ -150,7 +169,7 @@ public class LoginServiceImpl implements LoginService {
 			loginResponse.setUpdatedDate(userDto.getUpdatedDate() != null ? userDto.getUpdatedDate() : null);
 			loginResponse.setExpiryDate(userDto.getExpiryDate() != null ? userDto.getExpiryDate() : null);
 			loginResponse.setLogo(userDto.getLogo() != null ? userDto.getLogo() : null);
-			loginResponse.setPermissions(userDto.getPermissions() != null ? userDto.getPermissions() : null);
+			//loginResponse.setPermissions(userDto.getPermissions() != null ? userDto.getPermissions() : null);
 			loginResponse.setBlockReason(userDto.getBlockReason() != null ? userDto.getBlockReason() : null);
 			loginResponse.setBlockUser(userDto.isBlockUser()); // Boolean field, no need to check for null
 			loginResponse.setBlockedBy(userDto.getBlockedBy() != null ? userDto.getBlockedBy() : null);

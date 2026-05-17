@@ -153,6 +153,5 @@ public class UserDto {
 	public void setUserId(String userId) {
 		this.userId = userId;
 	}
-	
-	
+
 }
