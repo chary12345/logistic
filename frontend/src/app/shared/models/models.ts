@@ -29,6 +29,7 @@ export interface LoginResponse {
   companyName?: string;
   branchName?: string;
   companyAndBranchDeatils?: CompanyAndBranchDetails;
+  permissions?: any;
 }
 
 export interface LoginApiResponse {

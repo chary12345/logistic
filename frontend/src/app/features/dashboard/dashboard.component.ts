@@ -162,5 +162,41 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return this.router.url.includes('/dashboard/statements');
   }
 
+  hasPermission(key: string): boolean {
+    if (!this.currentUser) return false;
+    const permissions = this.currentUser.permissions;
+    if (!permissions) return true; // default to true if permissions are not set
+
+    return !!permissions[key];
+  }
+
+  get showOperations(): boolean {
+    return this.hasPermission('booking') ||
+           this.hasPermission('dispatch') ||
+           this.hasPermission('receive') ||
+           this.hasPermission('delivery');
+  }
+
+  get showReports(): boolean {
+    return this.hasPermission('bookingReport') ||
+           this.hasPermission('dispatchReport') ||
+           this.hasPermission('receiveReport') ||
+           this.hasPermission('deliveryReport');
+  }
+
+  get showStatements(): boolean {
+    return this.hasPermission('viewStatements') ||
+           this.hasPermission('tbbInvoice');
+  }
+
+  get showAdmin(): boolean {
+    if (!this.isAdmin) return false;
+    return this.hasPermission('branches') ||
+           this.hasPermission('employees') ||
+           this.hasPermission('vehicles') ||
+           this.hasPermission('parties') ||
+           this.hasPermission('articles');
+  }
+
   ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
 }

@@ -18,12 +18,15 @@
     <nav class="nav-list">
 
       <!-- Dashboard -->
+      @if (hasPermission('home')) {
       <a class="nav-item" routerLink="/dashboard/home" routerLinkActive="active-link">
         <mat-icon>home</mat-icon>
         <span>Home</span>
       </a>
+      }
 
       <!-- Operations -->
+      @if (showOperations) {
       <mat-expansion-panel class="nav-panel" [class.active-panel]="isOperationsActive" [expanded]="isOperationsActive">
         <mat-expansion-panel-header class="nav-panel-header">
           <mat-panel-title>
@@ -32,26 +35,36 @@
           </mat-panel-title>
         </mat-expansion-panel-header>
         <div class="sub-nav">
+          @if (hasPermission('booking')) {
           <a class="sub-item" routerLink="/dashboard/booking" routerLinkActive="active-link">
             <mat-icon>add_box</mat-icon>
             <span>Booking</span>
           </a>
+          }
+          @if (hasPermission('dispatch')) {
           <a class="sub-item" routerLink="/dashboard/operations/dispatch" routerLinkActive="active-link">
             <mat-icon>local_shipping</mat-icon>
             <span>Dispatch</span>
           </a>
+          }
+          @if (hasPermission('receive')) {
           <a class="sub-item" routerLink="/dashboard/operations/receive" routerLinkActive="active-link">
             <mat-icon>move_to_inbox</mat-icon>
             <span>Receive</span>
           </a>
+          }
+          @if (hasPermission('delivery')) {
           <a class="sub-item" routerLink="/dashboard/operations/delivery" routerLinkActive="active-link">
             <mat-icon>delivery_dining</mat-icon>
             <span>Delivery</span>
           </a>
+          }
         </div>
       </mat-expansion-panel>
+      }
 
       <!-- Reports -->
+      @if (showReports) {
       <mat-expansion-panel class="nav-panel" [class.active-panel]="isReportsActive" [expanded]="isReportsActive">
         <mat-expansion-panel-header class="nav-panel-header">
           <mat-panel-title>
@@ -60,26 +73,36 @@
           </mat-panel-title>
         </mat-expansion-panel-header>
         <div class="sub-nav">
+          @if (hasPermission('bookingReport')) {
           <a class="sub-item" routerLink="/dashboard/reports/booking" routerLinkActive="active-link">
             <mat-icon>receipt_long</mat-icon>
             <span>Booking Report</span>
           </a>
+          }
+          @if (hasPermission('dispatchReport')) {
           <a class="sub-item" routerLink="/dashboard/reports/dispatch" routerLinkActive="active-link">
             <mat-icon>local_shipping</mat-icon>
             <span>Dispatch Report</span>
           </a>
+          }
+          @if (hasPermission('receiveReport')) {
           <a class="sub-item" routerLink="/dashboard/reports/receive" routerLinkActive="active-link">
             <mat-icon>inbox</mat-icon>
             <span>Receive Report</span>
           </a>
+          }
+          @if (hasPermission('deliveryReport')) {
           <a class="sub-item" routerLink="/dashboard/reports/delivery" routerLinkActive="active-link">
             <mat-icon>done_all</mat-icon>
             <span>Delivery Report</span>
           </a>
+          }
         </div>
       </mat-expansion-panel>
+      }
 
       <!-- Statements -->
+      @if (showStatements) {
       <mat-expansion-panel class="nav-panel" [class.active-panel]="isStatementsActive" [expanded]="isStatementsActive">
         <mat-expansion-panel-header class="nav-panel-header">
           <mat-panel-title>
@@ -88,20 +111,25 @@
           </mat-panel-title>
         </mat-expansion-panel-header>
         <div class="sub-nav">
+          @if (hasPermission('viewStatements')) {
           <a class="sub-item" routerLink="/dashboard/statements" routerLinkActive="active-link"
             [routerLinkActiveOptions]="{exact: true}">
             <mat-icon>description</mat-icon>
             <span>View Statements</span>
           </a>
+          }
+          @if (hasPermission('tbbInvoice')) {
           <a class="sub-item" routerLink="/dashboard/statements/tbb-invoice" routerLinkActive="active-link">
             <mat-icon>receipt_long</mat-icon>
             <span>TBB Invoice</span>
           </a>
+          }
         </div>
       </mat-expansion-panel>
+      }
 
       <!-- Administration (Admin only) -->
-      @if (isAdmin) {
+      @if (showAdmin) {
       <mat-expansion-panel class="nav-panel" [class.active-panel]="isAdminActive" [expanded]="isAdminActive">
         <mat-expansion-panel-header class="nav-panel-header">
           <mat-panel-title>
@@ -110,35 +138,47 @@
           </mat-panel-title>
         </mat-expansion-panel-header>
         <div class="sub-nav">
+          @if (hasPermission('branches')) {
           <a class="sub-item" routerLink="/dashboard/admin/branches" routerLinkActive="active-link">
             <mat-icon>account_balance</mat-icon>
             <span>Branches</span>
           </a>
+          }
+          @if (hasPermission('employees')) {
           <a class="sub-item" routerLink="/dashboard/admin/employees" routerLinkActive="active-link">
             <mat-icon>group</mat-icon>
             <span>Employees</span>
           </a>
+          }
+          @if (hasPermission('vehicles')) {
           <a class="sub-item" routerLink="/dashboard/admin/vehicles" routerLinkActive="active-link">
             <mat-icon>fire_truck</mat-icon>
             <span>Vehicles</span>
           </a>
+          }
+          @if (hasPermission('parties')) {
           <a class="sub-item" routerLink="/dashboard/admin/parties" routerLinkActive="active-link">
             <mat-icon>groups</mat-icon>
             <span>Parties</span>
           </a>
+          }
+          @if (hasPermission('articles')) {
           <a class="sub-item" routerLink="/dashboard/admin/articles" routerLinkActive="active-link">
             <mat-icon>category</mat-icon>
             <span>Articles</span>
           </a>
+          }
         </div>
       </mat-expansion-panel>
       }
 
       <!-- Global Search -->
+      @if (hasPermission('globalSearch')) {
       <a class="nav-item" routerLink="/dashboard/global-search" routerLinkActive="active-link">
         <mat-icon>travel_explore</mat-icon>
         <span>Global Search</span>
       </a>
+      }
 
     </nav>
 
