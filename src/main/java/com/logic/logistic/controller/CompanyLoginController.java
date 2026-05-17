@@ -1,7 +1,9 @@
 package com.logic.logistic.controller;
 
+import java.util.HashMap;
 import java.util.Map;
 
+import com.logic.logistic.dto.UserPermissionDTO;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,7 +58,39 @@ public class CompanyLoginController {
       
       
     }
-    
- 
+
+
+
+	@PostMapping("/saveOrUpdatePermissions")
+	public ResponseEntity<?> savePermissions(
+			@RequestBody UserPermissionDTO dto) {
+
+		Map<String, Object> response = new HashMap<>();
+
+		try {
+
+			UserPermissionDTO saved =
+					loginService.saveOrUpdatePermissions(dto);
+
+			response.put("status", "SUCCESS");
+
+			response.put("message",
+					"Permissions saved successfully");
+
+			response.put("data", saved);
+
+			return ResponseEntity.ok(response);
+
+		} catch (Exception e) {
+
+			response.put("status", "FAILURE");
+
+			response.put("message", e.getMessage());
+
+			return ResponseEntity
+					.status(HttpStatus.BAD_REQUEST)
+					.body(response);
+		}
+	}
 
 }
