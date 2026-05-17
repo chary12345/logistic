@@ -1,9 +1,10 @@
 package com.logic.logistic.service;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
+import com.logic.logistic.dto.UserPermissionDTO;
+import jakarta.transaction.Transactional;
 import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -86,10 +87,10 @@ public class LoginServiceImpl implements LoginService {
 						loginResponse.setCompanyAndBranchDeatils(companyAndBranchData);
 
 						loginResponse = mapDtoToLoginResponse(userData, loginResponse);
-						List<String> permissions =
-								permissionService.getPermissionsByRole(userData.getRole());
 
-						loginResponse.setPermissions(permissions);
+						Map<String, Boolean> permissionsByRole = permissionService.getPermissionsByRole(userData);
+
+						loginResponse.setPermissions(permissionsByRole);
 						status = "SUCCESS";
 						map.put("status", status);
 						map.put("loginResponse", loginResponse);
@@ -119,6 +120,13 @@ public class LoginServiceImpl implements LoginService {
 		logger.info("Login user status is : " + status);
 
 		return map;
+	}
+
+	@Override
+	@Transactional
+	public UserPermissionDTO saveOrUpdatePermissions(UserPermissionDTO dto) {
+
+		return permissionService.saveOrUpdatePermissions(dto);
 	}
 
 	private LoginResponse mapDtoToLoginResponse(UserDto userDto, LoginResponse loginResponse) {
