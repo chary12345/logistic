@@ -3,6 +3,7 @@ package com.logic.logistic.service;
 import com.logic.logistic.dto.UserDto;
 import com.logic.logistic.dto.UserPermissionDTO;
 import com.logic.logistic.repository.UserPermissionRepo;
+
 import com.logic.logistic.util.PermissionDefaults;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +15,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @Service
+@Transactional
 public class PermissionService {
 
     @Autowired
@@ -23,11 +25,7 @@ public class PermissionService {
         Map<String, Boolean> permissionMap;
 
         if (userDto.getUserName() != null && userDto.getCompanyCode() != null) {
-
-            UserPermissionDTO permission =
-                    permissionRepo.findByUserNameAndCompanyCode(
-                            userDto.getUserName(),userDto.getCompanyCode()
-                    ).orElse(null);
+            UserPermissionDTO permission = getPermissions(userDto.getUserName(),userDto.getCompanyCode(),userDto.getRole());
 
             if (permission != null) {
 
@@ -59,6 +57,48 @@ public class PermissionService {
         return permissionMap;
     }
 
+
+
+    public UserPermissionDTO getPermissions(
+            String userName,
+            String companyCode,
+            String role) {
+
+        try {
+
+            if(userName == null || userName.trim().isEmpty()){
+                throw new RuntimeException("Username is required");
+            }
+
+            if(companyCode == null || companyCode.trim().isEmpty()){
+                throw new RuntimeException("Company code is required");
+            }
+
+            if(role == null || role.trim().isEmpty()){
+                throw new RuntimeException("Role is required");
+            }
+
+            UserPermissionDTO permission =
+                    permissionRepo.getPermissions(
+                            userName,
+                            companyCode
+                    );
+
+            if(permission != null){
+                if (permission.getRole().equalsIgnoreCase("SUPERADMIN")||permission.getRole().equalsIgnoreCase("MASTERADMIN"))
+                    permission.setGlobalSearch(true);
+                return permission;
+            }
+             permission = PermissionDefaults.getDefaultPermissions(role);
+        return permission;
+        } catch (Exception e) {
+
+            throw new RuntimeException(
+                    "Unable to fetch permissions : "
+                            + e.getMessage()
+            );
+        }
+    }
     @Transactional
     public UserPermissionDTO saveOrUpdatePermissions(UserPermissionDTO dto) {
 
@@ -91,27 +131,26 @@ public class PermissionService {
 
             // ================= FIND EXISTING =================
 
-            Optional<UserPermissionDTO> existing =
+            UserPermissionDTO existing =
 
                     permissionRepo
-                            .findByUserNameAndCompanyCode(
+                            .getPermissions(
                                     dto.getUserName(),
                                     dto.getCompanyCode()
                             );
 
+            // ================= UPDATE / NEW =================
+
             UserPermissionDTO permission;
 
-            // ================= UPDATE =================
+            if (existing != null) {
 
-            if (existing.isPresent()) {
-
-                permission = existing.get();
-
+                // UPDATE EXISTING
+                permission = existing;
 
             } else {
 
-                // ================= NEW SAVE =================
-
+                // NEW SAVE
                 permission = new UserPermissionDTO();
 
                 permission.setUserName(dto.getUserName());
@@ -121,8 +160,6 @@ public class PermissionService {
                 );
 
                 permission.setRole(dto.getRole());
-
-
             }
 
             // ================= HOME =================
