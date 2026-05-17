@@ -17,6 +17,9 @@ public interface UserRepository extends JpaRepository<UserDto, String> {
     @Query(value = "SELECT * FROM logistics_logic.user_data WHERE user_id = :username", nativeQuery = true)
     UserDto findByUsername(String username);
 
+    @Query(value = "SELECT * FROM logistics_logic.user_data WHERE user_name = :userName AND company_code = :companyCode", nativeQuery = true)
+    UserDto findByUserNameAndCompanyCode(@Param("userName") String userName, @Param("companyCode") String companyCode);
+
     @Query(value = "SELECT * FROM logistics_logic.user_data WHERE branch_code = :BranchCode", nativeQuery = true)
     List<UserDto> findBycompanyName(String BranchCode);
 

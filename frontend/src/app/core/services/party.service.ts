@@ -14,6 +14,7 @@ export interface Party {
   mobileNumber1: string;
   city: string;
   tbb: boolean;
+  gstNumber?: string;
 }
 
 @Injectable({ providedIn: 'root' })

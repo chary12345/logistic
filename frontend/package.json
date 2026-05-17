@@ -4,7 +4,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build && git add -A ../backend/src/main/resources/static/ && (git commit -m \"chore: update build artifacts\" --no-verify ../backend/src/main/resources/static/ || true)",
+    "build": "ng build && git add -A ../src/main/resources/static/ && (git commit -m \"chore: update build artifacts\" --no-verify ../src/main/resources/static/ || true)",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },

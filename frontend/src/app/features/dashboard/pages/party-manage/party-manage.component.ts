@@ -67,7 +67,14 @@ import { Country, State, City } from 'country-state-city';
             <mat-error *ngIf="form.get('mobileNumber1')?.hasError('pattern') && form.get('mobileNumber1')?.touched">Valid 10-digit number required</mat-error>
           </mat-form-field>
 
-          <mat-form-field class="full-col">
+          <mat-form-field>
+            <mat-label>GST Number</mat-label>
+            <input matInput formControlName="gstNumber" placeholder="e.g. 07AAAAA0000A1Z5" class="text-uppercase">
+            <mat-error *ngIf="form.get('gstNumber')?.hasError('required') && form.get('gstNumber')?.touched">Required</mat-error>
+            <mat-error *ngIf="form.get('gstNumber')?.hasError('pattern') && form.get('gstNumber')?.touched">Invalid GST format</mat-error>
+          </mat-form-field>
+
+          <mat-form-field>
             <mat-label>Address</mat-label>
             <input matInput formControlName="address" placeholder="e.g. Hyderabad">
             <mat-error *ngIf="form.get('address')?.hasError('required') && form.get('address')?.touched">Required</mat-error>
@@ -76,7 +83,7 @@ import { Country, State, City } from 'country-state-city';
           <mat-form-field>
             <mat-label>Country</mat-label>
             <mat-select formControlName="country" (selectionChange)="onCountryChange($event.value)" placeholder="Select Country">
-              <!-- Sticky Search Box -->
+
               <div class="select-search-box">
                 <mat-icon class="search-icon">search</mat-icon>
                 <input class="search-input" [value]="countrySearch" (input)="countrySearch = $any($event.target).value" placeholder="Search country..." (keydown)="$event.stopPropagation()">
@@ -90,7 +97,7 @@ import { Country, State, City } from 'country-state-city';
           <mat-form-field>
             <mat-label>State</mat-label>
             <mat-select formControlName="state" (selectionChange)="onStateChange($event.value)" placeholder="Select State">
-              <!-- Sticky Search Box -->
+
               <div class="select-search-box">
                 <mat-icon class="search-icon">search</mat-icon>
                 <input class="search-input" [value]="stateSearch" (input)="stateSearch = $any($event.target).value" placeholder="Search state..." (keydown)="$event.stopPropagation()">
@@ -105,7 +112,7 @@ import { Country, State, City } from 'country-state-city';
           <mat-form-field>
             <mat-label>City</mat-label>
             <mat-select formControlName="city" placeholder="Select City">
-              <!-- Sticky Search Box -->
+
               <div class="select-search-box">
                 <mat-icon class="search-icon">search</mat-icon>
                 <input class="search-input" [value]="citySearch" (input)="citySearch = $any($event.target).value" placeholder="Search city..." (keydown)="$event.stopPropagation()">
@@ -181,6 +188,7 @@ export class PartyManageComponent implements OnInit, OnDestroy {
     partyType: ['', Validators.required],
     contactPerson: ['', Validators.required],
     mobileNumber1: ['', [Validators.required, Validators.pattern(/^\d{10}$/)]],
+    gstNumber: ['', [Validators.required, Validators.pattern(/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[A-Z0-9]{1}Z[A-Z0-9]{1}$/)]],
     address: ['', Validators.required],
     country: ['IN', Validators.required],
     state: ['', Validators.required],
@@ -250,7 +258,7 @@ export class PartyManageComponent implements OnInit, OnDestroy {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.loading = true;
 
-    // Resolve name strings for the payload from codes
+
     const selectedCountryObj = this.countries.find(c => c.isoCode === this.form.value.country);
     const selectedStateObj = this.states.find(s => s.isoCode === this.form.value.state);
 
@@ -263,6 +271,7 @@ export class PartyManageComponent implements OnInit, OnDestroy {
       partyType: this.form.value.partyType,
       contactPerson: this.form.value.contactPerson,
       mobileNumber1: this.form.value.mobileNumber1,
+      gstNumber: this.form.value.gstNumber?.toUpperCase(),
       address: this.form.value.address,
       country: selectedCountryObj ? selectedCountryObj.name : this.form.value.country,
       state: selectedStateObj ? selectedStateObj.name : this.form.value.state,

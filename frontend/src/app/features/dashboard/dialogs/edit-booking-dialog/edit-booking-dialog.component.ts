@@ -1,4 +1,4 @@
-import { Component, Inject, OnInit, OnDestroy } from '@angular/core';
+import { Component, Inject, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators, FormControl
@@ -15,9 +15,12 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { Subject, takeUntil, startWith } from 'rxjs';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { BookingService } from '../../../../core/services/booking.service';
+import { ContactService } from '../../../../core/services/contact.service';
 import { BranchService } from '../../../../core/services/branch.service';
 import { SnackbarService } from '../../../../core/services/snackbar.service';
 import { PaymentMode } from '../../../../core/services/payment-mode.service';
+import { Contact } from '../../../../shared/models/models';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 
 const ARTICLE_TYPES = [
   'Auto Parts', 'Electronics', 'Garments', 'Furniture', 'Food Items',
@@ -33,7 +36,7 @@ const ARTICLE_OPTIONS = ['Article', 'Weight', 'Fix'];
     CommonModule, ReactiveFormsModule, MatDialogModule,
     MatFormFieldModule, MatInputModule, MatSelectModule,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule,
-    MatDividerModule, MatTooltipModule
+    MatDividerModule, MatTooltipModule, MatAutocompleteModule
   ],
   templateUrl: './edit-booking-dialog.component.html',
   styleUrls: ['./edit-booking-dialog.component.scss']
@@ -47,7 +50,8 @@ export class EditBookingDialogComponent implements OnInit, OnDestroy {
 
   destinationSuggestions: string[] = [];
   filteredDestinations: string[] = [];
-  destinationFilterCtrl = new FormControl('');
+  consignorSuggestions: Contact[] = [];
+  consigneeSuggestions: Contact[] = [];
 
   saidToContainsList: string[] = [];
   filteredSaidToContains: string[] = [];
@@ -77,25 +81,24 @@ export class EditBookingDialogComponent implements OnInit, OnDestroy {
     private auth: AuthService,
     private bookingSvc: BookingService,
     private branchSvc: BranchService,
+    private contactSvc: ContactService,
     private snack: SnackbarService,
     private dialogRef: MatDialogRef<EditBookingDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: { lr: string }
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.buildForm();
     this.loadBranchDestinations();
     this.loadSaidToContains();
 
-    // Destination filter
-    this.destinationFilterCtrl.valueChanges.pipe(
+    this.form.get('deliveryDestination')?.valueChanges.pipe(
       startWith(''),
       takeUntil(this.destroy$)
     ).subscribe(value => {
       this.filterDestinations(value || '');
     });
 
-    // Said To Contain filter
     this.stcFilterCtrl.valueChanges.pipe(
       startWith(''),
       takeUntil(this.destroy$)
@@ -103,7 +106,6 @@ export class EditBookingDialogComponent implements OnInit, OnDestroy {
       this.filterSaidToContains(value || '');
     });
 
-    // Type filter
     this.typeFilterCtrl.valueChanges.pipe(
       startWith(''),
       takeUntil(this.destroy$)
@@ -112,7 +114,6 @@ export class EditBookingDialogComponent implements OnInit, OnDestroy {
       this.filteredArticleTypes = ARTICLE_TYPES.filter(t => t.toLowerCase().includes(search));
     });
 
-    // Article filter
     this.articleFilterCtrl.valueChanges.pipe(
       startWith(''),
       takeUntil(this.destroy$)
@@ -121,7 +122,6 @@ export class EditBookingDialogComponent implements OnInit, OnDestroy {
       this.filteredArticleOptions = ARTICLE_OPTIONS.filter(a => a.toLowerCase().includes(search));
     });
 
-    // Load booking data
     this.loadBookingData();
   }
 
@@ -150,8 +150,7 @@ export class EditBookingDialogComponent implements OnInit, OnDestroy {
       articles: this.fb.array([this.makeArticleRow()]),
     });
 
-    // Watch for charge changes
-    ['loadingCharge', 'lrCharge'].forEach(f => {
+    ['loadingCharge', 'lrCharge', 'consignorGST', 'consigneeGST'].forEach(f => {
       this.form.get(f)?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => this.recalcCharges());
     });
   }
@@ -169,16 +168,13 @@ export class EditBookingDialogComponent implements OnInit, OnDestroy {
 
         this.booking = booking;
 
-        // Set payment mode
         if (booking.billType) {
           this.paymentMode = booking.billType as PaymentMode;
         }
 
-        // Find the full destination string that matches the branch code
         const destCode = booking.destinationBranchCode;
         const matchingDest = this.destinationSuggestions.find(d => d.includes(`(${destCode})`));
 
-        // Patch form values
         this.form.patchValue({
           deliveryDestination: matchingDest || destCode,
           consignorName: booking.consignorName,
@@ -197,7 +193,6 @@ export class EditBookingDialogComponent implements OnInit, OnDestroy {
           lrCharge: booking.loadingCharge || 0,
         });
 
-        // Rebuild articles
         while (this.articles.length > 0) this.articles.removeAt(0);
         const articleDetails = booking.articleDetails || [];
         if (articleDetails.length > 0) {
@@ -205,7 +200,7 @@ export class EditBookingDialogComponent implements OnInit, OnDestroy {
             const qty = +(a.artQty) || 1;
             const amt = +(a.artAmt) || 0;
             this.articles.push(this.fb.group({
-              article: [a.article || null],
+              article: [a.article || 'Article'],
               artQuantity: [qty, [Validators.min(0)]],
               artType: [a.artType || null],
               saidToContain: [a.saidToContain || null],
@@ -217,7 +212,6 @@ export class EditBookingDialogComponent implements OnInit, OnDestroy {
           this.articles.push(this.makeArticleRow());
         }
 
-        // Reset search filters
         this.stcFilterCtrl.setValue('', { emitEvent: false });
         this.typeFilterCtrl.setValue('', { emitEvent: false });
         this.articleFilterCtrl.setValue('', { emitEvent: false });
@@ -250,7 +244,6 @@ export class EditBookingDialogComponent implements OnInit, OnDestroy {
               .map(b => `${b.branchName} (${b.branchCode})`);
             this.filterDestinations('');
 
-            // If booking is already loaded, try to match destination
             if (this.booking) {
               const destCode = this.booking.destinationBranchCode;
               const matchingDest = this.destinationSuggestions.find(d => d.includes(`(${destCode})`));
@@ -260,7 +253,7 @@ export class EditBookingDialogComponent implements OnInit, OnDestroy {
             }
           }
         },
-        error: () => {}
+        error: () => { }
       });
   }
 
@@ -274,7 +267,8 @@ export class EditBookingDialogComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: list => {
-          const combined = Array.from(new Set([...(list || []), ...defaults])).sort();
+          const dbValues = (list || []).filter((v: string) => v && v.trim());
+          const combined = Array.from(new Set([...dbValues, ...defaults])).sort();
           this.saidToContainsList = combined;
           this.filterSaidToContains('');
         },
@@ -299,13 +293,45 @@ export class EditBookingDialogComponent implements OnInit, OnDestroy {
     );
   }
 
+  searchConsignor(q: string): void {
+    if (!q || q.length < 2) { this.consignorSuggestions = []; return; }
+    this.contactSvc.search('consignor', q, this.auth.branchCode)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({ next: r => this.consignorSuggestions = r, error: () => { } });
+  }
+
+  fillConsignor(c: Contact): void {
+    this.form.patchValue({
+      consignorName: c.name, consignorMobile: c.mobile,
+      consignorGST: c.gst, consignorAddress: c.address,
+    });
+    this.consignorSuggestions = [];
+    this.recalcCharges();
+  }
+
+  searchConsignee(q: string): void {
+    if (!q || q.length < 2) { this.consigneeSuggestions = []; return; }
+    this.contactSvc.search('consignee', q, this.auth.branchCode)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({ next: r => this.consigneeSuggestions = r, error: () => { } });
+  }
+
+  fillConsignee(c: Contact): void {
+    this.form.patchValue({
+      consigneeName: c.name, consigneeMobile: c.mobile,
+      consigneeGST: c.gst, consigneeAddress: c.address,
+    });
+    this.consigneeSuggestions = [];
+    this.recalcCharges();
+  }
+
   makeArticleRow(): FormGroup {
     return this.fb.group({
-      article: [null],
-      artQuantity: [1, [Validators.min(0)]],
+      article: ['Article'],
+      artQuantity: [null, [Validators.min(0)]],
       artType: [null],
       saidToContain: [null],
-      artAmount: [0, [Validators.min(0)]],
+      artAmount: [null, [Validators.min(0)]],
       total: [{ value: 0, disabled: true }],
     });
   }
@@ -333,15 +359,28 @@ export class EditBookingDialogComponent implements OnInit, OnDestroy {
     const loading = +this.form.get('loadingCharge')?.value || 0;
     const lr = +this.form.get('lrCharge')?.value || 0;
     const base = freight + loading + lr;
-    const sgst = base * 0.025;
-    const cgst = base * 0.025;
-    const igst = base * 0.05;
+
+    const consignorGST = this.form.get('consignorGST')?.value;
+    const consigneeGST = this.form.get('consigneeGST')?.value;
+    const hasValidGST = !!consignorGST?.trim() || !!consigneeGST?.trim();
+
+    let sgst = 0;
+    let cgst = 0;
+    let igst = 0;
+    let grandTotal = base;
+
+    if (hasValidGST) {
+      sgst = base * 0.025;
+      cgst = base * 0.025;
+      grandTotal = base + sgst + cgst;
+    }
+
     this.form.patchValue({
       freight,
       sgst: +sgst.toFixed(2),
       cgst: +cgst.toFixed(2),
       igst: +igst.toFixed(2),
-      grandTotal: +(base + sgst + cgst).toFixed(2),
+      grandTotal: +grandTotal.toFixed(2),
     }, { emitEvent: false });
   }
 
@@ -359,7 +398,6 @@ export class EditBookingDialogComponent implements OnInit, OnDestroy {
     this.recalcCharges();
     const raw = this.form.getRawValue();
 
-    // Extract only the branch code from the selected destination
     let branchCodeOnly = raw.deliveryDestination;
     if (branchCodeOnly && branchCodeOnly.includes('(') && branchCodeOnly.includes(')')) {
       branchCodeOnly = branchCodeOnly.substring(branchCodeOnly.indexOf('(') + 1, branchCodeOnly.indexOf(')'));
@@ -416,6 +454,64 @@ export class EditBookingDialogComponent implements OnInit, OnDestroy {
       }
     });
   }
+
+  @HostListener('window:keydown', ['$event'])
+  onKey(e: KeyboardEvent): void {
+    if (e.key === 'F7') { e.preventDefault(); this.setPaymentMode('PAID'); }
+    else if (e.key === 'F8') { e.preventDefault(); this.setPaymentMode('TO PAY'); }
+    else if (e.key === 'F9') { e.preventDefault(); this.setPaymentMode('TBB'); }
+    else if (e.key === 'Enter') {
+      this.handleEnterKey(e);
+    }
+  }
+
+  private handleEnterKey(event: KeyboardEvent): void {
+    const target = event.target as HTMLElement;
+    const tagName = target.tagName.toLowerCase();
+
+    if (tagName === 'textarea' ||
+      target.closest('button') ||
+      target.getAttribute('aria-expanded') === 'true' ||
+      document.querySelector('.mat-mdc-autocomplete-panel') ||
+      document.querySelector('.mat-mdc-select-panel')) {
+      return;
+    }
+
+    const selectors = [
+      'input:not([type="hidden"]):not([disabled])',
+      'mat-select',
+      'textarea:not([disabled])',
+      '[tabindex="0"]:not([disabled])'
+    ];
+
+    const form = target.closest('form');
+    if (!form) return;
+
+    const elements = Array.from(form.querySelectorAll(selectors.join(',')))
+      .filter((el: any) => {
+        const style = window.getComputedStyle(el);
+        return style.display !== 'none' && style.visibility !== 'hidden' && el.offsetParent !== null;
+      }) as HTMLElement[];
+
+    const currentIndex = elements.indexOf(target);
+
+    if (currentIndex > -1 && currentIndex < elements.length - 1) {
+      event.preventDefault();
+      const nextElement = elements[currentIndex + 1];
+
+      if (nextElement.tagName.toLowerCase() === 'mat-select') {
+        const trigger = nextElement.querySelector('.mat-mdc-select-trigger') as HTMLElement;
+        if (trigger) trigger.focus();
+        else nextElement.focus();
+      } else {
+        nextElement.focus();
+      }
+    }
+  }
+
+  displayContactName = (val: any): string => {
+    return typeof val === 'string' ? val : val?.name || '';
+  };
 
   cancel(): void {
     this.dialogRef.close();

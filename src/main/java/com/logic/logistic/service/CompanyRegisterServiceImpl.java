@@ -248,24 +248,37 @@ public class CompanyRegisterServiceImpl implements CompanyRegisterService {
 		BranchDTO existing = branchRepo.findById(branchCode)
 				.orElseThrow(() -> new RuntimeException("Branch not found"));
 
-		// ✅ Null checks before setting
-		if (updatedBranch.getBranchType() != null) {
+		java.util.Map<String, String[]> changes = new java.util.LinkedHashMap<>();
+
+		// Branch Fields tracking
+		if (updatedBranch.getBranchType() != null && !java.util.Objects.equals(existing.getBranchType(), updatedBranch.getBranchType())) {
+			changes.put("Branch Type", new String[]{existing.getBranchType(), updatedBranch.getBranchType()});
 			existing.setBranchType(updatedBranch.getBranchType());
 		}
-		if (updatedBranch.getBranchPhone() != null) {
+		if (updatedBranch.getBranchPhone() != null && !java.util.Objects.equals(existing.getBranchPhone(), updatedBranch.getBranchPhone())) {
+			changes.put("Primary Phone", new String[]{existing.getBranchPhone(), updatedBranch.getBranchPhone()});
 			existing.setBranchPhone(updatedBranch.getBranchPhone());
 		}
-		if (updatedBranch.getBranchPhoneAlt() != null) {
+		if (updatedBranch.getBranchPhoneAlt() != null && !java.util.Objects.equals(existing.getBranchPhoneAlt(), updatedBranch.getBranchPhoneAlt())) {
+			changes.put("Alternate Phone", new String[]{existing.getBranchPhoneAlt(), updatedBranch.getBranchPhoneAlt()});
 			existing.setBranchPhoneAlt(updatedBranch.getBranchPhoneAlt());
 		}
-		if (updatedBranch.getBranchEmail() != null) {
+		if (updatedBranch.getBranchEmail() != null && !java.util.Objects.equals(existing.getBranchEmail(), updatedBranch.getBranchEmail())) {
+			changes.put("Branch Email", new String[]{existing.getBranchEmail(), updatedBranch.getBranchEmail()});
 			existing.setBranchEmail(updatedBranch.getBranchEmail());
 		}
-		if (updatedBranch.getGstIn() != null) {
+		if (updatedBranch.getGstIn() != null && !java.util.Objects.equals(existing.getGstIn(), updatedBranch.getGstIn())) {
+			changes.put("GSTIN", new String[]{existing.getGstIn(), updatedBranch.getGstIn()});
 			existing.setGstIn(updatedBranch.getGstIn());
 		}
-		if (updatedBranch.getContactPersonName() != null) {
+		if (updatedBranch.getContactPersonName() != null && !java.util.Objects.equals(existing.getContactPersonName(), updatedBranch.getContactPersonName())) {
+			changes.put("Contact Person", new String[]{existing.getContactPersonName(), updatedBranch.getContactPersonName()});
 			existing.setContactPersonName(updatedBranch.getContactPersonName());
+		}
+		// Sync active status explicitly
+		if (existing.isBranchActive() != updatedBranch.isBranchActive()) {
+			changes.put("Branch Status", new String[]{existing.isBranchActive() ? "ACTIVE" : "DEACTIVATED", updatedBranch.isBranchActive() ? "ACTIVE" : "DEACTIVATED"});
+			existing.setBranchActive(updatedBranch.isBranchActive());
 		}
 
 		// ✅ set current SQL date
@@ -276,25 +289,32 @@ public class CompanyRegisterServiceImpl implements CompanyRegisterService {
 		if (address != null && updatedBranch.getBranchAddress() != null) {
 			Address updatedAddr = updatedBranch.getBranchAddress();
 
-			if (updatedAddr.getAreaOrStreetline() != null) {
+			if (updatedAddr.getAreaOrStreetline() != null && !java.util.Objects.equals(address.getAreaOrStreetline(), updatedAddr.getAreaOrStreetline())) {
+				changes.put("Street Area", new String[]{address.getAreaOrStreetline(), updatedAddr.getAreaOrStreetline()});
 				address.setAreaOrStreetline(updatedAddr.getAreaOrStreetline());
 			}
-			if (updatedAddr.getFlatOrApartmentNumber() != null) {
+			if (updatedAddr.getFlatOrApartmentNumber() != null && !java.util.Objects.equals(address.getFlatOrApartmentNumber(), updatedAddr.getFlatOrApartmentNumber())) {
+				changes.put("Flat / Appt No", new String[]{address.getFlatOrApartmentNumber(), updatedAddr.getFlatOrApartmentNumber()});
 				address.setFlatOrApartmentNumber(updatedAddr.getFlatOrApartmentNumber());
 			}
-			if (updatedAddr.getLandMark() != null) {
+			if (updatedAddr.getLandMark() != null && !java.util.Objects.equals(address.getLandMark(), updatedAddr.getLandMark())) {
+				changes.put("Landmark", new String[]{address.getLandMark(), updatedAddr.getLandMark()});
 				address.setLandMark(updatedAddr.getLandMark());
 			}
-			if (updatedAddr.getPostalCode() != null) {
+			if (updatedAddr.getPostalCode() != null && !java.util.Objects.equals(address.getPostalCode(), updatedAddr.getPostalCode())) {
+				changes.put("Postal Code", new String[]{address.getPostalCode(), updatedAddr.getPostalCode()});
 				address.setPostalCode(updatedAddr.getPostalCode());
 			}
-			if (updatedAddr.getState() != null) {
+			if (updatedAddr.getState() != null && !java.util.Objects.equals(address.getState(), updatedAddr.getState())) {
+				changes.put("State", new String[]{address.getState(), updatedAddr.getState()});
 				address.setState(updatedAddr.getState());
 			}
-			if (updatedAddr.getCity() != null) {
+			if (updatedAddr.getCity() != null && !java.util.Objects.equals(address.getCity(), updatedAddr.getCity())) {
+				changes.put("City", new String[]{address.getCity(), updatedAddr.getCity()});
 				address.setCity(updatedAddr.getCity());
 			}
-			if (updatedAddr.getCountry() != null) {
+			if (updatedAddr.getCountry() != null && !java.util.Objects.equals(address.getCountry(), updatedAddr.getCountry())) {
+				changes.put("Country", new String[]{address.getCountry(), updatedAddr.getCountry()});
 				address.setCountry(updatedAddr.getCountry());
 			}
 
@@ -322,68 +342,11 @@ public class CompanyRegisterServiceImpl implements CompanyRegisterService {
 					result.getBranchPhone(),
 					result.getBranchPhoneAlt(),
 					result.getGstIn(),
-					result.getContactPersonName());
+					result.getContactPersonName(),
+					result.isBranchActive(),
+					changes);
 		}
 
-		return result;
-	}
-
-	@Override
-	@Transactional
-	public void deleteBranch(String branchCode) {
-		if (branchCode == null || branchCode.trim().isEmpty()) {
-			throw new IllegalArgumentException("Branch code is required");
-		}
-		BranchDTO branch = branchRepo.findById(branchCode)
-				.orElseThrow(() -> new RuntimeException("Branch not found: " + branchCode));
-
-		String email = branch.getBranchEmail();
-		String name = branch.getBranchName();
-		String companyCode = branch.getCompanyCode();
-
-		regionMasterRepo.deleteByBranchCode(branchCode);
-		logger.info("Deleted region_master records for branch: " + branchCode);
-
-		AddressDto address = addressRepo.findByBranchCode(branchCode);
-		if (address != null) {
-			addressRepo.delete(address);
-			logger.info("Deleted address for branch: " + branchCode);
-		}
-
-		branchRepo.delete(branch);
-		logger.info("Deleted branch: " + branchCode);
-
-		if (email != null && !email.isBlank()) {
-			emailService.sendBranchDeleteEmail(email, branchCode, name, companyCode);
-		}
-	}
-
-	@Override
-	@Transactional
-	public Map<String, Object> deleteMultipleBranches(List<String> branchCodes) {
-		Map<String, Object> result = new java.util.HashMap<>();
-		List<String> deleted = new java.util.ArrayList<>();
-		List<String> failed = new java.util.ArrayList<>();
-
-		if (branchCodes == null || branchCodes.isEmpty()) {
-			throw new IllegalArgumentException("No branch codes provided");
-		}
-
-		for (String code : branchCodes) {
-			try {
-				deleteBranch(code);
-				deleted.add(code);
-			} catch (Exception e) {
-				logger.error("Failed to delete branch " + code + ": " + e.getMessage());
-				failed.add(code);
-			}
-		}
-
-		result.put("deleted", deleted);
-		result.put("failed", failed);
-		result.put("deletedCount", deleted.size());
-		result.put("failedCount", failed.size());
-		result.put("status", failed.isEmpty() ? "SUCCESS" : (deleted.isEmpty() ? "FAILURE" : "PARTIAL"));
 		return result;
 	}
 

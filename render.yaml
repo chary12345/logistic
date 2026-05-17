@@ -2,7 +2,7 @@ services:
   - type: web
     name: logistic
     runtime: docker
-    rootDir: backend
+    rootDir: .
     dockerfilePath: ./Dockerfile
     envVars:
       - key: PORT

@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
@@ -285,6 +285,7 @@ export class LrReceiptDialogComponent {
   shouldDownload = false;
   isProcessing = false;
   isEditMode = false;
+  private ready = false;
 
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: { booking: any, isEditMode?: boolean },
@@ -293,6 +294,14 @@ export class LrReceiptDialogComponent {
     private snackbar: SnackbarService,
   ) {
     this.isEditMode = !!data.isEditMode;
+
+    setTimeout(() => this.ready = true, 300);
+  }
+
+  @HostListener('window:keyup.enter')
+  onEnter(): void {
+    if (!this.ready || this.isProcessing) return;
+    this.execute();
   }
 
   get booking() {
@@ -333,8 +342,6 @@ export class LrReceiptDialogComponent {
 
     this.isProcessing = false;
 
-    // Dismiss the dialog after processing
     this.dialogRef.close();
   }
 }
-

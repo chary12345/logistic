@@ -621,6 +621,22 @@
 
       .mat-mdc-text-field-wrapper {
         background: #fff;
+        padding-right: 0 !important;
+      }
+
+      .mat-mdc-form-field-icon-suffix {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        padding-right: 12px !important;
+        padding-left: 4px;
+
+        mat-icon {
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
+          color: #64748b;
+        }
       }
     }
 

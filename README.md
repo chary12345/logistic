@@ -30,14 +30,15 @@ The **1UNIQ TRANS Logistics Portal** is an enterprise-grade logistics and transp
 ## 📁 Repository Structure
 ```text
 logistic/
-├── backend/            # Spring Boot REST API & Business Logic
-│   ├── src/main/java   # Java Controllers, Services, Entities & Repositories
-│   ├── src/main/resources # application.properties, log4j2 configs, compiled static content
-│   └── pom.xml         # Maven configuration
+├── src/                # Spring Boot REST API & Business Logic (Unified Root Source)
+│   ├── main/java       # Java Controllers, Services, Entities & Repositories
+│   ├── main/resources  # application.properties, log4j2 configs, compiled static content
+│   └── test/java       # Unit and integration test suites
 ├── frontend/           # Angular 17 Single Page Application
 │   ├── src/app         # Core, Features, Shared UI modules
-│   ├── angular.json    # Build configuration strictly mapped to backend's /static dir
+│   ├── angular.json    # Build configuration strictly mapped to root src's /static dir
 │   └── package.json    # Node dependencies
+├── pom.xml             # Root Maven configuration
 └── README.md           # Project Documentation
 ```
 
@@ -50,9 +51,8 @@ logistic/
 - **Redis Server** (Running locally on port `6379` for optimization caches)
 
 ### 1. Start the Backend
-Open a terminal in the `backend/` folder and boot the Spring application:
+Open a terminal in the root directory and boot the Spring application:
 ```bash
-cd backend
 ./mvnw spring-boot:run
 ```
 *(The backend REST API will power on at `http://localhost:8080`)*
@@ -68,19 +68,18 @@ npm start
 
 ## 📦 Production Build & Deployment
 
-This mono-repo is strategically configured so the frontend compiles its final production bundles directly into the backend's static directory. This avoids messy CORS complications and yields a single, highly distributable FAT JAR.
+This mono-repo is strategically configured so the frontend compiles its final production bundles directly into the root src's static directory. This avoids messy CORS complications and yields a single, highly distributable FAT JAR.
 
 1. **Compile the Angular Application:**
    Open a terminal in `frontend/` and execute the production build pipeline:
    ```bash
    npm run build
    ```
-   *This executes `ng build`, meticulously optimizing JS/CSS chunks and securely injecting them directly into `../backend/src/main/resources/static`.*
+   *This executes `ng build`, meticulously optimizing JS/CSS chunks and securely injecting them directly into `../src/main/resources/static`.*
 
 2. **Package the Spring Boot Executable JAR:**
-   Navigate back to the `backend/` directory and run Maven to encapsulate the entire application:
+   Navigate back to the root directory and run Maven to encapsulate the entire application:
    ```bash
-   cd ../backend
    ./mvnw clean package -DskipTests
    ```
 

@@ -127,14 +127,12 @@ public interface BookRepository extends JpaRepository<Booking, String> {
 			"WHERE company_code = :companyCode " +
 			"AND (:state IS NULL OR state = :state) " +
 			"AND (:city IS NULL OR city = :city) " +
-			"AND (:branchCode IS NULL OR branch_code = :branchCode)",
-			nativeQuery = true)
+			"AND (:branchCode IS NULL OR branch_code = :branchCode)", nativeQuery = true)
 	List<String> getlistofBranchcodes(
 			@Param("city") String city,
 			@Param("state") String state,
 			@Param("branchCode") String branchCode,
-			@Param("companyCode") String companyCode
-	);
+			@Param("companyCode") String companyCode);
 
 	@Query("SELECT b FROM Booking b " + "WHERE b.bookingDate BETWEEN :fromDate AND :toDate "
 			+ "AND b.BranchCode IN (:branchCodes) " + "AND (:status IS NULL OR b.consignStatus = :status) "

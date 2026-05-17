@@ -1,14 +1,15 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { A11yModule } from '@angular/cdk/a11y';
 
 @Component({
   selector: 'app-booking-confirmation-dialog',
   standalone: true,
   imports: [
-    CommonModule, MatDialogModule, MatButtonModule, MatIconModule
+    CommonModule, MatDialogModule, MatButtonModule, MatIconModule, A11yModule
   ],
   template: `
     <div class="dialog-wrapper">
@@ -33,7 +34,7 @@ import { MatIconModule } from '@angular/material/icon';
           <mat-icon>{{ isNoChanges ? 'check' : 'close' }}</mat-icon>
           {{ isNoChanges ? 'Ok' : 'Cancel' }}
         </button>
-        <button *ngIf="!isNoChanges" mat-raised-button [color]="btnColor" [mat-dialog-close]="true" class="confirm-btn">
+        <button *ngIf="!isNoChanges" mat-raised-button [color]="btnColor" [mat-dialog-close]="true" class="confirm-btn" cdkFocusInitial>
           <mat-icon>check</mat-icon>
           Confirm
         </button>
@@ -197,11 +198,27 @@ export class BookingConfirmationDialogComponent {
   grandTotal: number;
   isEditMode: boolean;
   isNoChanges: boolean;
+  private ready = false;
 
-  constructor(@Inject(MAT_DIALOG_DATA) public data: { grandTotal: number, isEditMode?: boolean, isNoChanges?: boolean }) {
+  constructor(
+    @Inject(MAT_DIALOG_DATA) public data: { grandTotal: number, isEditMode?: boolean, isNoChanges?: boolean },
+    private dialogRef: MatDialogRef<BookingConfirmationDialogComponent>
+  ) {
     this.grandTotal = data.grandTotal;
     this.isEditMode = !!data.isEditMode;
     this.isNoChanges = !!data.isNoChanges;
+
+    setTimeout(() => this.ready = true, 300);
+  }
+
+  @HostListener('window:keyup.enter')
+  onEnter(): void {
+    if (!this.ready) return;
+    if (!this.isNoChanges) {
+      this.dialogRef.close(true);
+    } else {
+      this.dialogRef.close(false);
+    }
   }
 
   get headerClass(): string {

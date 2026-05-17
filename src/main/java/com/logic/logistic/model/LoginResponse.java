@@ -17,7 +17,16 @@ public class LoginResponse {
 	private String permissions;
 	private String blockReason;
 	private boolean blockUser;
+	private boolean isEmployeeActive = true;
 	private String blockedBy;
+
+	public boolean isEmployeeActive() {
+		return isEmployeeActive;
+	}
+	public void setEmployeeActive(boolean isEmployeeActive) {
+		this.isEmployeeActive = isEmployeeActive;
+	}
+	
 	private CompanyAndBranch companyAndBranchDeatils;
 	public String getFirstName() {
 		return firstName;

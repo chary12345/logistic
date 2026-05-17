@@ -64,13 +64,9 @@ export class BookingFormComponent implements OnInit, OnDestroy {
   destinationSuggestions: BranchMap[] = [];
   filteredDestinations: BranchMap[] = [];
   loadedBookingSnapshot: any = null;
-  destinationFilterCtrl = new FormControl('');
-  stcFilterCtrl = new FormControl('');
   filteredSaidToContains: string[] = [];
-  typeFilterCtrl = new FormControl('');
   filteredArticleTypes: string[] = [];
   articleTypes: string[] = [];
-  articleFilterCtrl = new FormControl('');
   filteredArticleOptions: string[] = ARTICLE_OPTIONS;
   nextLR = '';
   hasValidConsignorGST = false;
@@ -106,39 +102,13 @@ export class BookingFormComponent implements OnInit, OnDestroy {
     this.loadBranchDestinations();
     this.watchCharges();
 
-    // Set up autocomplete filter
-    this.destinationFilterCtrl.valueChanges.pipe(
+    this.form.get('deliveryDestination')?.valueChanges.pipe(
       startWith(''),
       takeUntil(this.destroy$)
     ).subscribe(value => {
       this.filterDestinations(value || '');
     });
 
-    // Set up Said To Contain filter
-    this.stcFilterCtrl.valueChanges.pipe(
-      startWith(''),
-      takeUntil(this.destroy$)
-    ).subscribe(value => {
-      this.filterSaidToContains(value || '');
-    });
-
-    // Set up Type filter
-    this.typeFilterCtrl.valueChanges.pipe(
-      startWith(''),
-      takeUntil(this.destroy$)
-    ).subscribe(value => {
-      this.filterArticleTypes(value || '');
-    });
-
-    // Set up Article filter
-    this.articleFilterCtrl.valueChanges.pipe(
-      startWith(''),
-      takeUntil(this.destroy$)
-    ).subscribe(value => {
-      this.filterArticleOptions(value || '');
-    });
-
-    // Subscribe to payment mode changes from dashboard header
     this.paymentModeSvc.getPaymentMode()
       .pipe(takeUntil(this.destroy$))
       .subscribe(mode => {
@@ -146,7 +116,6 @@ export class BookingFormComponent implements OnInit, OnDestroy {
         this.updatePartyNameValidation(mode);
       });
 
-    // Check for edit mode via ?lr= query param
     this.route.queryParams.pipe(takeUntil(this.destroy$)).subscribe(params => {
       if (params['lr']) {
         this.isEditMode = true;
@@ -180,7 +149,6 @@ export class BookingFormComponent implements OnInit, OnDestroy {
       paidVia: ['CASH'],
       loadingCharge: [0, [Validators.min(0)]],
       lrCharge: [0, [Validators.min(0)]],
-      // Calculated (readonly)
       freight: [{ value: 0, disabled: true }],
       sgst: [{ value: 0, disabled: true }],
       cgst: [{ value: 0, disabled: true }],
@@ -189,7 +157,6 @@ export class BookingFormComponent implements OnInit, OnDestroy {
       articles: this.fb.array([this.makeArticleRow()]),
     });
 
-    // Watch for GST field changes to update validation status
     this.form.get('consignorGST')?.valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => {
@@ -223,12 +190,9 @@ export class BookingFormComponent implements OnInit, OnDestroy {
       next: (booking: any) => {
         this.loadingBooking = false;
         if (!booking) { this.snack.error('Booking not found.'); return; }
-        this.stcFilterCtrl.setValue('', { emitEvent: false });
-        this.typeFilterCtrl.setValue('', { emitEvent: false });
         this.filterSaidToContains('');
         this.filterArticleTypes('');
 
-        // Set payment mode (backend returns billType)
         if (booking.billType) {
           this.paymentMode = booking.billType as PaymentMode;
           this.updatePartyNameValidation(this.paymentMode);
@@ -237,13 +201,10 @@ export class BookingFormComponent implements OnInit, OnDestroy {
           }
         }
 
-        // Find the full destination string that matches the branch code
-        // Find the branch object by code
         const destCode = booking.destinationBranchCode;
         const matchingDest = this.destinationSuggestions.find(d => d.branchCode === destCode);
         const destStr = matchingDest ? `${matchingDest.branchName} (${matchingDest.branchCode})` : destCode;
 
-        // Patch main fields (map backend field names to form controls)
         this.form.patchValue({
           deliveryDestination: destStr,
           partyName: booking.partyName || booking.consignorName || '',
@@ -264,7 +225,6 @@ export class BookingFormComponent implements OnInit, OnDestroy {
           lrCharge: booking.loadingCharge || 0,
         });
 
-        // Handle multiple e-waybills if stored as array or comma-separated
         if (booking.eWayBillNumbers) {
           this.ewayBillList = Array.isArray(booking.eWayBillNumbers) ? booking.eWayBillNumbers : [];
         } else if (booking.eWayBillNumber && booking.eWayBillNumber.includes(',')) {
@@ -276,7 +236,6 @@ export class BookingFormComponent implements OnInit, OnDestroy {
         }
         this.form.patchValue({ ewayBillList: this.ewayBillList });
 
-        // Rebuild articles (backend uses artQty/artAmt as strings)
         while (this.articles.length > 0) this.articles.removeAt(0);
         const articleDetails = booking.articleDetails || [];
         if (articleDetails.length > 0) {
@@ -284,7 +243,7 @@ export class BookingFormComponent implements OnInit, OnDestroy {
             const qty = +(a.artQty) || 1;
             const amt = +(a.artAmt) || 0;
             this.articles.push(this.fb.group({
-              article: [a.article || null],
+              article: [a.article || 'Article'],
               artQuantity: [qty, [Validators.min(0)]],
               artType: [(a.artType && a.artType !== '') ? a.artType : null],
               saidToContain: [a.saidToContain || null],
@@ -309,11 +268,11 @@ export class BookingFormComponent implements OnInit, OnDestroy {
 
   makeArticleRow(): FormGroup {
     return this.fb.group({
-      article: [null],
-      artQuantity: [1, [Validators.min(0)]],
+      article: ['Article'],
+      artQuantity: [null, [Validators.min(0)]],
       artType: [null],
       saidToContain: [null],
-      artAmount: [0, [Validators.min(0)]],
+      artAmount: [null, [Validators.min(0)]],
       total: [{ value: 0, disabled: true }],
     });
   }
@@ -345,7 +304,6 @@ export class BookingFormComponent implements OnInit, OnDestroy {
     const lr = +this.form.get('lrCharge')?.value || 0;
     const base = freight + loading + lr;
 
-    // Only calculate SGST and CGST if at least one valid GST number is present
     const hasValidConsignorGST = !!this.form.get('consignorGST')?.value && !this.form.get('consignorGST')?.hasError('invalidGST');
     const hasValidConsigneeGST = !!this.form.get('consigneeGST')?.value && !this.form.get('consigneeGST')?.hasError('invalidGST');
     const hasValidGST = hasValidConsignorGST || hasValidConsigneeGST;
@@ -381,6 +339,61 @@ export class BookingFormComponent implements OnInit, OnDestroy {
     if (e.key === 'F7') { e.preventDefault(); this.setPaymentMode('PAID'); }
     else if (e.key === 'F8') { e.preventDefault(); this.setPaymentMode('TO PAY'); }
     else if (e.key === 'F9') { e.preventDefault(); this.setPaymentMode('TBB'); }
+    else if (e.key === 'Enter') {
+      this.handleEnterKey(e);
+    }
+  }
+
+  private handleEnterKey(event: KeyboardEvent): void {
+    const target = event.target as HTMLElement;
+    const tagName = target.tagName.toLowerCase();
+
+    if (tagName === 'textarea' || target.closest('button')) {
+      return;
+    }
+
+    if (tagName === 'mat-select' &&
+      (target.getAttribute('aria-expanded') === 'true' || document.querySelector('.mat-mdc-select-panel'))) {
+      return;
+    }
+
+    if (tagName === 'input' &&
+      target.getAttribute('aria-expanded') === 'true' &&
+      target.getAttribute('aria-activedescendant')) {
+      return;
+    }
+
+    const selectors = [
+      'input:not([type="hidden"]):not([disabled])',
+      'mat-select',
+      'textarea:not([disabled])',
+      '[tabindex="0"]:not([disabled])'
+    ];
+
+    const form = target.closest('form');
+    if (!form) return;
+
+    const elements = Array.from(form.querySelectorAll(selectors.join(',')))
+      .filter((el: any) => {
+        const style = window.getComputedStyle(el);
+        return style.display !== 'none' && style.visibility !== 'hidden' && el.offsetParent !== null;
+      }) as HTMLElement[];
+
+    const currentIndex = elements.indexOf(target);
+
+    if (currentIndex > -1 && currentIndex < elements.length - 1) {
+      event.preventDefault();
+      const nextElement = elements[currentIndex + 1];
+
+      target.blur();
+      if (nextElement.tagName.toLowerCase() === 'mat-select') {
+        const trigger = nextElement.querySelector('.mat-mdc-select-trigger') as HTMLElement;
+        if (trigger) trigger.focus();
+        else nextElement.focus();
+      } else {
+        nextElement.focus();
+      }
+    }
   }
 
   updatePartyNameValidation(mode: PaymentMode): void {
@@ -471,15 +484,14 @@ export class BookingFormComponent implements OnInit, OnDestroy {
     const cc = this.auth.companyCode;
     if (!cc) return;
 
-    // Standard default options to show if the database is empty or alongside DB results
     const defaults = ['Cartons', 'Boxes', 'Bags', 'Bundles', 'Rolls', 'Cases', 'Crates', 'Pallets', 'Pieces', 'Drums'];
 
     this.bookingSvc.getSaidToContains(cc)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: list => {
-          // Merge API results with defaults, remove duplicates and sort
-          const combined = Array.from(new Set([...(list || []), ...defaults])).sort();
+          const dbValues = (list || []).filter(v => v && v.trim());
+          const combined = Array.from(new Set([...dbValues, ...defaults])).sort();
           this.saidToContainsList = combined;
           this.filterSaidToContains('');
         },
@@ -490,8 +502,8 @@ export class BookingFormComponent implements OnInit, OnDestroy {
       });
   }
 
-  private filterSaidToContains(val: string): void {
-    const search = (val || '').toLowerCase().trim();
+  filterSaidToContains(val: any): void {
+    const search = (typeof val === 'string' ? val : val?.value || '').toLowerCase().trim();
     this.filteredSaidToContains = this.saidToContainsList.filter(s =>
       (s || '').toLowerCase().includes(search)
     );
@@ -517,15 +529,15 @@ export class BookingFormComponent implements OnInit, OnDestroy {
       });
   }
 
-  private filterArticleTypes(val: string): void {
-    const search = (val || '').toLowerCase().trim();
+  filterArticleTypes(val: any): void {
+    const search = (typeof val === 'string' ? val : val?.value || '').toLowerCase().trim();
     this.filteredArticleTypes = this.articleTypes.filter(t =>
       (t || '').toLowerCase().includes(search)
     );
   }
 
-  private filterArticleOptions(val: string): void {
-    const search = (val || '').toLowerCase().trim();
+  filterArticleOptions(val: any): void {
+    const search = (typeof val === 'string' ? val : val?.value || '').toLowerCase().trim();
     this.filteredArticleOptions = ARTICLE_OPTIONS.filter(a =>
       a.toLowerCase().includes(search)
     );
@@ -607,7 +619,6 @@ export class BookingFormComponent implements OnInit, OnDestroy {
       consignorName: c.name, consignorMobile: c.mobile,
       consignorGST: c.gst, consignorAddress: c.address,
     });
-    // Update validation status for consignor GST
     this.hasValidConsignorGST = !this.form.get('consignorGST')?.hasError('invalidGST') && !!this.form.get('consignorGST')?.value;
     this.recalcCharges();
     this.consignorSuggestions = [];
@@ -625,16 +636,12 @@ export class BookingFormComponent implements OnInit, OnDestroy {
       consigneeName: c.name, consigneeMobile: c.mobile,
       consigneeGST: c.gst, consigneeAddress: c.address,
     });
-    // Update validation status for consignee GST
     this.hasValidConsigneeGST = !this.form.get('consigneeGST')?.hasError('invalidGST') && !!this.form.get('consigneeGST')?.value;
     this.recalcCharges();
     this.consigneeSuggestions = [];
   }
 
   resetForm(): void {
-    // Reset the FormGroupDirective first to clear Angular Material's 'submitted' state.
-    // This is the key fix: without this, mat-form-field continues showing red error
-    // outlines because the default ErrorStateMatcher checks (control.invalid && form.submitted).
     if (this.formDirective) {
       this.formDirective.resetForm({
         deliveryDestination: '',
@@ -657,7 +664,6 @@ export class BookingFormComponent implements OnInit, OnDestroy {
         lrCharge: 0,
       });
     } else {
-      // Fallback if ViewChild is not yet available
       this.form.reset({
         deliveryDestination: '',
         partyName: '',
@@ -683,13 +689,12 @@ export class BookingFormComponent implements OnInit, OnDestroy {
     }
 
     while (this.articles.length > 1) this.articles.removeAt(1);
-    this.articles.at(0).reset({ article: null, artQuantity: 1, artType: null, saidToContain: null, artAmount: 0 });
+    this.articles.at(0).reset({ article: 'Article', artQuantity: null, artType: null, saidToContain: null, artAmount: null });
     this.articles.controls.forEach(ctrl => {
       ctrl.markAsUntouched();
       ctrl.markAsPristine();
     });
 
-    // Reset GST validation flags
     this.hasValidConsignorGST = false;
     this.hasValidConsigneeGST = false;
     this.ewayBillList = [];
@@ -700,15 +705,10 @@ export class BookingFormComponent implements OnInit, OnDestroy {
     this.partySuggestions = [];
     this.isEditMode = false;
     this.editLR = '';
-    this.destinationFilterCtrl.setValue('');
-    this.stcFilterCtrl.setValue('');
-    this.typeFilterCtrl.setValue('');
-    this.articleFilterCtrl.setValue('');
     this.loadNextLR();
     this.consigneeSuggestions = [];
     this.loadedBookingSnapshot = null;
 
-    // Clear the editLr query param if present
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { lr: null },
@@ -731,7 +731,6 @@ export class BookingFormComponent implements OnInit, OnDestroy {
     this.recalcCharges();
     const raw = this.form.getRawValue();
 
-    // Show confirmation dialog for creation or if form is dirty in edit mode
     this.dialog.open(BookingConfirmationDialogComponent, {
       data: {
         grandTotal: raw.grandTotal,
@@ -748,7 +747,6 @@ export class BookingFormComponent implements OnInit, OnDestroy {
   }
 
   private proceedWithBooking(raw: any): void {
-    // Extract only the branch code from the selected destination string
     let branchCodeOnly = raw.deliveryDestination;
     if (branchCodeOnly && branchCodeOnly.includes('(') && branchCodeOnly.includes(')')) {
       branchCodeOnly = branchCodeOnly.substring(branchCodeOnly.indexOf('(') + 1, branchCodeOnly.indexOf(')'));
@@ -804,20 +802,20 @@ export class BookingFormComponent implements OnInit, OnDestroy {
     apiCall$.subscribe({
       next: (saved: any) => {
         this.loading = false;
-        
+
         // The backend returns BookingResponseDTO for create, and Booking entity for update.
         // We ensure articles and charges are always available for the PDF generator.
         let bookingData: any;
         if (!this.isEditMode && saved.booking) {
-          bookingData = { 
-            ...saved.booking, 
+          bookingData = {
+            ...saved.booking,
             articleDetails: saved.articles || [],
             ...saved.charges
           };
         } else {
           // In edit mode, 'saved' is the updated Booking entity.
           // We attach the articles from our local 'raw' form data so the PDF is fully populated.
-          bookingData = { 
+          bookingData = {
             ...saved,
             articleDetails: raw.articles.map((a: any) => ({
               artQty: String(a.artQuantity),
@@ -829,7 +827,7 @@ export class BookingFormComponent implements OnInit, OnDestroy {
             }))
           };
         }
-        
+
         const msg = this.isEditMode
           ? `Booking updated! LR: ${bookingData.loadingReciept || this.editLR}`
           : `Booking created! LR: ${bookingData.loadingReciept}`;
@@ -837,6 +835,9 @@ export class BookingFormComponent implements OnInit, OnDestroy {
 
         // Immediately refresh the LR number in the dashboard header
         this.branchSvc.notifyLrUpdated();
+
+        // Refresh the Said To Contain list so newly entered values appear in future bookings
+        this.loadSaidToContains();
 
         // Open the enhanced receipt dialog with print/download options
         this.dialog.open(LrReceiptDialogComponent, {
@@ -875,6 +876,16 @@ export class BookingFormComponent implements OnInit, OnDestroy {
       }
     });
   }
+
+  /** Prevents [object Object] in autocomplete inputs */
+  displayContactName = (val: any): string => {
+    return typeof val === 'string' ? val : val?.name || '';
+  };
+
+  /** Prevents [object Object] in party autocomplete input */
+  displayPartyName = (val: any): string => {
+    return typeof val === 'string' ? val : val?.partyName || '';
+  };
 
   ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
 }

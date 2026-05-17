@@ -48,15 +48,11 @@
         </div>
         <mat-form-field class="full-width">
           <mat-label>Select destination</mat-label>
-          <mat-select formControlName="deliveryDestination">
-            <div class="search-box" (keydown)="$event.stopPropagation()" (click)="$event.stopPropagation()">
-              <mat-icon class="search-icon">search</mat-icon>
-              <input [formControl]="destinationFilterCtrl" placeholder="Search branch..."
-                     autocomplete="off" class="search-input">
-            </div>
+          <input matInput formControlName="deliveryDestination" [matAutocomplete]="autoDest" placeholder="Type to search destination...">
+          <mat-autocomplete #autoDest="matAutocomplete">
             <mat-option *ngFor="let d of filteredDestinations" [value]="d">{{ d }}</mat-option>
             <mat-option *ngIf="filteredDestinations.length === 0" disabled>No branches found</mat-option>
-          </mat-select>
+          </mat-autocomplete>
           <mat-error *ngIf="form.get('deliveryDestination')?.hasError('required')">Required</mat-error>
         </mat-form-field>
       </div>
@@ -70,12 +66,17 @@
         <div class="form-grid">
           <mat-form-field>
             <mat-label>Consignor / Party Name</mat-label>
-            <input matInput formControlName="consignorName" autocomplete="off">
+            <input matInput formControlName="consignorName" [matAutocomplete]="autoConsignor" (input)="searchConsignor($any($event.target).value)" autocomplete="off">
+            <mat-autocomplete #autoConsignor="matAutocomplete" [displayWith]="displayContactName" (optionSelected)="fillConsignor($event.option.value)">
+              <mat-option *ngFor="let c of consignorSuggestions" [value]="c">
+                <strong>{{ c.name }}</strong> · {{ c.mobile }}
+              </mat-option>
+            </mat-autocomplete>
             <mat-error *ngIf="form.get('consignorName')?.hasError('required')">Required</mat-error>
           </mat-form-field>
           <mat-form-field>
             <mat-label>Mobile</mat-label>
-            <input matInput type="number" formControlName="consignorMobile" autocomplete="off">
+            <input matInput formControlName="consignorMobile" maxlength="10" inputmode="numeric" autocomplete="off">
             <mat-error *ngIf="form.get('consignorMobile')?.hasError('required')">Required</mat-error>
             <mat-error *ngIf="form.get('consignorMobile')?.hasError('pattern')">Invalid mobile</mat-error>
           </mat-form-field>
@@ -100,12 +101,17 @@
         <div class="form-grid">
           <mat-form-field>
             <mat-label>Name</mat-label>
-            <input matInput formControlName="consigneeName" autocomplete="off">
+            <input matInput formControlName="consigneeName" [matAutocomplete]="autoConsignee" (input)="searchConsignee($any($event.target).value)" autocomplete="off">
+            <mat-autocomplete #autoConsignee="matAutocomplete" [displayWith]="displayContactName" (optionSelected)="fillConsignee($event.option.value)">
+              <mat-option *ngFor="let c of consigneeSuggestions" [value]="c">
+                <strong>{{ c.name }}</strong> · {{ c.mobile }}
+              </mat-option>
+            </mat-autocomplete>
             <mat-error *ngIf="form.get('consigneeName')?.hasError('required')">Required</mat-error>
           </mat-form-field>
           <mat-form-field>
             <mat-label>Mobile</mat-label>
-            <input matInput type="number" formControlName="consigneeMobile" autocomplete="off">
+            <input matInput formControlName="consigneeMobile" maxlength="10" inputmode="numeric" autocomplete="off">
             <mat-error *ngIf="form.get('consigneeMobile')?.hasError('required')">Required</mat-error>
             <mat-error *ngIf="form.get('consigneeMobile')?.hasError('pattern')">Invalid mobile</mat-error>
           </mat-form-field>
@@ -134,7 +140,7 @@
             <thead>
               <tr>
                 <th>Article</th>
-                <th>Qty</th>
+                <th>Quantity</th>
                 <th>Type</th>
                 <th>Said To Contain</th>
                 <th>Rate (₹)</th>
@@ -156,10 +162,10 @@
                 </td>
                 <td>
                   <input type="number" formControlName="artQuantity" class="mini-input"
-                         (input)="onArticleChange(i)" min="0">
+                         placeholder="ex: 10" (input)="onArticleChange(i)" min="0">
                 </td>
                 <td>
-                  <mat-select formControlName="artType" class="mini-select" placeholder="Select..." panelClass="stc-panel">
+                  <mat-select formControlName="artType" class="mini-select" placeholder="ex: Cartons" panelClass="stc-panel">
                     <div class="stc-search-box" (keydown)="$event.stopPropagation()" (click)="$event.stopPropagation()">
                       <mat-icon class="search-icon">search</mat-icon>
                       <input [formControl]="typeFilterCtrl" placeholder="Search..." autocomplete="off" class="stc-search-input">
@@ -169,7 +175,7 @@
                   </mat-select>
                 </td>
                 <td>
-                  <mat-select formControlName="saidToContain" class="mini-select" placeholder="Select..." panelClass="stc-panel">
+                  <mat-select formControlName="saidToContain" class="mini-select" placeholder="ex: Wood" panelClass="stc-panel">
                     <div class="stc-search-box" (keydown)="$event.stopPropagation()" (click)="$event.stopPropagation()">
                       <mat-icon class="search-icon">search</mat-icon>
                       <input [formControl]="stcFilterCtrl" placeholder="Search..." autocomplete="off" class="stc-search-input">
@@ -180,7 +186,7 @@
                 </td>
                 <td>
                   <input type="number" formControlName="artAmount" class="mini-input"
-                         (input)="onArticleChange(i)" min="0">
+                         placeholder="ex: 100" (input)="onArticleChange(i)" min="0">
                 </td>
                 <td class="total-cell">₹{{ row.get('total')?.value || 0 }}</td>
                 <td>
@@ -218,11 +224,11 @@
               <div class="card-field">
                 <label>Quantity</label>
                 <input type="number" formControlName="artQuantity" class="card-input"
-                       (input)="onArticleChange(i)" min="0">
+                       placeholder="ex: 10" (input)="onArticleChange(i)" min="0">
               </div>
               <div class="card-field">
                 <label>Type</label>
-                <mat-select formControlName="artType" class="card-mat-select" placeholder="Select..." panelClass="stc-panel">
+                <mat-select formControlName="artType" class="card-mat-select" placeholder="ex: Cartons" panelClass="stc-panel">
                   <div class="stc-search-box" (keydown)="$event.stopPropagation()" (click)="$event.stopPropagation()">
                     <mat-icon class="search-icon">search</mat-icon>
                     <input [formControl]="typeFilterCtrl" placeholder="Search..." autocomplete="off" class="stc-search-input">
@@ -232,7 +238,7 @@
               </div>
               <div class="card-field">
                 <label>Said To Contain</label>
-                <mat-select formControlName="saidToContain" class="card-mat-select" placeholder="Select..." panelClass="stc-panel">
+                <mat-select formControlName="saidToContain" class="card-mat-select" placeholder="ex: Wood" panelClass="stc-panel">
                   <div class="stc-search-box" (keydown)="$event.stopPropagation()" (click)="$event.stopPropagation()">
                     <mat-icon class="search-icon">search</mat-icon>
                     <input [formControl]="stcFilterCtrl" placeholder="Search..." autocomplete="off" class="stc-search-input">
@@ -243,7 +249,7 @@
               <div class="card-field">
                 <label>Rate (₹)</label>
                 <input type="number" formControlName="artAmount" class="card-input"
-                       (input)="onArticleChange(i)" min="0">
+                       placeholder="ex: 100" (input)="onArticleChange(i)" min="0">
               </div>
               <div class="card-field total">
                 <label>Total</label>
