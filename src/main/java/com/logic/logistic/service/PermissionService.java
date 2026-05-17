@@ -9,7 +9,6 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -25,39 +24,34 @@ public class PermissionService {
         Map<String, Boolean> permissionMap;
 
         if (userDto.getUserName() != null && userDto.getCompanyCode() != null) {
-            UserPermissionDTO permission = getPermissions(userDto.getUserName(),userDto.getCompanyCode(),userDto.getRole());
+            UserPermissionDTO permission = getPermissions(userDto.getUserName(), userDto.getCompanyCode(),
+                    userDto.getRole());
 
             if (permission != null) {
 
                 permissionMap = convertPermissionToMap(permission);
-               if (userDto.getRole().equalsIgnoreCase("SUPERADMIN")||userDto.getRole().equalsIgnoreCase("MASTERADMIN"))
-                   permissionMap.put("globalSearch",true);
-
+                if (userDto.getRole().equalsIgnoreCase("SUPERADMIN")
+                        || userDto.getRole().equalsIgnoreCase("MASTERADMIN"))
+                    permissionMap.put("globalSearch", true);
 
             } else {
 
-                UserPermissionDTO defaults =
-                        PermissionDefaults.getDefaultPermissions(
-                                userDto.getRole()
-                        );
+                UserPermissionDTO defaults = PermissionDefaults.getDefaultPermissions(
+                        userDto.getRole());
 
                 permissionMap = convertPermissionToMap(defaults);
             }
 
         } else {
 
-            UserPermissionDTO defaults =
-                    PermissionDefaults.getDefaultPermissions(
-                            userDto.getRole()
-                    );
+            UserPermissionDTO defaults = PermissionDefaults.getDefaultPermissions(
+                    userDto.getRole());
 
             permissionMap = convertPermissionToMap(defaults);
         }
 
         return permissionMap;
     }
-
-
 
     public UserPermissionDTO getPermissions(
             String userName,
@@ -66,39 +60,38 @@ public class PermissionService {
 
         try {
 
-            if(userName == null || userName.trim().isEmpty()){
+            if (userName == null || userName.trim().isEmpty()) {
                 throw new RuntimeException("Username is required");
             }
 
-            if(companyCode == null || companyCode.trim().isEmpty()){
+            if (companyCode == null || companyCode.trim().isEmpty()) {
                 throw new RuntimeException("Company code is required");
             }
 
-            if(role == null || role.trim().isEmpty()){
+            if (role == null || role.trim().isEmpty()) {
                 throw new RuntimeException("Role is required");
             }
 
-            UserPermissionDTO permission =
-                    permissionRepo.getPermissions(
-                            userName,
-                            companyCode
-                    );
+            UserPermissionDTO permission = permissionRepo.getPermissions(
+                    userName,
+                    companyCode);
 
-            if(permission != null){
-                if (permission.getRole().equalsIgnoreCase("SUPERADMIN")||permission.getRole().equalsIgnoreCase("MASTERADMIN"))
+            if (permission != null) {
+                if (permission.getRole().equalsIgnoreCase("SUPERADMIN")
+                        || permission.getRole().equalsIgnoreCase("MASTERADMIN"))
                     permission.setGlobalSearch(true);
                 return permission;
             }
-             permission = PermissionDefaults.getDefaultPermissions(role);
-        return permission;
+            permission = PermissionDefaults.getDefaultPermissions(role);
+            return permission;
         } catch (Exception e) {
 
             throw new RuntimeException(
                     "Unable to fetch permissions : "
-                            + e.getMessage()
-            );
+                            + e.getMessage());
         }
     }
+
     @Transactional
     public UserPermissionDTO saveOrUpdatePermissions(UserPermissionDTO dto) {
 
@@ -128,7 +121,6 @@ public class PermissionService {
                 throw new RuntimeException("Role is required");
             }
 
-
             // ================= FIND EXISTING =================
 
             UserPermissionDTO existing =
@@ -136,8 +128,7 @@ public class PermissionService {
                     permissionRepo
                             .getPermissions(
                                     dto.getUserName(),
-                                    dto.getCompanyCode()
-                            );
+                                    dto.getCompanyCode());
 
             // ================= UPDATE / NEW =================
 
@@ -156,8 +147,7 @@ public class PermissionService {
                 permission.setUserName(dto.getUserName());
 
                 permission.setCompanyCode(
-                        dto.getCompanyCode()
-                );
+                        dto.getCompanyCode());
 
                 permission.setRole(dto.getRole());
             }
@@ -179,30 +169,24 @@ public class PermissionService {
             // ================= REPORTS =================
 
             permission.setBookingReport(
-                    dto.getBookingReport()
-            );
+                    dto.getBookingReport());
 
             permission.setDispatchReport(
-                    dto.getDispatchReport()
-            );
+                    dto.getDispatchReport());
 
             permission.setReceiveReport(
-                    dto.getReceiveReport()
-            );
+                    dto.getReceiveReport());
 
             permission.setDeliveryReport(
-                    dto.getDeliveryReport()
-            );
+                    dto.getDeliveryReport());
 
             // ================= STATEMENTS =================
 
             permission.setViewStatements(
-                    dto.getViewStatements()
-            );
+                    dto.getViewStatements());
 
             permission.setTbbInvoice(
-                    dto.getTbbInvoice()
-            );
+                    dto.getTbbInvoice());
 
             // ================= ADMIN =================
 
@@ -219,30 +203,24 @@ public class PermissionService {
             permission.setCharges(dto.getCharges());
 
             permission.setRolesAndPermissions(
-                    dto.getRolesAndPermissions()
-            );
+                    dto.getRolesAndPermissions());
 
             // ================= SAVE =================
 
             permission = permissionRepo.save(permission);
 
-
             return permission;
 
         } catch (Exception e) {
 
-
             throw new RuntimeException(
                     "Unable to save permissions : "
-                            + e.getMessage()
-            );
+                            + e.getMessage());
         }
     }
 
-
     private Map<String, Boolean> convertPermissionToMap(
-            UserPermissionDTO p
-    ) {
+            UserPermissionDTO p) {
 
         Map<String, Boolean> map = new HashMap<>();
 
@@ -265,6 +243,7 @@ public class PermissionService {
         map.put("employees", p.getEmployees());
         map.put("vehicles", p.getVehicles());
         map.put("parties", p.getParties());
+        map.put("articles", p.getCharges());
 
         map.put("rolesAndPermissions", p.getRolesAndPermissions());
         map.put("globalSearch", p.getGlobalSearch());
