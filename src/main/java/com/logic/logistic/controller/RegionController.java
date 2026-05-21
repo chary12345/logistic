@@ -12,7 +12,7 @@ import com.logic.logistic.service.RegionService;
 
 @RestController
 @RequestMapping("/region")
-public class ReportController {
+public class RegionController {
 
 	@Autowired
 	private RegionService regionService;

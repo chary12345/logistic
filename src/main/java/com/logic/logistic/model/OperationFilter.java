@@ -6,6 +6,7 @@ public class OperationFilter {
 	private String region;
 	private String subregion;
 	private String branchCode;
+	private String destinationBranchCode;
 	private String employeeName;
 	private String status;
 	public String getFromDate() {
@@ -37,6 +38,14 @@ public class OperationFilter {
 	}
 	public void setBranchCode(String branchCode) {
 		this.branchCode = branchCode;
+	}
+	
+	
+	public String getDestinationBranchCode() {
+		return destinationBranchCode;
+	}
+	public void setDestinationBranchCode(String destinationBranchCode) {
+		this.destinationBranchCode = destinationBranchCode;
 	}
 	public String getEmployeeName() {
 		return employeeName;

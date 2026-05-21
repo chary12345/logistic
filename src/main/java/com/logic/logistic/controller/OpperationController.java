@@ -33,6 +33,19 @@ public class OpperationController {
 		DispatchedResponseDTO result = operationService.disaptchedListByLsORVehicleNumber(lsId, vehicleNo);
 		return ResponseEntity.ok(result);
 	}
+	
+	@GetMapping("/loadingSheet/list")
+	public ResponseEntity<?> getLoadingSheets(
+	    @RequestParam String companyCode,
+	    @RequestParam String destinationBranch){
+
+	    return ResponseEntity.ok(
+	    		operationService.getLoadingSheetList(
+	                companyCode,
+	                destinationBranch
+	            )
+	    );
+	}
 
 	@PostMapping("/receive")
 	public ResponseEntity<String> receiveSelectedLrs(@RequestBody ReceiveRequest request) {
