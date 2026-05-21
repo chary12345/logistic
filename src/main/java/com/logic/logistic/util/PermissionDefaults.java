@@ -41,7 +41,7 @@ public class PermissionDefaults {
                 p.setCharges(true);
                 p.setRolesAndPermissions(true);
                 p.setGlobalSearch(true);
-
+				p.setLoadingSheetList(true);
                 break;
 
 
@@ -71,6 +71,7 @@ public class PermissionDefaults {
 
                 p.setCharges(true);
                 p.setRolesAndPermissions(true);
+                p.setLoadingSheetList(true);
                 p.setGlobalSearch(true);
                 break;
 

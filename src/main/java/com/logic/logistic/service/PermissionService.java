@@ -204,6 +204,7 @@ public class PermissionService {
 
             permission.setRolesAndPermissions(
                     dto.getRolesAndPermissions());
+            permission.setLoadingSheetList(dto.getLoadingSheetList());
 
             // ================= SAVE =================
 
@@ -231,6 +232,8 @@ public class PermissionService {
         map.put("receive", p.getReceive());
         map.put("delivery", p.getDelivery());
 
+        map.put("loadingSheetList", p.getLoadingSheetList());
+
         map.put("bookingReport", p.getBookingReport());
         map.put("dispatchReport", p.getDispatchReport());
         map.put("receiveReport", p.getReceiveReport());
@@ -248,6 +251,7 @@ public class PermissionService {
         map.put("rolesAndPermissions", p.getRolesAndPermissions());
         map.put("globalSearch", p.getGlobalSearch());
         map.put("charges", p.getCharges());
+        
 
         return map;
     }

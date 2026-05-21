@@ -16,10 +16,16 @@ import jakarta.transaction.Transactional;
 @Repository
 @Transactional
 public interface BookRepository extends JpaRepository<Booking, String> {
-	@Query("SELECT b FROM Booking b WHERE b.bookingDate BETWEEN :fromDate AND :toDate or b.consignStatus = :status AND b.BranchCode= :branchCode ORDER BY b.bookingDate DESC")
-	List<Booking> findByBookingDateBetween(@Param("fromDate") LocalDateTime fromDate,
-			@Param("toDate") LocalDateTime toDate, @Param("status") String status,
-			@Param("branchCode") String branchCode);
+	@Query("""
+		    SELECT b
+		    FROM Booking b
+		    WHERE
+		    b.consignStatus = :status
+		    AND b.BranchCode = :fromBranch
+		    AND b.destinationBranchCode = :destinationBranch
+		    ORDER BY b.bookingDate DESC
+		""")	List<Booking> getBookingsWithFilter(@Param("status") String status,
+			@Param("fromBranch") String branchCode,@Param("destinationBranch") String destinationBranchCode);
 
 	@Query(value = """
 			SELECT * FROM booking b
