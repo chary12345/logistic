@@ -57,6 +57,8 @@ public class UserPermissionDTO {
     private Boolean charges = false;
     @Column(name = "roles_and_permissions")
     private Boolean rolesAndPermissions = false;
+    @Column(name = "loading_sheet_list")
+    private Boolean loadingSheetList = false;
     @Transient
     private Boolean globalSearch = false;
 
@@ -228,7 +230,15 @@ public class UserPermissionDTO {
         this.rolesAndPermissions = rolesAndPermissions;
     }
 
-    public Boolean getGlobalSearch() {
+    public Boolean getLoadingSheetList() {
+		return loadingSheetList;
+	}
+
+	public void setLoadingSheetList(Boolean loadingSheetList) {
+		this.loadingSheetList = loadingSheetList;
+	}
+
+	public Boolean getGlobalSearch() {
         return globalSearch;
     }
 

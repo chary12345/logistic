@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.logic.logistic.dto.Booking;
 import com.logic.logistic.dto.DispatchedResponseDTO;
+import com.logic.logistic.dto.LoadingSheetDTO;
 import com.logic.logistic.dto.ReceiveRequest;
 import com.logic.logistic.model.OperationFilter;
 
@@ -16,4 +17,5 @@ public interface OperationService {
 	List<Booking> getReceivedLrsForDelivery(String destinationBranchCode, String lrNumber);
 
 	void deliverSelectedLrs(List<String> lrIds);
+	List<LoadingSheetDTO> getLoadingSheetList(String companyCode, String destinationBranch);
 }
