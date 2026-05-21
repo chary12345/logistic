@@ -28,12 +28,13 @@ public class OperationServiceImpl implements OperationService {
 	@Override
 	public List<Booking> getBookingsWithFilter(OperationFilter filter) {
 		LocalDateTime from = null;
-		LocalDateTime to = null ;
-		if(filter.getFromDate()!=null)
+		LocalDateTime to = null;
+		if (filter.getFromDate() != null)
 			from = toDateTime(filter.getFromDate());
-		if(filter.getToDate()!=null)
+		if (filter.getToDate() != null)
 			to = toDateTime(filter.getToDate());
-		List<Booking> findByBookingDateBetween = bookingRepository.findByBookingDateBetween(from, to, "BOOKED",filter.getBranchCode());
+		List<Booking> findByBookingDateBetween = bookingRepository.getBookingsWithFilter("BOOKED",
+				filter.getBranchCode(),filter.getDestinationBranchCode());
 
 		return findByBookingDateBetween;
 	}
@@ -64,14 +65,14 @@ public class OperationServiceImpl implements OperationService {
 		}
 
 		// 🔥 Fetch only DISPATCHED bookings
-		List<Booking> bookings = bookingRepository
-				.findByLoadingRecieptInAndConsignStatus(lrIds, "DISPATCHED");
+		List<Booking> bookings = bookingRepository.findByLoadingRecieptInAndConsignStatus(lrIds, "DISPATCHED");
 
 		response.setBookings(bookings);
 		response.setStatus("SUCCESS");
 
 		return response;
 	}
+
 	private List<String> getDispatchedLrIds(String json) {
 
 		List<String> result = new ArrayList<>();
@@ -87,9 +88,8 @@ public class OperationServiceImpl implements OperationService {
 			// 🔹 OLD FORMAT → ["LR1","LR2"]
 			if (!json.contains("lrId")) {
 
-				List<String> lrIds = mapper.readValue(
-						json, new TypeReference<List<String>>() {}
-				);
+				List<String> lrIds = mapper.readValue(json, new TypeReference<List<String>>() {
+				});
 
 				result.addAll(lrIds); // all considered dispatched
 			}
@@ -97,9 +97,8 @@ public class OperationServiceImpl implements OperationService {
 			// 🔹 NEW FORMAT → [{lrId,status}]
 			else {
 
-				List<Map<String, String>> list = mapper.readValue(
-						json, new TypeReference<List<Map<String, String>>>() {}
-				);
+				List<Map<String, String>> list = mapper.readValue(json, new TypeReference<List<Map<String, String>>>() {
+				});
 
 				for (Map<String, String> item : list) {
 
@@ -120,6 +119,7 @@ public class OperationServiceImpl implements OperationService {
 
 		return result;
 	}
+
 	@Override
 	public void receiveSelectedLrs(ReceiveRequest request) {
 
@@ -142,7 +142,8 @@ public class OperationServiceImpl implements OperationService {
 				// CASE 1: Old format ["LR1","LR2"]
 				if (json.contains("\"") && !json.contains("lrId")) {
 
-					List<String> lrIds = mapper.readValue(json, new TypeReference<List<String>>() {});
+					List<String> lrIds = mapper.readValue(json, new TypeReference<List<String>>() {
+					});
 
 					for (String lrId : lrIds) {
 						Map<String, String> obj = new HashMap<>();
@@ -159,8 +160,9 @@ public class OperationServiceImpl implements OperationService {
 
 				} else {
 					// CASE 2: Already object format
-					List<Map<String, String>> existingList =
-							mapper.readValue(json, new TypeReference<List<Map<String, String>>>() {});
+					List<Map<String, String>> existingList = mapper.readValue(json,
+							new TypeReference<List<Map<String, String>>>() {
+							});
 
 					for (Map<String, String> item : existingList) {
 
@@ -189,8 +191,7 @@ public class OperationServiceImpl implements OperationService {
 		}
 
 		// 🔹 Update Booking Table
-		List<Booking> bookings = bookingRepository
-				.findByLoadingRecieptIn(selectedLrIds);
+		List<Booking> bookings = bookingRepository.findByLoadingRecieptIn(selectedLrIds);
 
 		for (Booking b : bookings) {
 			b.setRecieveDate(LocalDateTime.now());
@@ -207,8 +208,7 @@ public class OperationServiceImpl implements OperationService {
 		}
 
 		// 🔹 Update LS Status
-		boolean allReceived = updatedList.stream()
-				.allMatch(item -> "RECEIVED".equals(item.get("status")));
+		boolean allReceived = updatedList.stream().allMatch(item -> "RECEIVED".equals(item.get("status")));
 
 		if (allReceived) {
 			ls.setStatus("RECEIVED");
@@ -229,25 +229,21 @@ public class OperationServiceImpl implements OperationService {
 		// If a specific LR number is provided, filter to that single LR
 		if (lrNumber != null && !lrNumber.trim().isEmpty()) {
 			Booking booking = bookingRepository.findByLoadingReciept(lrNumber.trim());
-			if (booking == null
-					|| !"RECEIVED".equalsIgnoreCase(booking.getConsignStatus())
+			if (booking == null || !"RECEIVED".equalsIgnoreCase(booking.getConsignStatus())
 					|| !destinationBranchCode.equalsIgnoreCase(booking.getDestinationBranchCode())) {
 				return new ArrayList<>();
 			}
 			return List.of(booking);
 		}
 
-		return bookingRepository.findByConsignStatusAndDestinationBranchCode(
-				"RECEIVED", destinationBranchCode
-		);
+		return bookingRepository.findByConsignStatusAndDestinationBranchCode("RECEIVED", destinationBranchCode);
 	}
 
 	@Override
 	public void deliverSelectedLrs(List<String> lrIds) {
 
 		// 🔹 Fetch bookings
-		List<Booking> bookings = bookingRepository
-				.findByLoadingRecieptIn(lrIds);
+		List<Booking> bookings = bookingRepository.findByLoadingRecieptIn(lrIds);
 
 		if (bookings == null || bookings.isEmpty()) {
 			throw new RuntimeException("No LRs found for delivery");
@@ -262,9 +258,7 @@ public class OperationServiceImpl implements OperationService {
 				booking.setDeliveryDate(LocalDateTime.now());
 
 			} else {
-				throw new RuntimeException(
-						"LR " + booking.getLoadingReciept() + " is not in RECEIVED state"
-				);
+				throw new RuntimeException("LR " + booking.getLoadingReciept() + " is not in RECEIVED state");
 			}
 		}
 
@@ -273,7 +267,14 @@ public class OperationServiceImpl implements OperationService {
 	}
 
 	public static LocalDateTime toDateTime(String input) {
-	DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
-	return LocalDateTime.parse(input, formatter);
-}
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
+		return LocalDateTime.parse(input, formatter);
+	}
+
+	@Override
+	public List<LoadingSheetDTO> getLoadingSheetList(String companyCode, String destinationBranch) {
+
+		return loadingSheetRepository.findByDestinationBranchAndStatusNotOrNull( destinationBranch,
+				"COMPLETED");
+	}
 }
