@@ -1314,9 +1314,183 @@ public class EmailService {
         return sb.toString();
     }
 
+    @Async
+    public void sendBookingEmail(
+            String toEmail,
+            com.logic.logistic.model.BookingDTO booking,
+            String companyFullName,
+            String branchName,
+            boolean isUpdate) {
+
+        if (toEmail == null || toEmail.isBlank()) {
+            logger.warn("Booking email address is blank, skipping email.");
+            return;
+        }
+
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromEmail, companyName);
+            helper.setTo(toEmail);
+            String subjectAction = isUpdate ? "Updated" : "Created";
+            helper.setSubject(companyName + " — Booking " + subjectAction + ": " + booking.getLoadingReciept());
+            
+            helper.setText(buildBookingEmailHtml(booking, companyFullName, branchName, isUpdate), true);
+
+            mailSender.send(message);
+            logger.info("Booking {} email sent successfully to: {}", subjectAction, toEmail);
+
+        } catch (Exception e) {
+            logger.error("Failed to send booking email to {}: {}", toEmail, e.getMessage());
+        }
+    }
+
+    private String buildBookingEmailHtml(
+            com.logic.logistic.model.BookingDTO booking,
+            String companyFullName,
+            String branchName,
+            boolean isUpdate) {
+
+        String gradient = isUpdate ? "linear-gradient(135deg,#0d9488 0%,#0f766e 60%,#115e59 100%)" : "linear-gradient(135deg,#10b981 0%,#059669 60%,#047857 100%)";
+        String bannerBg = isUpdate ? "#0f766e" : "#059669";
+        String bannerIcon = isUpdate ? "✎" : "✦";
+        String badgeText = isUpdate ? "BOOKING UPDATED" : "NEW BOOKING";
+        String bannerStatusText = isUpdate ? "has been successfully updated." : "has been successfully created.";
+        String bodyHeadingText = isUpdate ? "updated" : "created";
+        String accentColor = isUpdate ? "#0d9488" : "#059669";
+
+        double gst = booking.getSgst() + booking.getCgst() + booking.getIgst();
+        double computedTotal = booking.getFreight() + booking.getLrCharge() + booking.getHamali() + booking.getLoading() + booking.getStationary() + booking.getOtherCharges() + booking.getOtherTransportCharges() + booking.getMiscellaneous() + booking.getCrossingAmount() + booking.getPodCharges() + booking.getDoorDelivery() + booking.getDoorPickup() + booking.getDdc() + booking.getDcc() + booking.getDemurrage() + booking.getUnloading() + booking.getLocalVehicle() + booking.getCrossingHire() + booking.getLoadingCharge() + gst;
+        double displayTotal = booking.getTotalAmount() > 0 ? booking.getTotalAmount() : (computedTotal > 0 ? computedTotal : booking.getFreight());
+
+        return """
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Booking Confirmation — %s</title>
+            </head>
+            <body style="margin:0;padding:0;background-color:#f0f4f8;font-family:'Segoe UI',Arial,sans-serif;">
+              <table width="100%%" cellpadding="0" cellspacing="0" style="background-color:#f0f4f8;padding:32px 0;">
+                <tr><td align="center">
+                  <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%%;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.10);">
+                    <!-- HEADER -->
+                    <tr>
+                      <td style="background:%s;padding:36px 40px 28px 40px;">
+                        <table width="100%%" cellpadding="0" cellspacing="0">
+                          <tr>
+                            <td>
+                              <div style="font-size:22px;font-weight:700;color:#ffffff;letter-spacing:1px;">%s</div>
+                              <div style="font-size:12px;color:rgba(255,255,255,0.75);margin-top:4px;letter-spacing:2px;text-transform:uppercase;">Logistics Management System</div>
+                            </td>
+                            <td align="right">
+                              <div style="background:rgba(255,255,255,0.15);border-radius:8px;padding:8px 14px;display:inline-block;">
+                                <span style="font-size:11px;color:#ffffff;font-weight:600;letter-spacing:1px;">%s</span>
+                              </div>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                    <!-- STATUS BANNER -->
+                    <tr>
+                      <td style="background:%s;padding:18px 40px;">
+                        <p style="margin:0;font-size:15px;color:#e8f5e9;font-style:italic;">
+                          %s &nbsp;Booking LR No: <strong style="color:#ffffff;">%s</strong> %s
+                        </p>
+                      </td>
+                    </tr>
+                    <!-- BODY -->
+                    <tr>
+                      <td style="padding:36px 40px 28px 40px;">
+                        <p style="margin:0 0 24px 0;font-size:14px;color:#37474f;line-height:1.7;">
+                          This is an official notification that a booking has been %s 
+                          under <strong>%s</strong> at branch <strong>%s</strong>.
+                        </p>
+                        <!-- BOOKING DETAILS -->
+                        <table width="100%%" cellpadding="0" cellspacing="0" style="background:#f1f8e9;border:1px solid #a5d6a7;border-radius:10px;margin-bottom:20px;">
+                          <tr>
+                            <td style="padding:20px 24px 4px 24px;">
+                              <p style="margin:0 0 4px 0;font-size:11px;font-weight:700;color:%s;letter-spacing:2px;text-transform:uppercase;">Booking Details</p>
+                              <hr style="border:none;border-top:2px solid #a5d6a7;margin:10px 0 16px 0;">
+                            </td>
+                          </tr>
+                          %s
+                          <tr><td style="height:12px;"></td></tr>
+                        </table>
+                        <!-- CONSIGNOR / CONSIGNEE -->
+                        <table width="100%%" cellpadding="0" cellspacing="0" style="background:#e8f5e9;border:1px solid #81c784;border-radius:10px;margin-bottom:20px;">
+                          <tr>
+                            <td style="padding:20px 24px 4px 24px;">
+                              <p style="margin:0 0 4px 0;font-size:11px;font-weight:700;color:%s;letter-spacing:2px;text-transform:uppercase;">Parties Involved</p>
+                              <hr style="border:none;border-top:2px solid #81c784;margin:10px 0 16px 0;">
+                            </td>
+                          </tr>
+                          %s
+                          <tr><td style="height:12px;"></td></tr>
+                        </table>
+                        <p style="margin:0;font-size:13px;color:#78909c;line-height:1.6;">
+                          For any queries regarding this booking, please contact the system administrator at
+                          <a href="mailto:%s" style="color:%s;text-decoration:none;">%s</a>.
+                        </p>
+                      </td>
+                    </tr>
+                    <!-- FOOTER -->
+                    <tr>
+                      <td style="background:#eceff1;padding:20px 40px;border-top:1px solid #e0e0e0;">
+                        <table width="100%%" cellpadding="0" cellspacing="0">
+                          <tr>
+                            <td>
+                              <p style="margin:0;font-size:12px;color:#90a4ae;">© %d %s. All rights reserved.</p>
+                              <p style="margin:4px 0 0 0;font-size:11px;color:#b0bec5;">This is an automated email. Please do not reply directly to this message.</p>
+                            </td>
+                            <td align="right">
+                              <p style="margin:0;font-size:11px;color:#b0bec5;font-weight:600;">POWERED BY 1UNIQ</p>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+                </td></tr>
+              </table>
+            </body>
+            </html>
+            """.formatted(
+                companyName,
+                gradient,
+                companyName,
+                badgeText,
+                bannerBg,
+                bannerIcon,
+                booking.getLoadingReciept() != null ? booking.getLoadingReciept() : "N/A",
+                bannerStatusText,
+                bodyHeadingText,
+                companyFullName != null ? companyFullName : companyName,
+                branchName != null ? branchName : (booking.getBranchCode() != null ? booking.getBranchCode() : "N/A"),
+                accentColor,
+                buildRow(accentColor, "LR Number", booking.getLoadingReciept()) +
+                buildRow(accentColor, "From Branch", booking.getBranchCode()) +
+                buildRow(accentColor, "To Branch", booking.getDestinationBranchCode()) +
+                buildRow(accentColor, "Bill Type", booking.getBillType()) +
+                buildRow(accentColor, "Total Amount", "Rs. " + displayTotal),
+                accentColor,
+                buildRow(accentColor, "Consignor", (booking.getConsignorName()!=null?booking.getConsignorName():"-") + " (" + (booking.getConsignorMobile()!=null?booking.getConsignorMobile():"") + ")") +
+                buildRow(accentColor, "Consignee", (booking.getConsigneeName()!=null?booking.getConsigneeName():"-") + " (" + (booking.getConsigneeMobile()!=null?booking.getConsigneeMobile():"") + ")"),
+                fromEmail,
+                accentColor,
+                fromEmail,
+                java.time.LocalDate.now().getYear(),
+                companyName
+        );
+    }
+
     // ────────────────────────────────────────────────────────────────
     // SHARED HELPER — Table Row
     // ────────────────────────────────────────────────────────────────
+
     private String buildRow(String accentColor, String label, String value) {
         return """
             <tr>
