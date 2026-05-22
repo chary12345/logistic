@@ -5,7 +5,8 @@ import java.util.List;
 public class UserChargeConfigModel {
         private String companyCode;
         private String userId;
-        private List<ChargeItem> charges;
+        private List<ChargeItem> availableCharges;
+        private List<ChargeItem> selectedCharges;
 
         public static class ChargeItem {
             private String chargeName;
@@ -44,11 +45,19 @@ public class UserChargeConfigModel {
         this.userId = userId;
     }
 
-    public List<ChargeItem> getCharges() {
-        return charges;
+    public List<ChargeItem> getAvailableCharges() {
+        return availableCharges;
     }
 
-    public void setCharges(List<ChargeItem> charges) {
-        this.charges = charges;
+    public void setAvailableCharges(List<ChargeItem> availableCharges) {
+        this.availableCharges = availableCharges;
+    }
+
+    public List<ChargeItem> getSelectedCharges() {
+        return selectedCharges;
+    }
+
+    public void setSelectedCharges(List<ChargeItem> selectedCharges) {
+        this.selectedCharges = selectedCharges;
     }
 }
