@@ -22,6 +22,9 @@ public class UserChargeConfigDTO {
     @Column(name = "display_order")
     private Integer displayOrder;
 
+    @Column(name = "is_selected")
+    private Boolean isSelected;
+
     public Long getId() {
         return id;
     }
@@ -60,5 +63,13 @@ public class UserChargeConfigDTO {
 
     public void setDisplayOrder(Integer displayOrder) {
         this.displayOrder = displayOrder;
+    }
+
+    public Boolean getIsSelected() {
+        return isSelected;
+    }
+
+    public void setIsSelected(Boolean isSelected) {
+        this.isSelected = isSelected;
     }
 }

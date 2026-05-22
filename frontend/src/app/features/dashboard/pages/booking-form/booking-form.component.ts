@@ -25,6 +25,7 @@ import { BranchService } from '../../../../core/services/branch.service';
 import { SnackbarService } from '../../../../core/services/snackbar.service';
 import { PaymentModeService, PaymentMode } from '../../../../core/services/payment-mode.service';
 import { PartyService, Party } from '../../../../core/services/party.service';
+import { HttpClient } from '@angular/common/http';
 import { LrReceiptDialogComponent } from '../../dialogs/lr-receipt-dialog/lr-receipt-dialog.component';
 import { BookingConfirmationDialogComponent } from '../../dialogs/booking-confirmation-dialog/booking-confirmation-dialog.component';
 import { EwaybillDialogComponent } from '../../dialogs/ewaybill-dialog/ewaybill-dialog.component';
@@ -76,7 +77,8 @@ export class BookingFormComponent implements OnInit, OnDestroy {
   partySuggestions: Party[] = [];
   selectedParty: any = null;
   ewayBillList: string[] = [];
-  readonly chargeFields = CHARGE_FIELD_CONFIG;
+  readonly allChargeFields = CHARGE_FIELD_CONFIG;
+  dynamicChargeFields: { key: string, label: string }[] = [];
 
   private destroy$ = new Subject<void>();
 
@@ -94,7 +96,8 @@ export class BookingFormComponent implements OnInit, OnDestroy {
     private dialog: MatDialog,
     private paymentModeSvc: PaymentModeService,
     private partySvc: PartyService,
-    private router: Router
+    private router: Router,
+    private http: HttpClient
   ) { }
 
   ngOnInit(): void {
@@ -102,6 +105,7 @@ export class BookingFormComponent implements OnInit, OnDestroy {
     this.loadSaidToContains();
     this.loadArticleTypes();
     this.loadBranchDestinations();
+    this.loadCompanyCharges();
     this.watchCharges();
 
     this.form.get('deliveryDestination')?.valueChanges.pipe(
@@ -322,8 +326,35 @@ export class BookingFormComponent implements OnInit, OnDestroy {
     this.recalcCharges();
   }
 
+  private loadCompanyCharges(): void {
+    if (!this.auth.companyCode) return;
+    this.http.get<any>(`/api/charges/getCompanyChargesList/${this.auth.companyCode}`)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          const selected = res.selectedCharges || [];
+          if (selected.length > 0) {
+            this.dynamicChargeFields = selected.map((c: any) => {
+              const name = c.chargeName.trim();
+              const found = this.allChargeFields.find(f =>
+                f.label.toLowerCase() === name.toLowerCase() ||
+                f.key.toLowerCase() === name.toLowerCase().replace(/\s+/g, '') ||
+                (name.toLowerCase() === 'other transport charges' && f.key === 'otherTransportCharges')
+              );
+              return found ? found : { key: name.replace(/\s+/g, '').toLowerCase(), label: name };
+            }).filter((f: any) => f.key !== 'lrCharge' && f.key !== 'loadingCharge');
+          } else {
+            this.dynamicChargeFields = []; // No dynamic charges selected
+          }
+        },
+        error: () => {
+          this.dynamicChargeFields = []; // Fallback to no dynamic charges
+        }
+      });
+  }
+
   private watchCharges(): void {
-    const fields = this.chargeFields.map(f => f.key);
+    const fields = this.allChargeFields.map(f => f.key);
     fields.forEach(f => {
       this.form.get(f)?.valueChanges
         .pipe(debounceTime(250), takeUntil(this.destroy$))
@@ -894,15 +925,16 @@ export class BookingFormComponent implements OnInit, OnDestroy {
   private handleBookingSaveSuccess(saved: any, raw: any): void {
     this.loading = false;
 
-    // Create returns BookingResponseDTO; update returns Booking entity.
+    // Create and Update now both return BookingResponseDTO.
     let bookingData: any;
-    if (!this.isEditMode && saved.booking) {
+    if (saved.booking) {
       bookingData = {
         ...saved.booking,
         articleDetails: saved.articles || [],
         ...saved.charges
       };
     } else {
+      // Fallback just in case
       bookingData = {
         ...saved,
         lrCharge: raw.lrCharge,
@@ -927,6 +959,7 @@ export class BookingFormComponent implements OnInit, OnDestroy {
         sgst: raw.sgst,
         cgst: raw.cgst,
         igst: raw.igst,
+        totalAmount: raw.grandTotal, // explicitly adding totalAmount fallback
         articleDetails: raw.articles.map((a: any) => ({
           artQty: String(a.artQuantity),
           saidToContain: a.saidToContain,
@@ -949,7 +982,8 @@ export class BookingFormComponent implements OnInit, OnDestroy {
     this.dialog.open(LrReceiptDialogComponent, {
       data: {
         booking: bookingData,
-        isEditMode: this.isEditMode
+        isEditMode: this.isEditMode,
+        dynamicChargeFields: this.dynamicChargeFields
       },
       width: '360px',
       maxWidth: '95vw',
@@ -981,9 +1015,9 @@ export class BookingFormComponent implements OnInit, OnDestroy {
     });
   }
 
-  private defaultChargeValues(): Record<string, number> {
-    const values: Record<string, number> = {};
-    this.chargeFields.forEach(f => { values[f.key] = 0; });
+  private defaultChargeValues(): any {
+    const values: any = {};
+    this.allChargeFields.forEach((f: any) => { values[f.key] = 0; });
     return values;
   }
 

@@ -288,7 +288,7 @@ export class LrReceiptDialogComponent {
   private ready = false;
 
   constructor(
-    @Inject(MAT_DIALOG_DATA) public data: { booking: any, isEditMode?: boolean },
+    @Inject(MAT_DIALOG_DATA) public data: { booking: any, isEditMode?: boolean, dynamicChargeFields?: any[] },
     private dialogRef: MatDialogRef<LrReceiptDialogComponent>,
     private exportSvc: ExportService,
     private snackbar: SnackbarService,
@@ -322,7 +322,7 @@ export class LrReceiptDialogComponent {
 
     if (this.shouldPrint) {
       try {
-        this.exportSvc.generateLRReceipt(this.booking, 'print');
+        this.exportSvc.generateLRReceipt(this.booking, 'print', this.data.dynamicChargeFields);
       } catch (error) {
         this.snackbar.error('Failed to print receipt.');
       }
@@ -330,7 +330,7 @@ export class LrReceiptDialogComponent {
 
     if (this.shouldDownload) {
       try {
-        this.exportSvc.generateLRReceipt(this.booking, 'download');
+        this.exportSvc.generateLRReceipt(this.booking, 'download', this.data.dynamicChargeFields);
       } catch (error) {
         this.snackbar.error('Failed to download receipt.');
       }

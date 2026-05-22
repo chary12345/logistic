@@ -376,7 +376,7 @@ public class BookingService {
 	}
 
 	@Transactional
-	public Booking updateBooking(String lr, BookingDTO dto) {
+	public BookingResponseDTO updateBooking(String lr, BookingDTO dto) {
 		Booking existing = bookingRepo.findById(lr).orElseThrow(() -> new RuntimeException("LR not found"));
 
 		// Update fields
@@ -413,12 +413,12 @@ public class BookingService {
 
 		existing.setModifiedDate(LocalDateTime.now());
 
-		saveBookingCharges(lr, dto);
+		BookingChargeDetails charges = saveBookingCharges(lr, dto);
 
 		articleRepo.deleteByLoadingReciept(lr);
 
-		saveArticles(lr, dto.getArticleDetails());
-		bookingRepo.save(existing);
+		List<ArticleDetailDto> articles = saveBookingArticles(lr, dto.getArticleDetails());
+		existing = bookingRepo.save(existing);
 
 		try {
 			dto.setLoadingReciept(lr);
@@ -435,7 +435,11 @@ public class BookingService {
 			logger.error("Failed to trigger booking update email: " + ex.getMessage());
 		}
 
-		return existing;
+		BookingResponseDTO response = new BookingResponseDTO();
+		response.setBooking(existing);
+		response.setCharges(charges);
+		response.setArticles(articles);
+		return response;
 	}
 
 	private void saveArticles(String lr, List<ArticleDetail> details) {

@@ -168,6 +168,12 @@
             <span>Articles</span>
           </a>
           }
+          @if (hasPermission('charges')) {
+          <a class="sub-item" routerLink="/dashboard/admin/charges" routerLinkActive="active-link">
+            <mat-icon>request_quote</mat-icon>
+            <span>Charges</span>
+          </a>
+          }
         </div>
       </mat-expansion-panel>
       }

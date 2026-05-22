@@ -310,12 +310,26 @@
 
           <div class="charges-fields-wrap">
             <div class="charges-fields-grid">
-              <mat-form-field class="charge-field" appearance="outline" subscriptSizing="dynamic"
-                *ngFor="let field of chargeFields">
-                <mat-label>{{ field.label }}</mat-label>
+              <!-- Permanent charges: LR Charge and Loading Charge -->
+              <mat-form-field class="charge-field" appearance="outline" subscriptSizing="dynamic">
+                <mat-label>LR Charge</mat-label>
+                <input matInput type="number" formControlName="lrCharge" min="0" inputmode="decimal">
+                <span matTextPrefix>₹&nbsp;</span>
+              </mat-form-field>
+              
+              <mat-form-field class="charge-field" appearance="outline" subscriptSizing="dynamic">
+                <mat-label>Loading Charge</mat-label>
+                <input matInput type="number" formControlName="loadingCharge" min="0" inputmode="decimal">
+                <span matTextPrefix>₹&nbsp;</span>
+              </mat-form-field>
+
+              @for (field of dynamicChargeFields; track field.key) {
+              <mat-form-field class="charge-field" appearance="outline" subscriptSizing="dynamic">
+                <mat-label>{{field.label}}</mat-label>
                 <input matInput type="number" [formControlName]="field.key" min="0" inputmode="decimal">
                 <span matTextPrefix>₹&nbsp;</span>
               </mat-form-field>
+              }
             </div>
           </div>
 

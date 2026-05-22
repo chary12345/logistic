@@ -75,6 +75,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/dashboard/pages/article-manage/article-manage.component').then(m => m.ArticleManageComponent)
       },
       {
+        path: 'admin/charges',
+        loadComponent: () => import('./features/dashboard/pages/charges-manage/charges-manage.component').then(m => m.ChargesManageComponent)
+      },
+      {
         path: 'statements',
         loadComponent: () => import('./features/dashboard/pages/statements/statements.component').then(m => m.StatementsComponent)
       },
