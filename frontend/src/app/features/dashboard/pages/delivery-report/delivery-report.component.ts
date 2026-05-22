@@ -16,6 +16,7 @@ import { ExportService } from '../../../../core/services/export.service';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { SnackbarService } from '../../../../core/services/snackbar.service';
 import { Booking, BookingSummaryRow } from '../../../../shared/models/models';
+import { calcBookingGrandTotal, mapReportContent } from '../../../../shared/utils/booking-report.util';
 import { LrSearchDialogComponent } from '../../dialogs/lr-search-dialog/lr-search-dialog.component';
 
 @Component({
@@ -191,7 +192,7 @@ export class DeliveryReportComponent implements OnDestroy {
     { headerName: 'Bill Type', field: 'billType', minWidth: 100, sortable: true,
       cellClass: (p) => 'payment-cell ' + this.getPaymentClass(p.value) },
     { headerName: 'Total', minWidth: 110, sortable: true,
-      valueGetter: p => this.calcGrandTotal(p.data),
+      valueGetter: p => calcBookingGrandTotal(p.data),
       valueFormatter: p => '₹' + (p.value || 0).toFixed(2),
       cellStyle: { fontWeight: '700' } },
   ];
@@ -269,11 +270,11 @@ export class DeliveryReportComponent implements OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res) => {
-          const items = res.content || [];
+          const items = mapReportContent(res.content);
           this.rowData = [...this.rowData, ...items];
           const isLast = res.last ?? true;
           if (!isLast && items.length) {
-            const nextLastId = items[items.length - 1].loadingReciept || '';
+            const nextLastId = res.lastId || items[items.length - 1]?.loadingReciept || '';
             this.fetchAll(fromDate, toDate, nextLastId);
           } else {
             this.loading = false;
@@ -288,7 +289,7 @@ export class DeliveryReportComponent implements OnDestroy {
     const init = { count: 0, grandTotal: 0, paid: 0, toPay: 0, tbb: 0 };
     this.totals = data.reduce((acc, b) => {
       acc.count++;
-      const gt = this.calcGrandTotal(b);
+      const gt = calcBookingGrandTotal(b);
       acc.grandTotal += gt;
       if (b.billType === 'PAID') acc.paid += gt;
       if (b.billType === 'TO PAY') acc.toPay += gt;
@@ -319,14 +320,14 @@ export class DeliveryReportComponent implements OnDestroy {
     this.exportSvc.exportExcel(this.rowData.map(b => ({
       'LR No': b.loadingReciept, 'Delivery Date': b.deliveryDate, 'Consignor': b.consignorName,
       'Consignee': b.consigneeName, 'Destination': b.destinationBranchCode, 'Bill Type': b.billType,
-      'Total': this.calcGrandTotal(b),
+      'Total': calcBookingGrandTotal(b),
     })), 'delivery-report.xlsx');
   }
 
   downloadPDF(action: 'download' | 'print'): void {
     const headers = ['LR No', 'Delivery Date', 'Consignor', 'Consignee', 'Destination', 'Bill Type', 'Total'];
     const rows = this.rowData.map(b => [b.loadingReciept, b.deliveryDate, b.consignorName, b.consigneeName,
-      b.destinationBranchCode, b.billType, this.calcGrandTotal(b)]);
+      b.destinationBranchCode, b.billType, calcBookingGrandTotal(b)]);
     this.exportSvc.exportPDF('Delivery Report', headers, rows as any, action, 'delivery-report.pdf');
   }
 

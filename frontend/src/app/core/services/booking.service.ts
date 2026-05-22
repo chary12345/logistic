@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
-  BookingDTO, Booking, BookingPageResponse,
+  BookingDTO, Booking, BookingPageResponse, BookingResponseDTO,
   DispatchRequest, DispatchResponse, BookingSearchRequest
 } from '../../shared/models/models';
 
@@ -10,8 +10,8 @@ import {
 export class BookingService {
   constructor(private http: HttpClient) { }
 
-  create(dto: BookingDTO): Observable<Booking> {
-    return this.http.post<Booking>('/api/bookings/bookLoad', dto);
+  create(dto: BookingDTO): Observable<BookingResponseDTO> {
+    return this.http.post<BookingResponseDTO>('/api/bookings/bookLoad', dto);
   }
 
   update(lr: string, dto: BookingDTO): Observable<Booking> {
@@ -19,7 +19,8 @@ export class BookingService {
   }
 
   searchByLR(lr: string): Observable<BookingDTO> {
-    return this.http.get<BookingDTO>(`/api/bookings/searchBylr?lr=${encodeURIComponent(lr)}`);
+    const ts = new Date().getTime();
+    return this.http.get<BookingDTO>(`/api/bookings/searchBylr?lr=${encodeURIComponent(lr)}&_t=${ts}`);
   }
 
   getReport(fromDate: string, toDate: string, status: string, lastId?: string, branchCode?: string): Observable<BookingPageResponse> {

@@ -142,20 +142,68 @@ export class ExportService {
       let cy3 = boxY + 16;
       const rightColRightAlign = 196;
       
-      const chargeField = (label: string, val: number | string, yPos: number) => {
-        doc.text(label, 152, yPos);
-        doc.text(String(val), rightColRightAlign, yPos, { align: 'right' });
+      const chargeField = (label: string, val: number | string, yPos: number, xStart = 152, xEnd = rightColRightAlign) => {
+        doc.text(label, xStart, yPos);
+        doc.text(String(val), xEnd, yPos, { align: 'right' });
       };
 
-      chargeField('Freight:', `Rs. ${booking['freight'] || 0}`, cy3); cy3 += 6;
-      chargeField('Loading:', `Rs. ${booking['loading'] || 0}`, cy3); cy3 += 6;
-      chargeField('Load Charges:', `Rs. ${booking['loadingCharge'] || 0}`, cy3); cy3 += 6;
       const gst = (booking['cgst']||0) + (booking['sgst']||0) + (booking['igst']||0);
-      chargeField('GST:', `Rs. ${gst}`, cy3); cy3 += 6;
+      const chargesList = [
+        { label: 'Freight:', val: booking['freight'] || 0 },
+        { label: 'LR Charge:', val: booking['lrCharge'] || 0 },
+        { label: 'Loading:', val: booking['loading'] || 0 },
+        { label: 'Load Chg:', val: booking['loadingCharge'] || 0 },
+        { label: 'Unloading:', val: booking['unloading'] || 0 },
+        { label: 'Hamali:', val: booking['hamali'] || 0 },
+        { label: 'Stationary:', val: booking['stationary'] || 0 },
+        { label: 'Other:', val: booking['otherCharges'] || 0 },
+        { label: 'Transport:', val: booking['otherTransportCharges'] || 0 },
+        { label: 'Misc:', val: booking['miscellaneous'] || 0 },
+        { label: 'Crossing:', val: booking['crossingAmount'] || 0 },
+        { label: 'POD:', val: booking['podCharges'] || 0 },
+        { label: 'Door Del:', val: booking['doorDelivery'] || 0 },
+        { label: 'Door Pick:', val: booking['doorPickup'] || 0 },
+        { label: 'DDC:', val: booking['ddc'] || 0 },
+        { label: 'DCC:', val: booking['dcc'] || 0 },
+        { label: 'Demurrage:', val: booking['demurrage'] || 0 },
+        { label: 'Local Veh:', val: booking['localVehicle'] || 0 },
+        { label: 'Cross Hire:', val: booking['crossingHire'] || 0 },
+        { label: 'GST:', val: gst }
+      ];
+
+      let activeCharges = chargesList.filter(c => Number(c.val) > 0);
+      if (activeCharges.length === 0) activeCharges.push(chargesList[0]);
+
+      doc.setFontSize(7);
+      if (activeCharges.length <= 6) {
+        let step = 22 / activeCharges.length;
+        if (step > 5) step = 5;
+        activeCharges.forEach(c => {
+           chargeField(c.label, `Rs. ${c.val}`, cy3);
+           cy3 += step;
+        });
+      } else {
+        doc.setFontSize(5.5);
+        let rows = Math.ceil(activeCharges.length / 2);
+        let step = Math.min(3.5, 22.5 / rows); // available vertical space is ~22.5
+        if (step < 2.5) { doc.setFontSize(5); }
+        let y1 = boxY + 15.5;
+        let y2 = boxY + 15.5;
+        activeCharges.forEach((c, index) => {
+           if (index % 2 === 0) {
+              chargeField(c.label, c.val, y1, 151, 173);
+              y1 += step;
+           } else {
+              chargeField(c.label, c.val, y2, 175, 198);
+              y2 += step;
+           }
+        });
+      }
+      doc.setFontSize(8);
       
       doc.line(150, boxY + 38, 200, boxY + 38);
       doc.setFont('helvetica', 'bold');
-      const grandTotal = booking['grandTotal'] ?? ((booking['freight']||0) + (booking['loading']||0) + (booking['loadingCharge']||0) + gst);
+      const grandTotal = booking['totalAmount'] ?? booking['grandTotal'] ?? activeCharges.reduce((sum, c) => sum + Number(c.val), 0);
       chargeField('Total:', `Rs. ${grandTotal}`, boxY + 43);
       doc.setFont('helvetica', 'normal');
 

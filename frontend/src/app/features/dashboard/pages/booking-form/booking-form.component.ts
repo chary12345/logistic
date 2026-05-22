@@ -29,6 +29,7 @@ import { LrReceiptDialogComponent } from '../../dialogs/lr-receipt-dialog/lr-rec
 import { BookingConfirmationDialogComponent } from '../../dialogs/booking-confirmation-dialog/booking-confirmation-dialog.component';
 import { EwaybillDialogComponent } from '../../dialogs/ewaybill-dialog/ewaybill-dialog.component';
 import { ArticleDetailDto, BookingDTO, BranchMap, Contact } from '../../../../shared/models/models';
+import { CHARGE_FIELD_CONFIG, sumChargeLineItems } from '../../../../shared/utils/booking-report.util';
 
 const ARTICLE_TYPES: string[] = [];
 
@@ -75,6 +76,7 @@ export class BookingFormComponent implements OnInit, OnDestroy {
   partySuggestions: Party[] = [];
   selectedParty: any = null;
   ewayBillList: string[] = [];
+  readonly chargeFields = CHARGE_FIELD_CONFIG;
 
   private destroy$ = new Subject<void>();
 
@@ -147,8 +149,24 @@ export class BookingFormComponent implements OnInit, OnDestroy {
       ewayBillList: [[]],
       remarks: [''],
       paidVia: ['CASH'],
-      loadingCharge: [0, [Validators.min(0)]],
       lrCharge: [0, [Validators.min(0)]],
+      hamali: [0, [Validators.min(0)]],
+      loading: [0, [Validators.min(0)]],
+      loadingCharge: [0, [Validators.min(0)]],
+      stationary: [0, [Validators.min(0)]],
+      otherCharges: [0, [Validators.min(0)]],
+      otherTransportCharges: [0, [Validators.min(0)]],
+      miscellaneous: [0, [Validators.min(0)]],
+      crossingAmount: [0, [Validators.min(0)]],
+      podCharges: [0, [Validators.min(0)]],
+      doorDelivery: [0, [Validators.min(0)]],
+      doorPickup: [0, [Validators.min(0)]],
+      ddc: [0, [Validators.min(0)]],
+      dcc: [0, [Validators.min(0)]],
+      demurrage: [0, [Validators.min(0)]],
+      unloading: [0, [Validators.min(0)]],
+      localVehicle: [0, [Validators.min(0)]],
+      crossingHire: [0, [Validators.min(0)]],
       freight: [{ value: 0, disabled: true }],
       sgst: [{ value: 0, disabled: true }],
       cgst: [{ value: 0, disabled: true }],
@@ -221,8 +239,24 @@ export class BookingFormComponent implements OnInit, OnDestroy {
           ewayBill: booking.eWayBillNumber || '',
           remarks: booking.remarks || '',
           paidVia: booking.paidVia || 'CASH',
-          loadingCharge: booking.loading || 0,
-          lrCharge: booking.loadingCharge || 0,
+          lrCharge: booking.lrCharge ?? 0,
+          hamali: booking.hamali ?? 0,
+          loading: booking.loading ?? 0,
+          loadingCharge: booking.loadingCharge ?? 0,
+          stationary: booking.stationary ?? 0,
+          otherCharges: booking.otherCharges ?? 0,
+          otherTransportCharges: booking.otherTransportCharges ?? 0,
+          miscellaneous: booking.miscellaneous ?? 0,
+          crossingAmount: booking.crossingAmount ?? 0,
+          podCharges: booking.podCharges ?? 0,
+          doorDelivery: booking.doorDelivery ?? 0,
+          doorPickup: booking.doorPickup ?? 0,
+          ddc: booking.ddc ?? 0,
+          dcc: booking.dcc ?? 0,
+          demurrage: booking.demurrage ?? 0,
+          unloading: booking.unloading ?? 0,
+          localVehicle: booking.localVehicle ?? 0,
+          crossingHire: booking.crossingHire ?? 0,
         });
 
         if (booking.eWayBillNumbers) {
@@ -289,7 +323,8 @@ export class BookingFormComponent implements OnInit, OnDestroy {
   }
 
   private watchCharges(): void {
-    ['loadingCharge', 'lrCharge'].forEach(f => {
+    const fields = this.chargeFields.map(f => f.key);
+    fields.forEach(f => {
       this.form.get(f)?.valueChanges
         .pipe(debounceTime(250), takeUntil(this.destroy$))
         .subscribe(() => this.recalcCharges());
@@ -300,9 +335,29 @@ export class BookingFormComponent implements OnInit, OnDestroy {
     const freight = this.articles.controls.reduce((sum, row) => {
       return sum + (+row.get('artQuantity')?.value || 0) * (+row.get('artAmount')?.value || 0);
     }, 0);
-    const loading = +this.form.get('loadingCharge')?.value || 0;
-    const lr = +this.form.get('lrCharge')?.value || 0;
-    const base = freight + loading + lr;
+
+    const raw = this.form.getRawValue();
+    const lineSubtotal = sumChargeLineItems({
+      freight,
+      lrCharge: +raw.lrCharge || 0,
+      hamali: +raw.hamali || 0,
+      loading: +raw.loading || 0,
+      loadingCharge: +raw.loadingCharge || 0,
+      stationary: +raw.stationary || 0,
+      otherCharges: +raw.otherCharges || 0,
+      otherTransportCharges: +raw.otherTransportCharges || 0,
+      miscellaneous: +raw.miscellaneous || 0,
+      crossingAmount: +raw.crossingAmount || 0,
+      podCharges: +raw.podCharges || 0,
+      doorDelivery: +raw.doorDelivery || 0,
+      doorPickup: +raw.doorPickup || 0,
+      ddc: +raw.ddc || 0,
+      dcc: +raw.dcc || 0,
+      demurrage: +raw.demurrage || 0,
+      unloading: +raw.unloading || 0,
+      localVehicle: +raw.localVehicle || 0,
+      crossingHire: +raw.crossingHire || 0,
+    });
 
     const hasValidConsignorGST = !!this.form.get('consignorGST')?.value && !this.form.get('consignorGST')?.hasError('invalidGST');
     const hasValidConsigneeGST = !!this.form.get('consigneeGST')?.value && !this.form.get('consigneeGST')?.hasError('invalidGST');
@@ -311,12 +366,12 @@ export class BookingFormComponent implements OnInit, OnDestroy {
     let sgst = 0;
     let cgst = 0;
     let igst = 0;
-    let grandTotal = base;
+    let grandTotal = lineSubtotal;
 
     if (hasValidGST) {
-      sgst = base * 0.025; // 2.5%
-      cgst = base * 0.025; // 2.5%
-      grandTotal = base + sgst + cgst;
+      sgst = lineSubtotal * 0.025;
+      cgst = lineSubtotal * 0.025;
+      grandTotal = lineSubtotal + sgst + cgst;
     }
 
     this.form.patchValue({
@@ -329,6 +384,7 @@ export class BookingFormComponent implements OnInit, OnDestroy {
   }
 
   setPaymentMode(mode: PaymentMode): void {
+    if (this.paymentMode === mode) return;
     this.paymentMode = mode;
     this.paymentModeSvc.setPaymentMode(mode);
     this.updatePartyNameValidation(mode);
@@ -405,10 +461,13 @@ export class BookingFormComponent implements OnInit, OnDestroy {
     } else {
       partyNameCtrl.clearValidators();
       partyNameCtrl.setValue('', { emitEvent: false });
+      partyNameCtrl.setErrors(null);
+      partyNameCtrl.markAsUntouched();
+      partyNameCtrl.markAsPristine();
       this.selectedParty = null;
       this.partySuggestions = [];
     }
-    partyNameCtrl.updateValueAndValidity({ emitEvent: false });
+    partyNameCtrl.updateValueAndValidity({ emitEvent: false, onlySelf: true });
   }
 
   partySelectedValidator(control: AbstractControl): ValidationErrors | null {
@@ -660,8 +719,7 @@ export class BookingFormComponent implements OnInit, OnDestroy {
         ewayBillList: [],
         remarks: '',
         paidVia: 'CASH',
-        loadingCharge: 0,
-        lrCharge: 0,
+        ...this.defaultChargeValues(),
       });
     } else {
       this.form.reset({
@@ -681,8 +739,7 @@ export class BookingFormComponent implements OnInit, OnDestroy {
         ewayBillList: [],
         remarks: '',
         paidVia: 'CASH',
-        loadingCharge: 0,
-        lrCharge: 0,
+        ...this.defaultChargeValues(),
       });
       this.form.markAsUntouched();
       this.form.markAsPristine();
@@ -708,6 +765,8 @@ export class BookingFormComponent implements OnInit, OnDestroy {
     this.loadNextLR();
     this.consigneeSuggestions = [];
     this.loadedBookingSnapshot = null;
+
+    this.recalcCharges();
 
     this.router.navigate([], {
       relativeTo: this.route,
@@ -781,12 +840,27 @@ export class BookingFormComponent implements OnInit, OnDestroy {
       eWayBillNumbers: raw.ewayBillList || [],
       remarks: raw.remarks,
       freight: raw.freight,
-      loading: raw.loadingCharge,
-      loadingCharge: raw.lrCharge,
+      lrCharge: raw.lrCharge,
+      hamali: raw.hamali,
+      loading: raw.loading,
+      loadingCharge: raw.loadingCharge,
+      stationary: raw.stationary,
+      otherCharges: raw.otherCharges,
+      otherTransportCharges: raw.otherTransportCharges,
+      miscellaneous: raw.miscellaneous,
+      crossingAmount: raw.crossingAmount,
+      podCharges: raw.podCharges,
+      doorDelivery: raw.doorDelivery,
+      doorPickup: raw.doorPickup,
+      ddc: raw.ddc,
+      dcc: raw.dcc,
+      demurrage: raw.demurrage,
+      unloading: raw.unloading,
+      localVehicle: raw.localVehicle,
+      crossingHire: raw.crossingHire,
       sgst: raw.sgst,
       cgst: raw.cgst,
       igst: raw.igst,
-      grandTotal: raw.grandTotal,
       companyCode: this.auth.companyCode,
       branchCode: this.auth.branchCode,
       employeeName: `${this.auth.currentUser?.firstName || ''} ${this.auth.currentUser?.lastName || ''}`.trim(),
@@ -795,68 +869,98 @@ export class BookingFormComponent implements OnInit, OnDestroy {
 
     this.loading = true;
 
-    const apiCall$ = this.isEditMode
-      ? this.bookingSvc.update(this.editLR, dto)
-      : this.bookingSvc.create(dto);
+    const onError = (e: any) => {
+      this.loading = false;
+      this.snack.error(e?.error?.message || 'Error saving booking. Please try again.');
+    };
 
-    apiCall$.subscribe({
-      next: (saved: any) => {
-        this.loading = false;
-
-        // The backend returns BookingResponseDTO for create, and Booking entity for update.
-        // We ensure articles and charges are always available for the PDF generator.
-        let bookingData: any;
-        if (!this.isEditMode && saved.booking) {
-          bookingData = {
-            ...saved.booking,
-            articleDetails: saved.articles || [],
-            ...saved.charges
-          };
-        } else {
-          // In edit mode, 'saved' is the updated Booking entity.
-          // We attach the articles from our local 'raw' form data so the PDF is fully populated.
-          bookingData = {
-            ...saved,
-            articleDetails: raw.articles.map((a: any) => ({
-              artQty: String(a.artQuantity),
-              saidToContain: a.saidToContain,
-              article: a.article,
-              artType: a.artType,
-              artAmt: String(a.artAmount),
-              total: String(+a.artQuantity * +a.artAmount)
-            }))
-          };
-        }
-
-        const msg = this.isEditMode
-          ? `Booking updated! LR: ${bookingData.loadingReciept || this.editLR}`
-          : `Booking created! LR: ${bookingData.loadingReciept}`;
-        this.snack.success(msg);
-
-        // Immediately refresh the LR number in the dashboard header
-        this.branchSvc.notifyLrUpdated();
-
-        // Refresh the Said To Contain list so newly entered values appear in future bookings
-        this.loadSaidToContains();
-
-        // Open the enhanced receipt dialog with print/download options
-        this.dialog.open(LrReceiptDialogComponent, {
-          data: {
-            booking: bookingData,
-            isEditMode: this.isEditMode
-          },
-          width: '360px',
-          maxWidth: '95vw',
-          disableClose: false,
-        }).afterClosed().subscribe(() => {
-          this.loadedBookingSnapshot = null;
-          this.resetForm();
+    if (this.isEditMode) {
+      this.bookingSvc.update(this.editLR, dto)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: saved => this.handleBookingSaveSuccess(saved, raw),
+          error: onError,
         });
+    } else {
+      this.bookingSvc.create(dto)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: saved => this.handleBookingSaveSuccess(saved, raw),
+          error: onError,
+        });
+    }
+  }
+
+  private handleBookingSaveSuccess(saved: any, raw: any): void {
+    this.loading = false;
+
+    // Create returns BookingResponseDTO; update returns Booking entity.
+    let bookingData: any;
+    if (!this.isEditMode && saved.booking) {
+      bookingData = {
+        ...saved.booking,
+        articleDetails: saved.articles || [],
+        ...saved.charges
+      };
+    } else {
+      bookingData = {
+        ...saved,
+        lrCharge: raw.lrCharge,
+        hamali: raw.hamali,
+        loading: raw.loading,
+        loadingCharge: raw.loadingCharge,
+        stationary: raw.stationary,
+        otherCharges: raw.otherCharges,
+        otherTransportCharges: raw.otherTransportCharges,
+        miscellaneous: raw.miscellaneous,
+        crossingAmount: raw.crossingAmount,
+        podCharges: raw.podCharges,
+        doorDelivery: raw.doorDelivery,
+        doorPickup: raw.doorPickup,
+        ddc: raw.ddc,
+        dcc: raw.dcc,
+        demurrage: raw.demurrage,
+        unloading: raw.unloading,
+        localVehicle: raw.localVehicle,
+        crossingHire: raw.crossingHire,
+        freight: raw.freight,
+        sgst: raw.sgst,
+        cgst: raw.cgst,
+        igst: raw.igst,
+        articleDetails: raw.articles.map((a: any) => ({
+          artQty: String(a.artQuantity),
+          saidToContain: a.saidToContain,
+          article: a.article,
+          artType: a.artType,
+          artAmt: String(a.artAmount),
+          total: String(+a.artQuantity * +a.artAmount)
+        }))
+      };
+    }
+
+    const msg = this.isEditMode
+      ? `Booking updated! LR: ${bookingData.loadingReciept || this.editLR}`
+      : `Booking created! LR: ${bookingData.loadingReciept}`;
+    this.snack.success(msg);
+
+    this.branchSvc.notifyLrUpdated();
+    this.loadSaidToContains();
+
+    this.dialog.open(LrReceiptDialogComponent, {
+      data: {
+        booking: bookingData,
+        isEditMode: this.isEditMode
       },
-      error: (e: any) => {
-        this.loading = false;
-        this.snack.error(e?.error?.message || 'Error saving booking. Please try again.');
+      width: '360px',
+      maxWidth: '95vw',
+      disableClose: false,
+    }).afterClosed().subscribe(() => {
+      if (this.isEditMode && this.editLR) {
+        this.loadBookingForEdit(this.editLR);
+        return;
       }
+      this.loadedBookingSnapshot = null;
+      this.resetForm();
     });
   }
 
@@ -875,6 +979,12 @@ export class BookingFormComponent implements OnInit, OnDestroy {
         }
       }
     });
+  }
+
+  private defaultChargeValues(): Record<string, number> {
+    const values: Record<string, number> = {};
+    this.chargeFields.forEach(f => { values[f.key] = 0; });
+    return values;
   }
 
   /** Prevents [object Object] in autocomplete inputs */

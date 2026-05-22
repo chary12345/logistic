@@ -16,6 +16,7 @@ import { ExportService } from '../../../../core/services/export.service';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { SnackbarService } from '../../../../core/services/snackbar.service';
 import { Booking, BookingSummaryRow } from '../../../../shared/models/models';
+import { calcBookingGrandTotal, mapReportContent } from '../../../../shared/utils/booking-report.util';
 import { LrSearchDialogComponent } from '../../dialogs/lr-search-dialog/lr-search-dialog.component';
 
 @Component({
@@ -256,7 +257,7 @@ export class DispatchReportComponent implements OnDestroy {
     { headerName: 'Bill Type', field: 'billType', minWidth: 100, sortable: true,
       cellClass: (p) => 'payment-cell ' + this.getPaymentClass(p.value) },
     { headerName: 'Total', minWidth: 110, sortable: true,
-      valueGetter: p => this.calcGrandTotal(p.data),
+      valueGetter: p => calcBookingGrandTotal(p.data),
       valueFormatter: p => '₹' + (p.value || 0).toFixed(2),
       cellStyle: { fontWeight: '700' } },
   ];
@@ -301,11 +302,6 @@ export class DispatchReportComponent implements OnDestroy {
     return m[mode || ''] || '';
   }
 
-  calcGrandTotal(b: Booking): number {
-    if (!b) return 0;
-    return (b.freight || 0) + (b.sgst || 0) + (b.cgst || 0);
-  }
-
   private toISO(d: any, eod = false): string {
     const dt = d instanceof Date ? new Date(d.getTime()) : new Date(d); if (eod) dt.setHours(23, 59, 59, 999);
     return dt.toISOString().slice(0, -1);
@@ -320,7 +316,7 @@ export class DispatchReportComponent implements OnDestroy {
       .subscribe({
         next: r => {
           this.loading = false;
-          this.rowData = r.content || [];
+          this.rowData = mapReportContent(r.content);
           this.calcTotals(this.rowData);
         },
         error: () => { this.loading = false; this.snack.error('Failed to load dispatch report.'); }
@@ -331,7 +327,7 @@ export class DispatchReportComponent implements OnDestroy {
     const init = { count: 0, grandTotal: 0, paid: 0, toPay: 0, tbb: 0 };
     this.totals = data.reduce((acc: typeof init, b: Booking) => {
       acc.count++;
-      const gt = this.calcGrandTotal(b);
+      const gt = calcBookingGrandTotal(b);
       acc.grandTotal += gt;
       if (b.billType === 'PAID') acc.paid += gt;
       if (b.billType === 'TO PAY') acc.toPay += gt;
@@ -379,13 +375,13 @@ export class DispatchReportComponent implements OnDestroy {
   exportExcel(): void {
     this.exportSvc.exportExcel(this.rowData.map(b => ({
       'LR No': b.loadingReciept, 'Dispatch Date': b.dispatchDate, 'Consignor': b.consignorName,
-      'Consignee': b.consigneeName, 'Destination': b.destinationBranchCode, 'Bill Type': b.billType, 'Total': this.calcGrandTotal(b)
+      'Consignee': b.consigneeName, 'Destination': b.destinationBranchCode, 'Bill Type': b.billType, 'Total': calcBookingGrandTotal(b)
     })), 'dispatch-report.xlsx');
   }
 
   downloadPDF(action: 'download' | 'print'): void {
     const headers = ['LR No', 'Dispatch Date', 'Consignor', 'Consignee', 'Destination', 'Bill Type', 'Total'];
-    const rows = this.rowData.map(b => [b.loadingReciept, b.dispatchDate, b.consignorName, b.consigneeName, b.destinationBranchCode, b.billType, this.calcGrandTotal(b)]);
+    const rows = this.rowData.map(b => [b.loadingReciept, b.dispatchDate, b.consignorName, b.consigneeName, b.destinationBranchCode, b.billType, calcBookingGrandTotal(b)]);
     this.exportSvc.exportPDF('Dispatch Report', headers, rows as any, action, 'dispatch-report.pdf');
   }
 

@@ -16,6 +16,7 @@ import { ExportService } from '../../../../core/services/export.service';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { SnackbarService } from '../../../../core/services/snackbar.service';
 import { Booking, BookingSummaryRow } from '../../../../shared/models/models';
+import { calcBookingGrandTotal, mapReportContent } from '../../../../shared/utils/booking-report.util';
 import { LrSearchDialogComponent } from '../../dialogs/lr-search-dialog/lr-search-dialog.component';
 
 @Component({
@@ -63,7 +64,7 @@ export class BookingReportComponent implements OnInit, OnDestroy {
     { headerName: 'Payment', field: 'billType', minWidth: 100, sortable: true,
       cellClass: (p) => 'payment-cell ' + this.getPaymentClass(p.value) },
     { headerName: 'Total', minWidth: 110, sortable: true,
-      valueGetter: p => this.calcGrandTotal(p.data),
+      valueGetter: p => calcBookingGrandTotal(p.data),
       valueFormatter: p => '₹' + (p.value || 0).toFixed(2),
       cellStyle: { fontWeight: '700' } },
     { headerName: 'Status', field: 'consignStatus', minWidth: 100, sortable: true },
@@ -150,11 +151,11 @@ export class BookingReportComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res) => {
-          const items = res.content || [];
+          const items = mapReportContent(res.content);
           this.rowData = [...this.rowData, ...items];
           const isLast = res.last ?? true;
           if (!isLast && items.length) {
-            const nextLastId = items[items.length - 1].loadingReciept || '';
+            const nextLastId = res.lastId || items[items.length - 1]?.loadingReciept || '';
             this.fetchAll(fromDate, toDate, nextLastId);
           } else {
             this.loading = false;
@@ -165,17 +166,11 @@ export class BookingReportComponent implements OnInit, OnDestroy {
       });
   }
 
-  calcGrandTotal(b: Booking): number {
-    if (!b) return 0;
-    return (b.freight ?? 0) + (b.loading ?? 0) + (b.loadingCharge ?? 0)
-         + (b.sgst ?? 0) + (b.cgst ?? 0) + (b.igst ?? 0);
-  }
-
   private calcTotals(data: Booking[]): void {
     const init = { count: 0, grandTotal: 0, paid: 0, toPay: 0, tbb: 0 };
     this.totals = data.reduce((acc: typeof init, b: Booking) => {
       acc.count++;
-      const gt = this.calcGrandTotal(b);
+      const gt = calcBookingGrandTotal(b);
       acc.grandTotal += gt;
       if (b.billType === 'PAID')    acc.paid  += gt;
       if (b.billType === 'TO PAY')  acc.toPay += gt;
@@ -209,7 +204,7 @@ export class BookingReportComponent implements OnInit, OnDestroy {
     const headers = ['LR No','Date','Consignor','Consignee','Destination','Payment','Total','Status'];
     const rows = this.rowData.map(b => [
       b.loadingReciept, b.bookingDate, b.consignorName, b.consigneeName,
-      b.destinationBranchCode, b.billType, this.calcGrandTotal(b), b.consignStatus
+      b.destinationBranchCode, b.billType, calcBookingGrandTotal(b), b.consignStatus
     ]);
     this.exportSvc.exportPDF('Booking Report', headers, rows as any, action, 'booking-report.pdf');
   }
@@ -219,7 +214,7 @@ export class BookingReportComponent implements OnInit, OnDestroy {
       this.rowData.map(b => ({
         'LR No': b.loadingReciept, 'Date': b.bookingDate, 'Consignor': b.consignorName,
         'Consignee': b.consigneeName, 'Destination': b.destinationBranchCode,
-        'Payment': b.billType, 'Total': this.calcGrandTotal(b), 'Status': b.consignStatus,
+        'Payment': b.billType, 'Total': calcBookingGrandTotal(b), 'Status': b.consignStatus,
       })),
       'booking-report.xlsx'
     );

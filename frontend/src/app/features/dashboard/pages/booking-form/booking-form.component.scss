@@ -1,7 +1,11 @@
+:host {
+  display: block;
+}
+
 .booking-page {
   padding-bottom: 8px;
   max-width: 100%;
-  overflow-x: hidden;
+  overflow: visible;
   box-sizing: border-box;
 
   *,
@@ -158,12 +162,12 @@
 
 .booking-grid {
   display: grid;
-  grid-template-columns: 1fr 220px;
+  grid-template-columns: 1fr minmax(360px, min(40vw, 520px));
   grid-template-rows: auto auto auto;
   gap: var(--sp-sm);
   align-items: start;
   min-width: 0;
-  overflow: hidden;
+  overflow: visible;
 
   .pm-banner {
     grid-column: 1 / -1;
@@ -437,17 +441,72 @@
 }
 
 .charges-col {
+  align-self: start;
   position: sticky;
-  top: 12px;
+  top: 0;
+  z-index: 2;
+  height: fit-content;
+  max-height: calc(100vh - 72px);
 }
 
 .charges-card {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
+  overflow: visible;
+  max-height: calc(100vh - 72px);
+
+  .freight-row {
+    margin-bottom: 2px;
+  }
+
+  .charges-fields-wrap {
+    overflow: visible;
+    padding-top: 6px;
+    margin-top: 2px;
+  }
+
+  .charges-fields-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px 12px;
+    align-items: start;
+  }
 
   .charge-field {
-    margin-top: var(--sp-sm);
+    width: 100%;
+    margin: 0;
+
+    ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+      display: none;
+    }
+
+    ::ng-deep .mat-mdc-text-field-wrapper {
+      padding-top: 2px;
+    }
+
+    ::ng-deep .mat-mdc-form-field-infix {
+      min-height: 44px;
+      padding-top: 10px;
+      padding-bottom: 8px;
+    }
+  }
+}
+
+@media (min-width: 1100px) {
+  .charges-card .charges-fields-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (min-width: 1400px) {
+  .booking-grid {
+    grid-template-columns: 1fr minmax(400px, min(38vw, 560px));
+  }
+
+  .charges-card .charges-fields-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px 10px;
   }
 }
 
@@ -513,9 +572,14 @@
     .charges-col {
       grid-column: 1;
       grid-row: auto;
-      position: relative;
-      top: 0;
+      position: static;
+      top: auto;
+      max-height: none;
       order: 1;
+    }
+
+    .charges-card {
+      max-height: none;
     }
 
     .submit-row {
@@ -569,6 +633,10 @@
   }
 
   .charges-card {
+    .charges-fields-grid {
+      grid-template-columns: 1fr;
+    }
+
     .charge-field {
       width: 100%;
     }

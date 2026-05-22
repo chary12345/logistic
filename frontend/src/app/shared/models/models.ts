@@ -48,6 +48,45 @@ export interface ArticleDetailDto {
   total: string;
 }
 
+// ---- Booking charges (booking_charge_details table) ----
+export interface BookingChargeDetails {
+  loadingReciept?: string;
+  lrCharge?: number;
+  hamali?: number;
+  loading?: number;
+  stationary?: number;
+  otherCharges?: number;
+  otherTransportCharges?: number;
+  miscellaneous?: number;
+  crossingAmount?: number;
+  podCharges?: number;
+  doorDelivery?: number;
+  doorPickup?: number;
+  ddc?: number;
+  dcc?: number;
+  demurrage?: number;
+  unloading?: number;
+  localVehicle?: number;
+  crossingHire?: number;
+  freight?: number;
+  sgst?: number;
+  cgst?: number;
+  igst?: number;
+  loadingCharge?: number;
+  totalAmount?: number;
+}
+
+export interface BookingReportRow {
+  booking: Booking;
+  charges: BookingChargeDetails | null;
+}
+
+export interface BookingResponseDTO {
+  booking: Booking;
+  articles?: ArticleDetailDto[];
+  charges?: BookingChargeDetails | null;
+}
+
 // ---- Booking ----
 export interface BookingDTO {
   loadingReciept?: string;
@@ -66,11 +105,28 @@ export interface BookingDTO {
   invoiceValue?: number;
   eWayBillNumber?: string;
   freight?: number;
+  lrCharge?: number;
+  hamali?: number;
   loading?: number;
+  stationary?: number;
+  otherCharges?: number;
+  otherTransportCharges?: number;
+  miscellaneous?: number;
+  crossingAmount?: number;
+  podCharges?: number;
+  doorDelivery?: number;
+  doorPickup?: number;
+  ddc?: number;
+  dcc?: number;
+  demurrage?: number;
+  unloading?: number;
+  localVehicle?: number;
+  crossingHire?: number;
   loadingCharge?: number;
   sgst?: number;
   cgst?: number;
   igst?: number;
+  totalAmount?: number;
   articleDetails?: ArticleDetailDto[];
   bookingDate?: string;
   consignStatus?: string;
@@ -100,11 +156,28 @@ export interface Booking {
   invoiceValue?: number;
   eWayBillNumber?: string;
   freight?: number;
+  lrCharge?: number;
+  hamali?: number;
   loading?: number;
+  stationary?: number;
+  otherCharges?: number;
+  otherTransportCharges?: number;
+  miscellaneous?: number;
+  crossingAmount?: number;
+  podCharges?: number;
+  doorDelivery?: number;
+  doorPickup?: number;
+  ddc?: number;
+  dcc?: number;
+  demurrage?: number;
+  unloading?: number;
+  localVehicle?: number;
+  crossingHire?: number;
   loadingCharge?: number;
   sgst?: number;
   cgst?: number;
   igst?: number;
+  totalAmount?: number;
   articleDetails?: ArticleDetailDto[];
   bookingDate?: string;
   consignStatus?: string;
@@ -124,7 +197,7 @@ export interface Booking {
 }
 
 export interface BookingPageResponse {
-  content: Booking[];
+  content: BookingReportRow[];
   lastId?: string;
   last?: boolean;
   pageSize?: number;

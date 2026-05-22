@@ -21,13 +21,13 @@
       <div class="pm-banner" [class]="'pm-' + paymentMode.toLowerCase().replace(' ','-')">
         <div class="pm-mode-label">Payment Mode:</div>
         <div class="pm-keys">
-          <button class="pm-key" [class.active]="paymentMode==='PAID'" (click)="setPaymentMode('PAID')">
+          <button type="button" class="pm-key" [class.active]="paymentMode==='PAID'" (click)="setPaymentMode('PAID')">
             <kbd>F7</kbd> PAID
           </button>
-          <button class="pm-key" [class.active]="paymentMode==='TO PAY'" (click)="setPaymentMode('TO PAY')">
+          <button type="button" class="pm-key" [class.active]="paymentMode==='TO PAY'" (click)="setPaymentMode('TO PAY')">
             <kbd>F8</kbd> TO PAY
           </button>
-          <button class="pm-key" [class.active]="paymentMode==='TBB'" (click)="setPaymentMode('TBB')">
+          <button type="button" class="pm-key" [class.active]="paymentMode==='TBB'" (click)="setPaymentMode('TBB')">
             <kbd>F9</kbd> TBB
           </button>
         </div>
@@ -303,20 +303,21 @@
         <div class="charges-card page-card">
           <div class="section-title">💰 Charges</div>
 
-          <div class="charge-row">
+          <div class="charge-row freight-row">
             <span class="c-label">Freight</span>
             <span class="c-value">₹{{ form.get('freight')?.value | number:'1.2-2' }}</span>
           </div>
-          <mat-form-field class="charge-field">
-            <mat-label>Loading Charge</mat-label>
-            <input matInput type="number" formControlName="loadingCharge" min="0">
-            <span matTextPrefix>₹&nbsp;</span>
-          </mat-form-field>
-          <mat-form-field class="charge-field">
-            <mat-label>LR Charge</mat-label>
-            <input matInput type="number" formControlName="lrCharge" min="0">
-            <span matTextPrefix>₹&nbsp;</span>
-          </mat-form-field>
+
+          <div class="charges-fields-wrap">
+            <div class="charges-fields-grid">
+              <mat-form-field class="charge-field" appearance="outline" subscriptSizing="dynamic"
+                *ngFor="let field of chargeFields">
+                <mat-label>{{ field.label }}</mat-label>
+                <input matInput type="number" [formControlName]="field.key" min="0" inputmode="decimal">
+                <span matTextPrefix>₹&nbsp;</span>
+              </mat-form-field>
+            </div>
+          </div>
 
           <mat-divider class="charge-divider"></mat-divider>
 

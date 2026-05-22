@@ -41,6 +41,15 @@ public class BookingService {
 
 	@Autowired
 	private BookingChargeDetailsRepo bookingChargeRepo;
+
+	@Autowired
+	private EmailService emailService;
+
+	@Autowired
+	private BranchRepo branchRepo;
+
+	@Autowired
+	private CompanyRegisterrepo companyRegisterrepo;
 	
 	@Transactional
 	public BookingResponseDTO saveBooking(BookingDTO dto) {
@@ -72,6 +81,8 @@ public class BookingService {
 				booking.setConsignorMobile(dto.getConsignorMobile());
 			if (dto.getConsignorAddress() != null)
 				booking.setConsignorAddress(dto.getConsignorAddress());
+			if (dto.getConsignorGST() != null)
+				booking.setConsignorGST(dto.getConsignorGST());
 
 			if (dto.getConsigneeName() != null)
 				booking.setConsigneeName(dto.getConsigneeName());
@@ -79,6 +90,8 @@ public class BookingService {
 				booking.setConsigneeMobile(dto.getConsigneeMobile());
 			if (dto.getConsigneeAddress() != null)
 				booking.setConsigneeAddress(dto.getConsigneeAddress());
+			if (dto.getConsigneeGST() != null)
+				booking.setConsigneeGST(dto.getConsigneeGST());
 			if (dto.getPartyName() != null)
 				booking.setPartyName(dto.getPartyName());
 
@@ -136,6 +149,21 @@ public class BookingService {
 			response.setBooking(save);
 			response.setArticles(articleDetailDtos);
 			response.setCharges(bookingChargeDetails);
+			
+			try {
+				dto.setLoadingReciept(loadingReceipt);
+				String branchCodeToUse = dto.getBranchCode() != null ? dto.getBranchCode() : booking.getBranchCode();
+				String companyCodeToUse = dto.getCompanyCode() != null ? dto.getCompanyCode() : booking.getCompanyCode();
+				com.logic.logistic.dto.BranchDTO branch = branchCodeToUse != null ? branchRepo.getBranchBybranchCode(branchCodeToUse) : null;
+				com.logic.logistic.dto.CompanyDto company = companyCodeToUse != null ? companyRegisterrepo.getCompanyByID(companyCodeToUse) : null;
+				if (branch != null && branch.getBranchEmail() != null && !branch.getBranchEmail().isBlank()) {
+					emailService.sendBookingEmail(branch.getBranchEmail(), dto, 
+						company != null ? company.getCompanyFullName() : "", 
+						branch.getBranchName(), false);
+				}
+			} catch (Exception ex) {
+				logger.error("Failed to trigger booking create email: " + ex.getMessage());
+			}
 		} catch (Exception e) {
 			logger.error("Exception in saveBooking: " + e);
 		}
@@ -312,6 +340,19 @@ public class BookingService {
 			dto.setRemarks(bookingByLr.getRemarks());
 
 			dto.setArticleDetails(articleDetails);
+
+			// Full charge breakdown lives in booking_charge_details; merge for edit/search UI
+			java.util.Optional<BookingChargeDetails> chargeDetails =
+					bookingChargeRepo.findByLoadingReciept(lr);
+			if (chargeDetails.isPresent()) {
+				BeanUtils.copyProperties(
+						chargeDetails.get(),
+						dto,
+						"id",
+						"loadingReciept",
+						"createdDate",
+						"modifiedDate");
+			}
 		}
 		return dto;
 	}
@@ -334,6 +375,7 @@ public class BookingService {
 		return details;
 	}
 
+	@Transactional
 	public Booking updateBooking(String lr, BookingDTO dto) {
 		Booking existing = bookingRepo.findById(lr).orElseThrow(() -> new RuntimeException("LR not found"));
 
@@ -342,9 +384,11 @@ public class BookingService {
 		existing.setConsignorName(dto.getConsignorName());
 		existing.setConsignorMobile(dto.getConsignorMobile());
 		existing.setConsignorAddress(dto.getConsignorAddress());
+		existing.setConsignorGST(dto.getConsignorGST());
 		existing.setConsigneeName(dto.getConsigneeName());
 		existing.setConsigneeMobile(dto.getConsigneeMobile());
 		existing.setConsigneeAddress(dto.getConsigneeAddress());
+		existing.setConsigneeGST(dto.getConsigneeGST());
 		existing.setFreight(dto.getFreight());
 		existing.setSgst(dto.getSgst());
 		existing.setCgst(dto.getCgst());
@@ -356,10 +400,15 @@ public class BookingService {
 		existing.setDestinationBranchCode(dto.getDestinationBranchCode());
 		existing.setBillType(dto.getBillType());
 		existing.setRemarks(dto.getRemarks());
-		
+		existing.setPaidVia(dto.getPaidVia());
+		existing.setPartyName(dto.getPartyName());
+
 		if (dto.geteWayBillNumbers() != null && !dto.geteWayBillNumbers().isEmpty()) {
 			existing.seteWayBillNumbers(String.join(",", dto.geteWayBillNumbers()));
 			existing.seteWayBillNumber(dto.geteWayBillNumbers().get(0));
+		} else if (dto.geteWayBillNumber() != null) {
+			existing.seteWayBillNumber(dto.geteWayBillNumber());
+			existing.seteWayBillNumbers(dto.geteWayBillNumber());
 		}
 
 		existing.setModifiedDate(LocalDateTime.now());
@@ -370,6 +419,21 @@ public class BookingService {
 
 		saveArticles(lr, dto.getArticleDetails());
 		bookingRepo.save(existing);
+
+		try {
+			dto.setLoadingReciept(lr);
+			String branchCodeToUse = dto.getBranchCode() != null ? dto.getBranchCode() : existing.getBranchCode();
+			String companyCodeToUse = dto.getCompanyCode() != null ? dto.getCompanyCode() : existing.getCompanyCode();
+			com.logic.logistic.dto.BranchDTO branch = branchCodeToUse != null ? branchRepo.getBranchBybranchCode(branchCodeToUse) : null;
+			com.logic.logistic.dto.CompanyDto company = companyCodeToUse != null ? companyRegisterrepo.getCompanyByID(companyCodeToUse) : null;
+			if (branch != null && branch.getBranchEmail() != null && !branch.getBranchEmail().isBlank()) {
+				emailService.sendBookingEmail(branch.getBranchEmail(), dto, 
+					company != null ? company.getCompanyFullName() : "", 
+					branch.getBranchName(), true);
+			}
+		} catch (Exception ex) {
+			logger.error("Failed to trigger booking update email: " + ex.getMessage());
+		}
 
 		return existing;
 	}
@@ -495,13 +559,17 @@ public class BookingService {
 	}
 
 	public BookingChargeDetails saveBookingCharges(String lrNumber, BookingDTO dto) {
-		BookingChargeDetails chargeData=null;
+		BookingChargeDetails chargeData = null;
 		try {
+			LocalDateTime now = LocalDateTime.now();
 
-			BookingChargeDetails charges =
-					new BookingChargeDetails();
+			// Update existing row instead of delete/insert to avoid transaction flush conflicts
+			BookingChargeDetails charges = bookingChargeRepo.findByLoadingReciept(lrNumber).orElseGet(BookingChargeDetails::new);
 
 			charges.setLoadingReciept(lrNumber);
+			if (charges.getCreatedDate() == null) {
+				charges.setCreatedDate(now);
+			}
 
 			charges.setLrCharge(dto.getLrCharge());
 
@@ -626,15 +694,9 @@ public class BookingService {
 
 			charges.setTotalAmount(totalAmount);
 
-			charges.setCreatedDate(
-					LocalDateTime.now()
-			);
+			charges.setModifiedDate(now);
 
-			charges.setModifiedDate(
-					LocalDateTime.now()
-			);
-
-			 chargeData = bookingChargeRepo.save(charges);
+			chargeData = bookingChargeRepo.save(charges);
 
 			logger.info(
 					"booking charges saved :: "

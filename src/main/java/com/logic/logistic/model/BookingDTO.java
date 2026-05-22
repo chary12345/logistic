@@ -9,10 +9,12 @@ public class BookingDTO {
     private String consignorName;
     private String consignorMobile;
     private String consignorAddress;
+    private String consignorGST;
 
     private String consigneeName;
     private String consigneeMobile;
     private String consigneeAddress;
+    private String consigneeGST;
 
     private List<ArticleDetail> articleDetails;
 
@@ -100,6 +102,12 @@ public class BookingDTO {
 	public void setConsignorAddress(String consignorAddress) {
 		this.consignorAddress = consignorAddress;
 	}
+	public String getConsignorGST() {
+		return consignorGST;
+	}
+	public void setConsignorGST(String consignorGST) {
+		this.consignorGST = consignorGST;
+	}
 	public String getConsigneeName() {
 		return consigneeName;
 	}
@@ -117,6 +125,12 @@ public class BookingDTO {
 	}
 	public void setConsigneeAddress(String consigneeAddress) {
 		this.consigneeAddress = consigneeAddress;
+	}
+	public String getConsigneeGST() {
+		return consigneeGST;
+	}
+	public void setConsigneeGST(String consigneeGST) {
+		this.consigneeGST = consigneeGST;
 	}
 	
 	public double getFreight() {

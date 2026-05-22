@@ -10,6 +10,7 @@ import java.util.Optional;
 public interface BookingChargeDetailsRepo
         extends JpaRepository<BookingChargeDetails, Long> {
 
+    @org.springframework.transaction.annotation.Transactional
     void deleteByLoadingReciept(String loadingReciept);
 
     Optional<BookingChargeDetails> findByLoadingReciept(

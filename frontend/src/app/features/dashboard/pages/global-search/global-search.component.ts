@@ -18,6 +18,7 @@ import { ExportService } from '../../../../core/services/export.service';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { SnackbarService } from '../../../../core/services/snackbar.service';
 import { Booking, BookingSummaryRow } from '../../../../shared/models/models';
+import { calcBookingGrandTotal, mapReportContent } from '../../../../shared/utils/booking-report.util';
 import { LrSearchDialogComponent } from '../../dialogs/lr-search-dialog/lr-search-dialog.component';
 
 @Component({
@@ -75,7 +76,7 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
     { headerName: 'Payment', field: 'billType', minWidth: 100, sortable: true,
       cellClass: (p) => 'payment-cell ' + this.getPaymentClass(p.value) },
     { headerName: 'Total', minWidth: 110, sortable: true,
-      valueGetter: p => this.calcTotal(p.data),
+      valueGetter: p => calcBookingGrandTotal(p.data),
       valueFormatter: p => '₹' + (p.value || 0).toFixed(2),
       cellStyle: { fontWeight: '700' } },
     { headerName: 'Status', field: 'consignStatus', minWidth: 100, sortable: true },
@@ -153,18 +154,13 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
       .subscribe({
         next: r => {
           this.loading = false;
-          const items = r.content || [];
+          const items = mapReportContent(r.content);
           this.rowData = items;
-          this.totals = { count: items.length, grandTotal: items.reduce((s,b) => s + this.calcTotal(b), 0) };
+          this.totals = { count: items.length, grandTotal: items.reduce((s, b) => s + calcBookingGrandTotal(b), 0) };
           this.computeSummary(items);
         },
         error: () => { this.loading = false; this.snack.error('Global search failed.'); }
       });
-  }
-
-  calcTotal(b: Booking): number {
-    if (!b) return 0;
-    return (b.freight||0) + (b.loading||0) + (b.loadingCharge||0) + (b.sgst||0) + (b.cgst||0) + (b.igst||0);
   }
 
   getPaymentClass(m?: string): string {
@@ -195,7 +191,7 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
   downloadExcel(): void {
     this.exportSvc.exportExcel(this.rowData.map(b => ({
       'LR':b.loadingReciept,'Date':b.bookingDate,'Consignor':b.consignorName,'Consignee':b.consigneeName,
-      'Destination':b.destinationBranchCode,'Payment':b.billType,'Total':this.calcTotal(b),'Status':b.consignStatus
+      'Destination':b.destinationBranchCode,'Payment':b.billType,'Total':calcBookingGrandTotal(b),'Status':b.consignStatus
     })), 'global-search.xlsx');
   }
 
@@ -203,7 +199,7 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
     const headers = ['LR','Date','Consignor','Consignee','Dest','Mode','Total','Status'];
     const rows = this.rowData.map(b => [
       b.loadingReciept, b.bookingDate, b.consignorName, b.consigneeName,
-      b.destinationBranchCode, b.billType, this.calcTotal(b), b.consignStatus
+      b.destinationBranchCode, b.billType, calcBookingGrandTotal(b), b.consignStatus
     ]);
     this.exportSvc.exportPDF('Global Search', headers, rows as any, action, 'global-search.pdf');
   }
