@@ -10,5 +10,5 @@ public interface UserChargeConfigRepository extends JpaRepository<UserChargeConf
     List<UserChargeConfigDTO> findByCompanyCodeOrderByDisplayOrderAsc(
             String companyCode);
 
-    void deleteByCompanyCodeAndUserId(String companyCode, String userId);
+    void deleteByCompanyCode(String companyCode);
 }

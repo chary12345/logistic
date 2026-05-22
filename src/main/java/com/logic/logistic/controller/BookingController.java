@@ -47,7 +47,7 @@ public class BookingController {
 	@PutMapping("/updateBookLoad")
 	public ResponseEntity<?> updateBooking(@RequestParam String lr, @RequestBody BookingDTO dto) {
 	        try {
-	            Booking bookingUpdated = bookingService.updateBooking(lr, dto);
+	            BookingResponseDTO bookingUpdated = bookingService.updateBooking(lr, dto);
 	            return ResponseEntity.ok(bookingUpdated);
 	        } catch (Exception e) {
 	            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Update failed: " + e.getMessage());
