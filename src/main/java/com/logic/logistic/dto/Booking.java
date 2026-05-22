@@ -25,6 +25,9 @@ public class Booking {
 	@Column(name = "consignor_address", length = 255)
 	private String consignorAddress;
 
+	@Column(name = "consignor_gst", length = 20)
+	private String consignorGST;
+
 	@Column(name = "consignee_name", length = 100)
 	private String consigneeName;
 
@@ -33,6 +36,9 @@ public class Booking {
 
 	@Column(name = "consignee_address", length = 255)
 	private String consigneeAddress;
+
+	@Column(name = "consignee_gst", length = 20)
+	private String consigneeGST;
 
 
 
@@ -204,12 +210,28 @@ public class Booking {
 		this.consignorAddress = consignorAddress;
 	}
 
+	public String getConsignorGST() {
+		return consignorGST;
+	}
+
+	public void setConsignorGST(String consignorGST) {
+		this.consignorGST = consignorGST;
+	}
+
 	public String getConsigneeAddress() {
 		return consigneeAddress;
 	}
 
 	public void setConsigneeAddress(String consigneeAddress) {
 		this.consigneeAddress = consigneeAddress;
+	}
+
+	public String getConsigneeGST() {
+		return consigneeGST;
+	}
+
+	public void setConsigneeGST(String consigneeGST) {
+		this.consigneeGST = consigneeGST;
 	}
 
 	public LocalDateTime getBookingDate() {

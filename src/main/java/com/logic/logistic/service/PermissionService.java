@@ -204,7 +204,9 @@ public class PermissionService {
 
             permission.setRolesAndPermissions(
                     dto.getRolesAndPermissions());
+
             permission.setLoadingSheetList(dto.getLoadingSheetList());
+
 
             // ================= SAVE =================
 
