@@ -16,4 +16,6 @@ public interface BookingChargeDetailsRepo
     Optional<BookingChargeDetails> findByLoadingReciept(
             String loadingReciept
     );
+
+    java.util.List<BookingChargeDetails> findByLoadingRecieptIn(java.util.List<String> loadingReciepts);
 }

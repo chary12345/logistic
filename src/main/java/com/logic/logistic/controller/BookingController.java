@@ -46,14 +46,13 @@ public class BookingController {
 
 	@PutMapping("/updateBookLoad")
 	public ResponseEntity<?> updateBooking(@RequestParam String lr, @RequestBody BookingDTO dto) {
-	        try {
-	            BookingResponseDTO bookingUpdated = bookingService.updateBooking(lr, dto);
-	            return ResponseEntity.ok(bookingUpdated);
-	        } catch (Exception e) {
-	            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Update failed: " + e.getMessage());
-	        }
-	    }
-	
+		try {
+			BookingResponseDTO bookingUpdated = bookingService.updateBooking(lr, dto);
+			return ResponseEntity.ok(bookingUpdated);
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Update failed: " + e.getMessage());
+		}
+	}
 
 	@GetMapping("/report")
 	public ResponseEntity<BookingPageResponse> getReport(
@@ -64,12 +63,13 @@ public class BookingController {
 		BookingPageResponse response = bookingService.getReports(fromDate, toDate, status, lastId, branchCode);
 		return ResponseEntity.ok(response);
 	}
-	
+
 	@PostMapping("/dispatchLoad")
 	public ResponseEntity<DispatchResponse> dispatchLoad(@RequestBody DispatchRequest request) {
-	    DispatchResponse result = bookingService.dispatchLoad(request);
-	    return ResponseEntity.ok(result);
+		DispatchResponse result = bookingService.dispatchLoad(request);
+		return ResponseEntity.ok(result);
 	}
+
 	@GetMapping("/searchBylr")
 	public ResponseEntity<?> searchByLR(@RequestParam String lr) {
 		try {
@@ -86,18 +86,16 @@ public class BookingController {
 		}
 	}
 
-
 	@PostMapping("/get-Global-Search-Reports")
 	public ResponseEntity<BookingPageResponse> getGlobalSearchReports(@RequestBody BookingSearchRequest request) {
-	    BookingPageResponse response = bookingService.getGlobalSearchReports(request);
-	    return ResponseEntity.ok(response);
+		BookingPageResponse response = bookingService.getGlobalSearchReports(request);
+		return ResponseEntity.ok(response);
 	}
 
-	 @GetMapping("Get-distinct-saidtocontains/{companyCode}")
-	    public List<String> getSaidToContainsByCompany(@PathVariable String companyCode) {
-	        return bookingService.getSaidToContainsByCompany(companyCode);
-	    }
-
+	@GetMapping("Get-distinct-saidtocontains/{companyCode}")
+	public List<String> getSaidToContainsByCompany(@PathVariable String companyCode) {
+		return bookingService.getSaidToContainsByCompany(companyCode);
+	}
 
 	@PostMapping("/createArticleType")
 	public ResponseEntity<ArticleTypeResponse> createArticleType(
@@ -105,7 +103,6 @@ public class BookingController {
 
 		return ResponseEntity.ok(articleTypeService.create(request));
 	}
-
 
 	@GetMapping("/fetchArticleTypeList")
 	public ResponseEntity<List<String>> getByCompany(
