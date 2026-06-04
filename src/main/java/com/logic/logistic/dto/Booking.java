@@ -112,6 +112,12 @@ public class Booking {
 	@Column(name = "party_name")
 	private String partyName;
 
+    @Column(name = "gst_paid_by")
+    private String gstPaidBy;
+
+    @Column(name = "delivery_type")
+    private String deliveryType;
+
     @Transient
     private String companyCode;
    
@@ -120,6 +126,25 @@ public class Booking {
     
     @Transient
     private String nextLr;
+
+    @Transient private double lrCharge;
+    @Transient private double hamali;
+    @Transient private double stationary;
+    @Transient private double otherCharges;
+    @Transient private double otherTransportCharges;
+    @Transient private double miscellaneous;
+    @Transient private double crossingAmount;
+    @Transient private double podCharges;
+    @Transient private double doorDelivery;
+    @Transient private double doorPickup;
+    @Transient private double ddc;
+    @Transient private double dcc;
+    @Transient private double demurrage;
+    @Transient private double unloading;
+    @Transient private double localVehicle;
+    @Transient private double crossingHire;
+    @Transient private double totalAmount;
+    @Transient private double grandTotal;
 
     
     @Column(name = "modified_date")
@@ -419,4 +444,74 @@ public class Booking {
 	public void setPartyName(String partyName) {
 		this.partyName = partyName;
 	}
+
+	public String getGstPaidBy() {
+		return gstPaidBy;
+	}
+
+	public void setGstPaidBy(String gstPaidBy) {
+		this.gstPaidBy = gstPaidBy;
+	}
+
+	public String getDeliveryType() {
+		return deliveryType;
+	}
+
+	public void setDeliveryType(String deliveryType) {
+		this.deliveryType = deliveryType;
+	}
+
+	public double getLrCharge() { return lrCharge; }
+	public void setLrCharge(double lrCharge) { this.lrCharge = lrCharge; }
+
+	public double getHamali() { return hamali; }
+	public void setHamali(double hamali) { this.hamali = hamali; }
+
+	public double getStationary() { return stationary; }
+	public void setStationary(double stationary) { this.stationary = stationary; }
+
+	public double getOtherCharges() { return otherCharges; }
+	public void setOtherCharges(double otherCharges) { this.otherCharges = otherCharges; }
+
+	public double getOtherTransportCharges() { return otherTransportCharges; }
+	public void setOtherTransportCharges(double otherTransportCharges) { this.otherTransportCharges = otherTransportCharges; }
+
+	public double getMiscellaneous() { return miscellaneous; }
+	public void setMiscellaneous(double miscellaneous) { this.miscellaneous = miscellaneous; }
+
+	public double getCrossingAmount() { return crossingAmount; }
+	public void setCrossingAmount(double crossingAmount) { this.crossingAmount = crossingAmount; }
+
+	public double getPodCharges() { return podCharges; }
+	public void setPodCharges(double podCharges) { this.podCharges = podCharges; }
+
+	public double getDoorDelivery() { return doorDelivery; }
+	public void setDoorDelivery(double doorDelivery) { this.doorDelivery = doorDelivery; }
+
+	public double getDoorPickup() { return doorPickup; }
+	public void setDoorPickup(double doorPickup) { this.doorPickup = doorPickup; }
+
+	public double getDdc() { return ddc; }
+	public void setDdc(double ddc) { this.ddc = ddc; }
+
+	public double getDcc() { return dcc; }
+	public void setDcc(double dcc) { this.dcc = dcc; }
+
+	public double getDemurrage() { return demurrage; }
+	public void setDemurrage(double demurrage) { this.demurrage = demurrage; }
+
+	public double getUnloading() { return unloading; }
+	public void setUnloading(double unloading) { this.unloading = unloading; }
+
+	public double getLocalVehicle() { return localVehicle; }
+	public void setLocalVehicle(double localVehicle) { this.localVehicle = localVehicle; }
+
+	public double getCrossingHire() { return crossingHire; }
+	public void setCrossingHire(double crossingHire) { this.crossingHire = crossingHire; }
+
+	public double getTotalAmount() { return totalAmount; }
+	public void setTotalAmount(double totalAmount) { this.totalAmount = totalAmount; }
+
+	public double getGrandTotal() { return grandTotal; }
+	public void setGrandTotal(double grandTotal) { this.grandTotal = grandTotal; }
 }

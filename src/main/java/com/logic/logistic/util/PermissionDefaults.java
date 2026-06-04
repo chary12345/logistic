@@ -92,11 +92,28 @@ public class PermissionDefaults {
 
                 p.setHome(true);
 
+                // Operations
                 p.setBooking(true);
                 p.setDispatch(true);
                 p.setReceive(true);
                 p.setDelivery(true);
 
+                // Reports
+                p.setBookingReport(true);
+                p.setDispatchReport(true);
+                p.setReceiveReport(true);
+                p.setDeliveryReport(true);
+
+                // Finance/Billing
+                p.setViewStatements(true);
+                p.setTbbInvoice(true);
+                
+                // Other
+                p.setLoadingSheetList(true);
+                p.setGlobalSearch(true);
+
+                // Administration modules (remains false by default):
+                // Branches, Employees, Vehicles, Parties, Charges, RolesAndPermissions
 
                 break;
         }

@@ -5,8 +5,6 @@ public class OperationFilter {
 	private String toDate;
 	private String region;
 	private String subregion;
-	private String branchCode;
-	private String destinationBranchCode;
 	private String employeeName;
 	private String status;
 	public String getFromDate() {
@@ -33,19 +31,24 @@ public class OperationFilter {
 	public void setSubregion(String subregion) {
 		this.subregion = subregion;
 	}
-	public String getBranchCode() {
-		return branchCode;
+	@com.fasterxml.jackson.annotation.JsonProperty("fromBranchCode")
+	private String fromBranchCode;
+
+	@com.fasterxml.jackson.annotation.JsonProperty("ToBranchCode")
+	private String ToBranchCode;
+
+	public String getFromBranchCode() {
+		return fromBranchCode;
 	}
-	public void setBranchCode(String branchCode) {
-		this.branchCode = branchCode;
+	public void setFromBranchCode(String fromBranchCode) {
+		this.fromBranchCode = fromBranchCode;
 	}
-	
-	
-	public String getDestinationBranchCode() {
-		return destinationBranchCode;
+
+	public String getToBranchCode() {
+		return ToBranchCode;
 	}
-	public void setDestinationBranchCode(String destinationBranchCode) {
-		this.destinationBranchCode = destinationBranchCode;
+	public void setToBranchCode(String toBranchCode) {
+		this.ToBranchCode = toBranchCode;
 	}
 	public String getEmployeeName() {
 		return employeeName;

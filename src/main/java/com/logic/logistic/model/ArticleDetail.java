@@ -9,6 +9,8 @@ public class ArticleDetail {
 	private String artAmt;
 	private String total;
 	private String companyCode;
+	private String actualWeight;
+	private String chargeWeight;
 	public String getArticle() {
 		return article;
 	}
@@ -56,6 +58,18 @@ public class ArticleDetail {
 	}
 	public void setLoadingReciept(String loadingReciept) {
 		this.loadingReciept = loadingReciept;
+	}
+	public String getActualWeight() {
+		return actualWeight;
+	}
+	public void setActualWeight(String actualWeight) {
+		this.actualWeight = actualWeight;
+	}
+	public String getChargeWeight() {
+		return chargeWeight;
+	}
+	public void setChargeWeight(String chargeWeight) {
+		this.chargeWeight = chargeWeight;
 	}
 	
 	

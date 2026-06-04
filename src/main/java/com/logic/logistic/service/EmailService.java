@@ -1364,6 +1364,28 @@ public class EmailService {
         double computedTotal = booking.getFreight() + booking.getLrCharge() + booking.getHamali() + booking.getLoading() + booking.getStationary() + booking.getOtherCharges() + booking.getOtherTransportCharges() + booking.getMiscellaneous() + booking.getCrossingAmount() + booking.getPodCharges() + booking.getDoorDelivery() + booking.getDoorPickup() + booking.getDdc() + booking.getDcc() + booking.getDemurrage() + booking.getUnloading() + booking.getLocalVehicle() + booking.getCrossingHire() + booking.getLoadingCharge() + gst;
         double displayTotal = booking.getTotalAmount() > 0 ? booking.getTotalAmount() : (computedTotal > 0 ? computedTotal : booking.getFreight());
 
+        StringBuilder chargesHtml = new StringBuilder();
+        if (booking.getFreight() > 0) chargesHtml.append(buildRow(accentColor, "Freight", "Rs. " + booking.getFreight()));
+        if (booking.getLrCharge() > 0) chargesHtml.append(buildRow(accentColor, "LR Charge", "Rs. " + booking.getLrCharge()));
+        if (booking.getLoading() > 0) chargesHtml.append(buildRow(accentColor, "Loading", "Rs. " + booking.getLoading()));
+        if (booking.getLoadingCharge() > 0) chargesHtml.append(buildRow(accentColor, "Loading Charge", "Rs. " + booking.getLoadingCharge()));
+        if (booking.getUnloading() > 0) chargesHtml.append(buildRow(accentColor, "Unloading", "Rs. " + booking.getUnloading()));
+        if (booking.getHamali() > 0) chargesHtml.append(buildRow(accentColor, "Hamali", "Rs. " + booking.getHamali()));
+        if (booking.getStationary() > 0) chargesHtml.append(buildRow(accentColor, "Stationary", "Rs. " + booking.getStationary()));
+        if (booking.getOtherCharges() > 0) chargesHtml.append(buildRow(accentColor, "Other Charges", "Rs. " + booking.getOtherCharges()));
+        if (booking.getOtherTransportCharges() > 0) chargesHtml.append(buildRow(accentColor, "Other Transport", "Rs. " + booking.getOtherTransportCharges()));
+        if (booking.getMiscellaneous() > 0) chargesHtml.append(buildRow(accentColor, "Miscellaneous", "Rs. " + booking.getMiscellaneous()));
+        if (booking.getCrossingAmount() > 0) chargesHtml.append(buildRow(accentColor, "Crossing Amount", "Rs. " + booking.getCrossingAmount()));
+        if (booking.getPodCharges() > 0) chargesHtml.append(buildRow(accentColor, "POD Charges", "Rs. " + booking.getPodCharges()));
+        if (booking.getDoorDelivery() > 0) chargesHtml.append(buildRow(accentColor, "Door Delivery", "Rs. " + booking.getDoorDelivery()));
+        if (booking.getDoorPickup() > 0) chargesHtml.append(buildRow(accentColor, "Door Pickup", "Rs. " + booking.getDoorPickup()));
+        if (booking.getDdc() > 0) chargesHtml.append(buildRow(accentColor, "DDC", "Rs. " + booking.getDdc()));
+        if (booking.getDcc() > 0) chargesHtml.append(buildRow(accentColor, "DCC", "Rs. " + booking.getDcc()));
+        if (booking.getDemurrage() > 0) chargesHtml.append(buildRow(accentColor, "Demurrage", "Rs. " + booking.getDemurrage()));
+        if (booking.getLocalVehicle() > 0) chargesHtml.append(buildRow(accentColor, "Local Vehicle", "Rs. " + booking.getLocalVehicle()));
+        if (booking.getCrossingHire() > 0) chargesHtml.append(buildRow(accentColor, "Crossing Hire", "Rs. " + booking.getCrossingHire()));
+        if (gst > 0) chargesHtml.append(buildRow(accentColor, "GST", "Rs. " + gst));
+
         return """
             <!DOCTYPE html>
             <html lang="en">
@@ -1420,6 +1442,28 @@ public class EmailService {
                           %s
                           <tr><td style="height:12px;"></td></tr>
                         </table>
+                        
+                        <!-- CHARGES BREAKDOWN -->
+                        <table width="100%%" cellpadding="0" cellspacing="0" style="background:#fffde7;border:1px solid #fff59d;border-radius:10px;margin-bottom:20px;">
+                          <tr>
+                            <td style="padding:20px 24px 4px 24px;">
+                              <p style="margin:0 0 4px 0;font-size:11px;font-weight:700;color:#fbc02d;letter-spacing:2px;text-transform:uppercase;">Charges Breakdown</p>
+                              <hr style="border:none;border-top:2px solid #fff59d;margin:10px 0 16px 0;">
+                            </td>
+                          </tr>
+                          %s
+                          <tr>
+                            <td style="padding:10px 24px 20px 24px;">
+                              <table width="100%%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                  <td width="150" style="font-size:13px;color:#263238;font-weight:700;">Grand Total</td>
+                                  <td style="font-size:15px;color:#d32f2f;font-weight:800;border-left:3px solid #fbc02d;padding-left:12px;">Rs. %s</td>
+                                </tr>
+                              </table>
+                            </td>
+                          </tr>
+                        </table>
+
                         <!-- CONSIGNOR / CONSIGNEE -->
                         <table width="100%%" cellpadding="0" cellspacing="0" style="background:#e8f5e9;border:1px solid #81c784;border-radius:10px;margin-bottom:20px;">
                           <tr>
@@ -1474,8 +1518,9 @@ public class EmailService {
                 buildRow(accentColor, "LR Number", booking.getLoadingReciept()) +
                 buildRow(accentColor, "From Branch", booking.getBranchCode()) +
                 buildRow(accentColor, "To Branch", booking.getDestinationBranchCode()) +
-                buildRow(accentColor, "Bill Type", booking.getBillType()) +
-                buildRow(accentColor, "Total Amount", "Rs. " + displayTotal),
+                buildRow(accentColor, "Bill Type", booking.getBillType()),
+                chargesHtml.toString(),
+                displayTotal,
                 accentColor,
                 buildRow(accentColor, "Consignor", (booking.getConsignorName()!=null?booking.getConsignorName():"-") + " (" + (booking.getConsignorMobile()!=null?booking.getConsignorMobile():"") + ")") +
                 buildRow(accentColor, "Consignee", (booking.getConsigneeName()!=null?booking.getConsigneeName():"-") + " (" + (booking.getConsigneeMobile()!=null?booking.getConsigneeMobile():"") + ")"),
