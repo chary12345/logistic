@@ -13,13 +13,18 @@ import org.springframework.stereotype.Service;
 
 import com.logic.logistic.dto.Booking;
 import com.logic.logistic.dto.StatementDto;
+import com.logic.logistic.dto.BookingChargeDetails;
 import com.logic.logistic.repository.BookRepository;
+import com.logic.logistic.repository.BookingChargeDetailsRepo;
 
 @Service
 public class StatementServicImpl implements StatementService{
 	
 	@Autowired
 	private BookRepository bookingRepository;
+
+	@Autowired
+	private BookingChargeDetailsRepo bookingChargeRepo;
 
 	@Override
 	public List<StatementDto> getStatements(String branchCode, LocalDateTime from, LocalDateTime to, String paymentMode) {
@@ -30,9 +35,40 @@ public class StatementServicImpl implements StatementService{
 	            (paymentMode == null || paymentMode.isEmpty()) ? null : paymentMode
 	    );
 
+	    if (bookings == null || bookings.isEmpty()) return new ArrayList<>();
+
+	    List<String> lrIds = bookings.stream().map(Booking::getLoadingReciept).collect(Collectors.toList());
+	    List<BookingChargeDetails> charges = bookingChargeRepo.findByLoadingRecieptIn(lrIds);
+	    java.util.Map<String, BookingChargeDetails> chargeMap = new java.util.HashMap<>();
+	    for (BookingChargeDetails c : charges) {
+	        chargeMap.put(c.getLoadingReciept(), c);
+	    }
+
 	    return bookings.stream().map(b -> {
 	        double gst = (b.getSgst() + b.getCgst() + b.getIgst());
-	        double total = b.getFreight() + gst + b.getLoading() + b.getLoadingCharge();
+	        
+	        double otherCharges = 0;
+	        BookingChargeDetails c = chargeMap.get(b.getLoadingReciept());
+	        if (c != null) {
+	            otherCharges += c.getLrCharge();
+	            otherCharges += c.getHamali();
+	            otherCharges += c.getStationary();
+	            otherCharges += c.getOtherCharges();
+	            otherCharges += c.getOtherTransportCharges();
+	            otherCharges += c.getMiscellaneous();
+	            otherCharges += c.getCrossingAmount();
+	            otherCharges += c.getPodCharges();
+	            otherCharges += c.getDoorDelivery();
+	            otherCharges += c.getDoorPickup();
+	            otherCharges += c.getDdc();
+	            otherCharges += c.getDcc();
+	            otherCharges += c.getDemurrage();
+	            otherCharges += c.getUnloading();
+	            otherCharges += c.getLocalVehicle();
+	            otherCharges += c.getCrossingHire();
+	        }
+	        
+	        double total = b.getFreight() + gst + b.getLoading() + b.getLoadingCharge() + otherCharges;
 
 	        // Logic: amount effective date
 	        LocalDateTime effectiveDate;
@@ -53,6 +89,7 @@ public class StatementServicImpl implements StatementService{
 	                gst,
 	                b.getLoading(),
 	                b.getLoadingCharge(),
+	                otherCharges,
 	                (effectiveDate != null ? total : 0) // amount only if effective date present
 	        );
 	    }).collect(Collectors.toList());
