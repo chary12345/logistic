@@ -149,41 +149,50 @@ export class ExportService {
 
       const gst = (booking['cgst']||0) + (booking['sgst']||0) + (booking['igst']||0);
       
+      const defaultChargeFields = [
+        { key: 'lrCharge', label: 'LR Charge' },
+        { key: 'loading', label: 'Loading' },
+        { key: 'loadingCharge', label: 'Load Chg' },
+        { key: 'unloading', label: 'Unloading' },
+        { key: 'hamali', label: 'Hamali' },
+        { key: 'stationary', label: 'Stationary' },
+        { key: 'otherCharges', label: 'Other' },
+        { key: 'otherTransportCharges', label: 'Transport' },
+        { key: 'miscellaneous', label: 'Misc' },
+        { key: 'crossingAmount', label: 'Crossing' },
+        { key: 'podCharges', label: 'POD' },
+        { key: 'doorDelivery', label: 'Door Del' },
+        { key: 'doorPickup', label: 'Door Pick' },
+        { key: 'ddc', label: 'DDC' },
+        { key: 'dcc', label: 'DCC' },
+        { key: 'demurrage', label: 'Demurrage' },
+        { key: 'localVehicle', label: 'Local Veh' },
+        { key: 'crossingHire', label: 'Cross Hire' }
+      ];
+
       let chargesList: {label: string, val: number}[] = [];
-      
+      chargesList.push({ label: 'Freight:', val: booking['freight'] || 0 });
+
+      // First add any dynamic charges requested
+      const processedKeys = new Set<string>();
       if (dynamicChargeFields && dynamicChargeFields.length > 0) {
-        chargesList.push({ label: 'Freight:', val: booking['freight'] || 0 });
         dynamicChargeFields.forEach(f => {
           let shortLabel = f.label.length > 10 ? f.label.substring(0, 9) + '.' : f.label;
           chargesList.push({ label: shortLabel + ':', val: booking[f.key] || 0 });
+          processedKeys.add(f.key);
         });
-        chargesList.push({ label: 'GST:', val: gst });
-      } else {
-        chargesList = [
-          { label: 'Freight:', val: booking['freight'] || 0 },
-          { label: 'LR Charge:', val: booking['lrCharge'] || 0 },
-          { label: 'Loading:', val: booking['loading'] || 0 },
-          { label: 'Load Chg:', val: booking['loadingCharge'] || 0 },
-          { label: 'Unloading:', val: booking['unloading'] || 0 },
-          { label: 'Hamali:', val: booking['hamali'] || 0 },
-          { label: 'Stationary:', val: booking['stationary'] || 0 },
-          { label: 'Other:', val: booking['otherCharges'] || 0 },
-          { label: 'Transport:', val: booking['otherTransportCharges'] || 0 },
-          { label: 'Misc:', val: booking['miscellaneous'] || 0 },
-          { label: 'Crossing:', val: booking['crossingAmount'] || 0 },
-          { label: 'POD:', val: booking['podCharges'] || 0 },
-          { label: 'Door Del:', val: booking['doorDelivery'] || 0 },
-          { label: 'Door Pick:', val: booking['doorPickup'] || 0 },
-          { label: 'DDC:', val: booking['ddc'] || 0 },
-          { label: 'DCC:', val: booking['dcc'] || 0 },
-          { label: 'Demurrage:', val: booking['demurrage'] || 0 },
-          { label: 'Local Veh:', val: booking['localVehicle'] || 0 },
-          { label: 'Cross Hire:', val: booking['crossingHire'] || 0 },
-          { label: 'GST:', val: gst }
-        ];
       }
 
-      let activeCharges = dynamicChargeFields && dynamicChargeFields.length > 0 ? chargesList : chargesList.filter(c => Number(c.val) > 0);
+      // Then add any other non-zero charges that were not in dynamicChargeFields
+      defaultChargeFields.forEach(f => {
+        if (!processedKeys.has(f.key) && Number(booking[f.key]) > 0) {
+          chargesList.push({ label: f.label + ':', val: booking[f.key] });
+        }
+      });
+
+      chargesList.push({ label: 'GST:', val: gst });
+
+      let activeCharges = chargesList.filter(c => Number(c.val) > 0);
       if (activeCharges.length === 0) activeCharges.push(chargesList[0]);
 
       doc.setFontSize(7);

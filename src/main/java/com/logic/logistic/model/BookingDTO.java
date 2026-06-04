@@ -82,6 +82,8 @@ public class BookingDTO {
 	private String partyName;
 	private String remarks;
 	private List<String> eWayBillNumbers;
+	private String gstPaidBy;
+	private String deliveryType;
 
     
 	public String getConsignorName() {
@@ -425,5 +427,21 @@ public class BookingDTO {
 
 	public void seteWayBillNumbers(List<String> eWayBillNumbers) {
 		this.eWayBillNumbers = eWayBillNumbers;
+	}
+
+	public String getGstPaidBy() {
+		return gstPaidBy;
+	}
+
+	public void setGstPaidBy(String gstPaidBy) {
+		this.gstPaidBy = gstPaidBy;
+	}
+
+	public String getDeliveryType() {
+		return deliveryType;
+	}
+
+	public void setDeliveryType(String deliveryType) {
+		this.deliveryType = deliveryType;
 	}
 }

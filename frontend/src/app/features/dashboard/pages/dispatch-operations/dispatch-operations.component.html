@@ -6,21 +6,18 @@
     <mat-form-field>
       <mat-label>Region*</mat-label>
       <mat-select formControlName="region" (selectionChange)="onRegion($event.value)">
-        <mat-option value="">All</mat-option>
-        <mat-option *ngFor="let r of regions" [value]="r">{{ r }}</mat-option>
+        <mat-option *ngFor="let s of states" [value]="s.isoCode">{{ s.name }}</mat-option>
       </mat-select>
     </mat-form-field>
     <mat-form-field>
       <mat-label>Sub-Region*</mat-label>
       <mat-select formControlName="subRegion" (selectionChange)="onSubRegion($event.value)">
-        <mat-option value="">All</mat-option>
-        <mat-option *ngFor="let s of subRegions" [value]="s">{{ s }}</mat-option>
+        <mat-option *ngFor="let c of cities" [value]="c.name">{{ c.name }}</mat-option>
       </mat-select>
     </mat-form-field>
     <mat-form-field>
       <mat-label>Branch*</mat-label>
       <mat-select formControlName="branchCode">
-        <mat-option value="">All</mat-option>
         <mat-option *ngFor="let b of branchOptions" [value]="b.code">{{ b.label }}</mat-option>
       </mat-select>
     </mat-form-field>

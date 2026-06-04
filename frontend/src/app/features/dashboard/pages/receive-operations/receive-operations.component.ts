@@ -16,6 +16,7 @@ import { OperationService } from '../../../../core/services/operation.service';
 import { SnackbarService } from '../../../../core/services/snackbar.service';
 import { Booking, DispatchedResponseDTO, LoadingSheetInfo } from '../../../../shared/models/models';
 import { LrSearchDialogComponent } from '../../dialogs/lr-search-dialog/lr-search-dialog.component';
+import { calcBookingGrandTotal, calcOtherCharges } from '../../../../shared/utils/booking-report.util';
 
 @Component({
   selector: 'app-receive-operations',
@@ -70,8 +71,10 @@ export class ReceiveOperationsComponent implements OnDestroy {
       cellClass: (p) => 'payment-cell ' + this.getPaymentClass(p.value) },
     { headerName: 'Freight', field: 'freight', minWidth: 90, sortable: true, filter: 'agNumberColumnFilter',
       valueFormatter: p => '₹' + (p.value ?? 0).toLocaleString() },
+    { headerName: 'Other Charges', minWidth: 110, sortable: true, filter: 'agNumberColumnFilter',
+      valueGetter: p => calcOtherCharges(p.data), valueFormatter: p => '₹' + (p.value || 0).toFixed(2) },
     { headerName: 'Total', minWidth: 110, sortable: true,
-      valueGetter: p => this.calcTotal(p.data),
+      valueGetter: p => calcBookingGrandTotal(p.data),
       valueFormatter: p => '₹' + (p.value || 0).toFixed(2),
       cellStyle: { fontWeight: '700' } },
     { headerName: 'Booking Date', field: 'bookingDate', minWidth: 120, sortable: true,
@@ -157,11 +160,6 @@ export class ReceiveOperationsComponent implements OnDestroy {
     this.rowData = [];
     this.selectedRows = [];
     this.loadingSheet = null;
-  }
-
-  calcTotal(b: Booking): number {
-    if (!b) return 0;
-    return (b.freight || 0) + (b.loading || 0) + (b.loadingCharge || 0) + (b.sgst || 0) + (b.cgst || 0) + (b.igst || 0);
   }
 
   getPaymentClass(m?: string): string {

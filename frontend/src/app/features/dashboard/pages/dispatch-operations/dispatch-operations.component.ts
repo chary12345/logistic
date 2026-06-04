@@ -17,8 +17,10 @@ import { RegionService } from '../../../../core/services/region.service';
 import { VehicleService } from '../../../../core/services/vehicle.service';
 import { SnackbarService } from '../../../../core/services/snackbar.service';
 import { Booking, BranchOption, BookingSummaryRow, VehicleDTO } from '../../../../shared/models/models';
+import { State, City } from 'country-state-city';
 import { DispatchDetailsDialogComponent } from '../../dialogs/dispatch-details-dialog/dispatch-details-dialog.component';
 import { LrSearchDialogComponent } from '../../dialogs/lr-search-dialog/lr-search-dialog.component';
+import { calcOtherCharges, calcBookingGrandTotal } from '../../../../shared/utils/booking-report.util';
 
 @Component({
   selector: 'app-dispatch-operations',
@@ -40,8 +42,8 @@ export class DispatchOperationsComponent implements OnInit, OnDestroy {
     region: [''], subRegion: [''], branchCode: [''],
   });
 
-  regions: string[] = [];
-  subRegions: string[] = [];
+  states: any[] = [];
+  cities: any[] = [];
   branchOptions: BranchOption[] = [];
   vehicles: VehicleDTO[] = [];
 
@@ -90,6 +92,10 @@ export class DispatchOperationsComponent implements OnInit, OnDestroy {
       valueFormatter: p => (p.value ?? 0).toLocaleString() },
     { headerName: 'Loading Charges', field: 'loadingCharge', minWidth: 120, sortable: true, filter: 'agNumberColumnFilter',
       valueFormatter: p => (p.value ?? 0).toLocaleString() },
+    { headerName: 'Other Charges', minWidth: 100, sortable: true, filter: 'agNumberColumnFilter',
+      valueGetter: p => calcOtherCharges(p.data), valueFormatter: p => (p.value ?? 0).toLocaleString() },
+    { headerName: 'Total', minWidth: 90, sortable: true, filter: 'agNumberColumnFilter',
+      valueGetter: p => calcBookingGrandTotal(p.data), valueFormatter: p => (p.value ?? 0).toLocaleString() },
     { headerName: 'Consign Status', field: 'consignStatus', minWidth: 120, sortable: true, filter: true,
       cellClass: (p) => 'status-cell ' + (p.value === 'BOOKED' ? 'booked' : '') },
     { headerName: 'Booking Date', field: 'bookingDate', minWidth: 120, sortable: true,
@@ -123,9 +129,7 @@ export class DispatchOperationsComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.regionSvc.getRegions(this.auth.companyCode)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({ next: r => this.regions = r, error: () => { } });
+    this.states = State.getStatesOfCountry('IN');
 
     this.vehSvc.getActive(this.auth.branchCode)
       .pipe(takeUntil(this.destroy$))
@@ -145,18 +149,23 @@ export class DispatchOperationsComponent implements OnInit, OnDestroy {
     this.selectedRows = event.api.getSelectedRows();
   }
 
-  onRegion(v: string): void {
-    this.subRegions = []; this.branchOptions = [];
+  onRegion(stateCode: string): void {
+    this.cities = []; this.branchOptions = [];
     this.filterForm.patchValue({ subRegion: '', branchCode: '' });
-    if (!v) return;
-    this.regionSvc.getSubRegions(v).pipe(takeUntil(this.destroy$)).subscribe({ next: s => this.subRegions = s, error: () => { } });
+    if (!stateCode) return;
+    this.cities = City.getCitiesOfState('IN', stateCode);
   }
 
-  onSubRegion(v: string): void {
+  onSubRegion(cityName: string): void {
     this.branchOptions = []; this.filterForm.patchValue({ branchCode: '' });
-    const r = this.filterForm.value.region;
-    if (!v || !r) return;
-    this.regionSvc.getBranches(r, v).pipe(takeUntil(this.destroy$)).subscribe({
+    const stateCode = this.filterForm.value.region;
+    if (!cityName || !stateCode) return;
+    
+    // Find state name
+    const stateObj = this.states.find(s => s.isoCode === stateCode);
+    const stateName = stateObj ? stateObj.name : stateCode;
+
+    this.regionSvc.getBranches(stateName, cityName).pipe(takeUntil(this.destroy$)).subscribe({
       next: (branches: string[]) => {
         // Backend returns "BranchName-BranchCode" format — parse into { label, code }
         this.branchOptions = branches.map(b => {
@@ -164,7 +173,7 @@ export class DispatchOperationsComponent implements OnInit, OnDestroy {
           return idx > -1
             ? { label: b.substring(0, idx).trim(), code: b.substring(idx + 1).trim() }
             : { label: b, code: b };
-        });
+        }).filter(b => b.code !== this.auth.branchCode);
       },
       error: () => { }
     });
@@ -173,10 +182,14 @@ export class DispatchOperationsComponent implements OnInit, OnDestroy {
   fetchBookings(): void {
     this.loading = true; this.selectedRows = []; this.summaryRows = [];
     const v = this.filterForm.value;
+    const stateObj = this.states.find(s => s.isoCode === v.region);
+    const stateName = stateObj ? stateObj.name : (v.region || undefined);
+    
     this.opSvc.getBookingsWithFilter({
-      region: v.region || undefined,
+      region: stateName,
       subregion: v.subRegion || undefined,
-      branchCode: v.branchCode || undefined,
+      fromBranchCode: this.auth.branchCode,
+      ToBranchCode: v.branchCode || undefined,
       status: 'BOOKED',
     }).pipe(takeUntil(this.destroy$))
       .subscribe({
@@ -191,7 +204,7 @@ export class DispatchOperationsComponent implements OnInit, OnDestroy {
 
   resetFilters(): void {
     this.filterForm.reset({ region: '', subRegion: '', branchCode: '' });
-    this.subRegions = []; this.branchOptions = [];
+    this.cities = []; this.branchOptions = [];
     this.rowData = []; this.selectedRows = []; this.summaryRows = [];
   }
 
@@ -200,8 +213,10 @@ export class DispatchOperationsComponent implements OnInit, OnDestroy {
 
     const calc = (list: Booking[]) => {
       const totalFreight = list.reduce((s, b) => s + (b.freight || 0), 0);
+      const totalOtherCharges = list.reduce((s, b) => s + calcOtherCharges(b), 0);
       const gst = list.reduce((s, b) => s + (b.sgst || 0) + (b.cgst || 0) + (b.igst || 0), 0);
-      return { totalFreight, gst, grandTotal: totalFreight + gst };
+      const grandTotal = list.reduce((s, b) => s + calcBookingGrandTotal(b), 0);
+      return { totalFreight, totalOtherCharges, gst, grandTotal };
     };
 
     const auto = bookings.filter(b => b.bookingtype !== 'Manual');
@@ -216,8 +231,7 @@ export class DispatchOperationsComponent implements OnInit, OnDestroy {
   }
 
   calcTotal(b: Booking): number {
-    if (!b) return 0;
-    return (b.freight||0) + (b.loading||0) + (b.loadingCharge||0) + (b.sgst||0) + (b.cgst||0) + (b.igst||0);
+    return calcBookingGrandTotal(b);
   }
 
   openDispatch(): void {

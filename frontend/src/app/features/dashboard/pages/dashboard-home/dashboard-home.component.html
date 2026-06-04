@@ -146,8 +146,7 @@
                 <span class="pay-badge" [ngClass]="getPaymentClass(b.billType)">{{ b.billType }}</span>
               </td>
               <td class="amount-cell">
-                ₹{{ ((b.freight || 0) + (b.sgst || 0) + (b.cgst || 0) + (b.igst || 0) + (b.loading || 0) +
-                (b.loadingCharge || 0)).toLocaleString('en-IN') }}
+                ₹{{ getGrandTotal(b).toLocaleString('en-IN') }}
               </td>
               <td>
                 <span class="status-badge" [ngClass]="getStatusClass(b.consignStatus)">{{ b.consignStatus }}</span>

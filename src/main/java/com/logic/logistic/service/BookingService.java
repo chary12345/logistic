@@ -94,6 +94,10 @@ public class BookingService {
 				booking.setConsigneeGST(dto.getConsigneeGST());
 			if (dto.getPartyName() != null)
 				booking.setPartyName(dto.getPartyName());
+			if (dto.getGstPaidBy() != null)
+				booking.setGstPaidBy(dto.getGstPaidBy());
+			if (dto.getDeliveryType() != null)
+				booking.setDeliveryType(dto.getDeliveryType());
 
 			List<ArticleDetailDto> articleDetailDtos = saveBookingArticles(loadingReceipt, dto.getArticleDetails());
 			BookingChargeDetails bookingChargeDetails = saveBookingCharges(loadingReceipt, dto);
@@ -402,6 +406,8 @@ public class BookingService {
 		existing.setRemarks(dto.getRemarks());
 		existing.setPaidVia(dto.getPaidVia());
 		existing.setPartyName(dto.getPartyName());
+		existing.setGstPaidBy(dto.getGstPaidBy());
+		existing.setDeliveryType(dto.getDeliveryType());
 
 		if (dto.geteWayBillNumbers() != null && !dto.geteWayBillNumbers().isEmpty()) {
 			existing.seteWayBillNumbers(String.join(",", dto.geteWayBillNumbers()));

@@ -11,6 +11,7 @@ import { BookingService } from '../../../../core/services/booking.service';
 import { ExportService } from '../../../../core/services/export.service';
 import { BookingDTO } from '../../../../shared/models/models';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
+import { calcBookingGrandTotal } from '../../../../shared/utils/booking-report.util';
 
 @Component({
   selector: 'app-lr-search-dialog',
@@ -41,7 +42,7 @@ import { MatDialog, MatDialogRef } from '@angular/material/dialog';
           </div>
           <div class="detail-row"><span class="label">Booking Date</span><span class="value">{{ booking.bookingDate | date:'dd/MM/yyyy HH:mm' }}</span></div>
           <div class="detail-row"><span class="label">Destination</span><span class="value">{{ booking.destinationBranchCode }}</span></div>
-          <div class="detail-row"><span class="label">Grand Total</span><span class="value fw-700">₹{{ (booking.freight||0) + (booking.loading||0) + (booking.loadingCharge||0) + (booking.sgst||0) + (booking.cgst||0) + (booking.igst||0) }}</span></div>
+          <div class="detail-row"><span class="label">Grand Total</span><span class="value fw-700">₹{{ getGrandTotal(booking) }}</span></div>
         </div>
         <mat-divider></mat-divider>
         <div class="detail-grid detail-grid-mt">
@@ -143,6 +144,10 @@ export class LrSearchDialogComponent implements OnInit {
     if (!status) return '';
     const map: Record<string, string> = { 'BOOKED': 'booked', 'DISPATCHED': 'dispatched' };
     return map[status] || '';
+  }
+
+  getGrandTotal(booking: any): string {
+    return calcBookingGrandTotal(booking).toFixed(2);
   }
 
   printReceipt(): void {

@@ -179,7 +179,9 @@
                   <th>Quantity</th>
                   <th>Packing Type</th>
                   <th>Said To Contain</th>
-                  <th>Rate (₹)</th>
+                  <th *ngIf="hasWeightArticle()">Actual Weight(kg)</th>
+                  <th *ngIf="hasWeightArticle()">Charge Weight(kg)</th>
+                  <th>Rate / Fix Amt (₹)</th>
                   <th>Total</th>
                   <th></th>
                 </tr>
@@ -213,9 +215,21 @@
                         (focus)="filterSaidToContains(row.get('saidToContain')?.value)">
                     </mat-form-field>
                   </td>
+                  <td *ngIf="hasWeightArticle()">
+                    <mat-form-field appearance="outline" class="table-form-field" subscriptSizing="dynamic">
+                      <input matInput type="number" formControlName="actualWeight" placeholder="0"
+                        [readonly]="row.get('article')?.value !== 'Weight'">
+                    </mat-form-field>
+                  </td>
+                  <td *ngIf="hasWeightArticle()">
+                    <mat-form-field appearance="outline" class="table-form-field" subscriptSizing="dynamic">
+                      <input matInput type="number" formControlName="chargeWeight" placeholder="0"
+                        [readonly]="row.get('article')?.value !== 'Weight'">
+                    </mat-form-field>
+                  </td>
                   <td>
                     <mat-form-field appearance="outline" class="table-form-field" subscriptSizing="dynamic">
-                      <input matInput type="number" formControlName="artAmount" placeholder="ex: 100"
+                      <input matInput type="number" formControlName="artAmount" placeholder="Rate / Fix"
                         (input)="onArticleChange(i)">
                     </mat-form-field>
                   </td>
@@ -273,6 +287,24 @@
               <mat-label>Invoice Value</mat-label>
               <input matInput type="number" formControlName="invoiceValue" inputmode="numeric">
               <span matTextPrefix>₹&nbsp;</span>
+            </mat-form-field>
+            <mat-form-field>
+              <mat-label>GST Paid By</mat-label>
+              <input matInput formControlName="gstPaidBy" [matAutocomplete]="autoGstPaidBy" placeholder="Select GST Paid By" (focus)="filterGstPaidBy(form.get('gstPaidBy')?.value)" (input)="filterGstPaidBy($any($event.target).value)">
+              <mat-autocomplete #autoGstPaidBy="matAutocomplete">
+                <mat-option *ngFor="let option of filteredGstPaidByOptions" [value]="option">
+                  {{ option }}
+                </mat-option>
+              </mat-autocomplete>
+            </mat-form-field>
+            <mat-form-field>
+              <mat-label>Delivery Type</mat-label>
+              <input matInput formControlName="deliveryType" [matAutocomplete]="autoDeliveryType" placeholder="Select Delivery Type" (focus)="filterDeliveryType(form.get('deliveryType')?.value)" (input)="filterDeliveryType($any($event.target).value)">
+              <mat-autocomplete #autoDeliveryType="matAutocomplete">
+                <mat-option *ngFor="let option of filteredDeliveryTypeOptions" [value]="option">
+                  {{ option }}
+                </mat-option>
+              </mat-autocomplete>
             </mat-form-field>
           </div>
 

@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { LoadingService } from './core/services/loading.service';
 import { Subscription } from 'rxjs';
+import { delay } from 'rxjs/operators';
 
 @Component({
   selector: 'app-root',
@@ -23,7 +24,7 @@ export class AppComponent implements OnInit, OnDestroy {
   private loadingSubscription?: Subscription;
 
   ngOnInit(): void {
-    this.loadingSubscription = this.loadingService.loading$.subscribe(
+    this.loadingSubscription = this.loadingService.loading$.pipe(delay(0)).subscribe(
       isLoading => this.loading = isLoading
     );
   }

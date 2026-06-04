@@ -162,7 +162,7 @@
 
 .booking-grid {
   display: grid;
-  grid-template-columns: 1fr minmax(360px, min(40vw, 520px));
+  grid-template-columns: 1fr minmax(280px, 350px);
   grid-template-rows: auto auto auto;
   gap: var(--sp-sm);
   align-items: start;
@@ -267,6 +267,10 @@
     .mat-mdc-text-field-wrapper {
       padding-right: 0 !important; // Let the suffix handle its own padding
     }
+    
+    &:has(mat-select) .mat-mdc-text-field-wrapper {
+      padding-right: 12px !important;
+    }
   }
 }
 
@@ -281,6 +285,10 @@
   @media (max-width: 520px) {
     max-width: 100%;
   }
+}
+
+.placeholder-grey ::ng-deep .mat-mdc-select-value-text {
+  color: #6b7280 !important;
 }
 
 
@@ -501,7 +509,7 @@
 
 @media (min-width: 1400px) {
   .booking-grid {
-    grid-template-columns: 1fr minmax(400px, min(38vw, 560px));
+    grid-template-columns: 1fr minmax(320px, 400px);
   }
 
   .charges-card .charges-fields-grid {

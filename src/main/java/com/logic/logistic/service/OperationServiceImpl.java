@@ -25,6 +25,41 @@ public class OperationServiceImpl implements OperationService {
 	@Autowired
 	private LoadingSheetRepository loadingSheetRepository;
 
+	@Autowired
+	private com.logic.logistic.repository.BookingChargeDetailsRepo bookingChargeRepo;
+
+	private void enrichBookingsWithCharges(List<Booking> bookings) {
+		if (bookings == null || bookings.isEmpty()) return;
+		List<String> lrIds = bookings.stream().map(Booking::getLoadingReciept).toList();
+		List<BookingChargeDetails> charges = bookingChargeRepo.findByLoadingRecieptIn(lrIds);
+		Map<String, BookingChargeDetails> chargeMap = new HashMap<>();
+		for (BookingChargeDetails c : charges) {
+			chargeMap.put(c.getLoadingReciept(), c);
+		}
+		for (Booking b : bookings) {
+			BookingChargeDetails c = chargeMap.get(b.getLoadingReciept());
+			if (c != null) {
+				b.setLrCharge(c.getLrCharge());
+				b.setHamali(c.getHamali());
+				b.setStationary(c.getStationary());
+				b.setOtherCharges(c.getOtherCharges());
+				b.setOtherTransportCharges(c.getOtherTransportCharges());
+				b.setMiscellaneous(c.getMiscellaneous());
+				b.setCrossingAmount(c.getCrossingAmount());
+				b.setPodCharges(c.getPodCharges());
+				b.setDoorDelivery(c.getDoorDelivery());
+				b.setDoorPickup(c.getDoorPickup());
+				b.setDdc(c.getDdc());
+				b.setDcc(c.getDcc());
+				b.setDemurrage(c.getDemurrage());
+				b.setUnloading(c.getUnloading());
+				b.setLocalVehicle(c.getLocalVehicle());
+				b.setCrossingHire(c.getCrossingHire());
+				b.setTotalAmount(c.getTotalAmount());
+			}
+		}
+	}
+
 	@Override
 	public List<Booking> getBookingsWithFilter(OperationFilter filter) {
 		LocalDateTime from = null;
@@ -34,7 +69,9 @@ public class OperationServiceImpl implements OperationService {
 		if (filter.getToDate() != null)
 			to = toDateTime(filter.getToDate());
 		List<Booking> findByBookingDateBetween = bookingRepository.getBookingsWithFilter("BOOKED",
-				filter.getBranchCode(),filter.getDestinationBranchCode());
+				filter.getFromBranchCode(),filter.getToBranchCode());
+		
+		enrichBookingsWithCharges(findByBookingDateBetween);
 
 		return findByBookingDateBetween;
 	}
@@ -66,6 +103,7 @@ public class OperationServiceImpl implements OperationService {
 
 		// 🔥 Fetch only DISPATCHED bookings
 		List<Booking> bookings = bookingRepository.findByLoadingRecieptInAndConsignStatus(lrIds, "DISPATCHED");
+		enrichBookingsWithCharges(bookings);
 
 		response.setBookings(bookings);
 		response.setStatus("SUCCESS");
@@ -233,10 +271,14 @@ public class OperationServiceImpl implements OperationService {
 					|| !destinationBranchCode.equalsIgnoreCase(booking.getDestinationBranchCode())) {
 				return new ArrayList<>();
 			}
-			return List.of(booking);
+			List<Booking> list = List.of(booking);
+			enrichBookingsWithCharges(list);
+			return list;
 		}
 
-		return bookingRepository.findByConsignStatusAndDestinationBranchCode("RECEIVED", destinationBranchCode);
+		List<Booking> bookings = bookingRepository.findByConsignStatusAndDestinationBranchCode("RECEIVED", destinationBranchCode);
+		enrichBookingsWithCharges(bookings);
+		return bookings;
 	}
 
 	@Override

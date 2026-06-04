@@ -18,7 +18,7 @@ import { ExportService } from '../../../../core/services/export.service';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { SnackbarService } from '../../../../core/services/snackbar.service';
 import { Booking, BookingSummaryRow } from '../../../../shared/models/models';
-import { calcBookingGrandTotal, mapReportContent } from '../../../../shared/utils/booking-report.util';
+import { calcBookingGrandTotal, mapReportContent, calcOtherCharges } from '../../../../shared/utils/booking-report.util';
 import { LrSearchDialogComponent } from '../../dialogs/lr-search-dialog/lr-search-dialog.component';
 
 @Component({
@@ -75,6 +75,8 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
     { headerName: 'Destination', field: 'destinationBranchCode', minWidth: 110, sortable: true, filter: true },
     { headerName: 'Payment', field: 'billType', minWidth: 100, sortable: true,
       cellClass: (p) => 'payment-cell ' + this.getPaymentClass(p.value) },
+    { headerName: 'Other Charges', minWidth: 110, sortable: true, filter: 'agNumberColumnFilter',
+      valueGetter: p => calcOtherCharges(p.data), valueFormatter: p => '₹' + (p.value || 0).toFixed(2) },
     { headerName: 'Total', minWidth: 110, sortable: true,
       valueGetter: p => calcBookingGrandTotal(p.data),
       valueFormatter: p => '₹' + (p.value || 0).toFixed(2),
@@ -173,8 +175,10 @@ export class GlobalSearchComponent implements OnInit, OnDestroy {
 
     const calc = (list: Booking[]) => {
       const totalFreight = list.reduce((s, b) => s + (b.freight || 0), 0);
+      const totalOtherCharges = list.reduce((s, b) => s + calcOtherCharges(b), 0);
       const gst = list.reduce((s, b) => s + (b.sgst || 0) + (b.cgst || 0) + (b.igst || 0), 0);
-      return { totalFreight, gst, grandTotal: totalFreight + gst };
+      const grandTotal = list.reduce((s, b) => s + calcBookingGrandTotal(b), 0);
+      return { totalFreight, totalOtherCharges, gst, grandTotal };
     };
 
     const auto = bookings.filter(b => b.bookingtype !== 'Manual');

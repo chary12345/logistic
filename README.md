@@ -53,7 +53,7 @@ logistic/
 ### 1. Start the Backend
 Open a terminal in the root directory and boot the Spring application:
 ```bash
-./mvnw spring-boot:run
+./mvnw clean spring-boot:run
 ```
 *(The backend REST API will power on at `http://localhost:8080`)*
 

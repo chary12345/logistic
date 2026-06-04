@@ -19,6 +19,7 @@ import { VehicleService } from '../../../../core/services/vehicle.service';
 import { BranchService } from '../../../../core/services/branch.service';
 import { DashboardService } from '../../../../core/services/dashboard.service';
 import { Booking, BookingPageResponse, VehicleDTO, DashboardSummary } from '../../../../shared/models/models';
+import { calcBookingGrandTotal } from '../../../../shared/utils/booking-report.util';
 
 interface KpiCard {
   title: string;
@@ -89,7 +90,7 @@ export class DashboardHomeComponent implements OnInit, OnDestroy {
     private router: Router,
     private cdr: ChangeDetectorRef,
     private dialog: MatDialog,
-  ) {}
+  ) { }
 
   openLRDetails(lr: string | undefined): void {
     if (!lr) return;
@@ -97,6 +98,10 @@ export class DashboardHomeComponent implements OnInit, OnDestroy {
       width: '500px',
       data: { lr, hideEdit: true }
     });
+  }
+
+  getGrandTotal(b: Booking): number {
+    return calcBookingGrandTotal(b);
   }
 
   ngOnInit(): void {
@@ -136,10 +141,10 @@ export class DashboardHomeComponent implements OnInit, OnDestroy {
         this.toPayCount = summary.toPayCount || 0;
         this.tbbCount = summary.tbbCount || 0;
         this.activeVehicles = summary.activeVehicles || 0;
-        
+
         this.recentBookings = (summary.recentBookings || []).slice(0, 5);
         this.allBookings = summary.recentBookings || []; // Fallback for calculations if needed
-        
+
         this.buildCharts(summary);
         this.buildKpiCards();
         this.loading = false;
@@ -298,9 +303,9 @@ export class DashboardHomeComponent implements OnInit, OnDestroy {
         type: 'column',
         name: 'Count',
         data: [
-          this.totalBookings - this.dispatchedCount - this.receivedCount - this.deliveredCount, 
-          this.dispatchedCount, 
-          this.receivedCount, 
+          this.totalBookings - this.dispatchedCount - this.receivedCount - this.deliveredCount,
+          this.dispatchedCount,
+          this.receivedCount,
           this.deliveredCount
         ],
       }],
@@ -322,7 +327,7 @@ export class DashboardHomeComponent implements OnInit, OnDestroy {
         min: 0,
         labels: {
           style: { fontSize: '10px' },
-          formatter: function() { return '₹' + Highcharts.numberFormat(this.value as number, 0, '.', ','); },
+          formatter: function () { return '₹' + Highcharts.numberFormat(this.value as number, 0, '.', ','); },
         },
       },
       tooltip: {

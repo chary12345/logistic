@@ -38,6 +38,8 @@ const ARTICLE_OPTIONS = ['Article', 'Weight', 'Fix'];
 
 const GST_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[A-Z0-9]{1}Z[A-Z0-9]{1}$/
 
+import { ChangeDetectorRef } from '@angular/core';
+
 @Component({
   selector: 'app-booking-form',
   standalone: true,
@@ -70,6 +72,10 @@ export class BookingFormComponent implements OnInit, OnDestroy {
   filteredArticleTypes: string[] = [];
   articleTypes: string[] = [];
   filteredArticleOptions: string[] = ARTICLE_OPTIONS;
+  readonly gstPaidByOptions: string[] = ['Consignor', 'Consignee', 'Transporter', 'Not Applicable'];
+  filteredGstPaidByOptions: string[] = this.gstPaidByOptions;
+  readonly deliveryTypeOptions: string[] = ['Door Delivery', 'Godown Delivery'];
+  filteredDeliveryTypeOptions: string[] = this.deliveryTypeOptions;
   nextLR = '';
   hasValidConsignorGST = false;
   hasValidConsigneeGST = false;
@@ -97,7 +103,8 @@ export class BookingFormComponent implements OnInit, OnDestroy {
     private paymentModeSvc: PaymentModeService,
     private partySvc: PartyService,
     private router: Router,
-    private http: HttpClient
+    private http: HttpClient,
+    private cdr: ChangeDetectorRef
   ) { }
 
   ngOnInit(): void {
@@ -151,6 +158,8 @@ export class BookingFormComponent implements OnInit, OnDestroy {
       invoiceValue: [null],
       ewayBill: [''],
       ewayBillList: [[]],
+      gstPaidBy: [''],
+      deliveryType: [''],
       remarks: [''],
       paidVia: ['CASH'],
       lrCharge: [0, [Validators.min(0)]],
@@ -241,6 +250,8 @@ export class BookingFormComponent implements OnInit, OnDestroy {
           invoiceNo: booking.invoiceNumber,
           invoiceValue: booking.invoiceValue,
           ewayBill: booking.eWayBillNumber || '',
+          gstPaidBy: this.formatGstPaidBy(this.getIgnoreCase(booking, 'gstpaidby')),
+          deliveryType: this.formatDeliveryType(this.getIgnoreCase(booking, 'deliverytype')),
           remarks: booking.remarks || '',
           paidVia: booking.paidVia || 'CASH',
           lrCharge: booking.lrCharge ?? 0,
@@ -274,6 +285,25 @@ export class BookingFormComponent implements OnInit, OnDestroy {
         }
         this.form.patchValue({ ewayBillList: this.ewayBillList });
 
+        // Ensure all non-zero charges present in the booking are visible, even if disabled in admin
+        let updated = false;
+        this.allChargeFields.forEach(f => {
+          if (f.key !== 'lrCharge' && f.key !== 'loadingCharge') {
+            const val = booking[f.key] !== undefined ? booking[f.key] : this.form.get(f.key)?.value;
+            if (Number(val) > 0) {
+              const exists = this.dynamicChargeFields.find(df => df.key === f.key);
+              if (!exists) {
+                this.dynamicChargeFields.push({ key: f.key, label: f.label });
+                updated = true;
+              }
+            }
+          }
+        });
+        if (updated) {
+          this.dynamicChargeFields = [...this.dynamicChargeFields];
+        }
+        this.cdr.detectChanges();
+
         while (this.articles.length > 0) this.articles.removeAt(0);
         const articleDetails = booking.articleDetails || [];
         if (articleDetails.length > 0) {
@@ -285,6 +315,8 @@ export class BookingFormComponent implements OnInit, OnDestroy {
               artQuantity: [qty, [Validators.min(0)]],
               artType: [(a.artType && a.artType !== '') ? a.artType : null],
               saidToContain: [a.saidToContain || null],
+              actualWeight: [a.actualWeight || null],
+              chargeWeight: [a.chargeWeight || null],
               artAmount: [amt, [Validators.min(0)]],
               total: [{ value: qty * amt, disabled: true }],
             }));
@@ -310,6 +342,8 @@ export class BookingFormComponent implements OnInit, OnDestroy {
       artQuantity: [null, [Validators.min(0)]],
       artType: [null],
       saidToContain: [null],
+      actualWeight: [null],
+      chargeWeight: [null],
       artAmount: [null, [Validators.min(0)]],
       total: [{ value: 0, disabled: true }],
     });
@@ -326,6 +360,15 @@ export class BookingFormComponent implements OnInit, OnDestroy {
     this.recalcCharges();
   }
 
+  hasWeightArticle(): boolean {
+    return this.articles.getRawValue().some((a: any) => a.article === 'Weight');
+  }
+
+  isFixArticle(index: number): boolean {
+    const row = this.articles.at(index);
+    return row?.get('article')?.value === 'Fix';
+  }
+
   private loadCompanyCharges(): void {
     if (!this.auth.companyCode) return;
     this.http.get<any>(`/api/charges/getCompanyChargesList/${this.auth.companyCode}`)
@@ -334,7 +377,7 @@ export class BookingFormComponent implements OnInit, OnDestroy {
         next: (res) => {
           const selected = res.selectedCharges || [];
           if (selected.length > 0) {
-            this.dynamicChargeFields = selected.map((c: any) => {
+            const mapped = selected.map((c: any) => {
               const name = c.chargeName.trim();
               const found = this.allChargeFields.find(f =>
                 f.label.toLowerCase() === name.toLowerCase() ||
@@ -343,12 +386,22 @@ export class BookingFormComponent implements OnInit, OnDestroy {
               );
               return found ? found : { key: name.replace(/\s+/g, '').toLowerCase(), label: name };
             }).filter((f: any) => f.key !== 'lrCharge' && f.key !== 'loadingCharge');
-          } else {
-            this.dynamicChargeFields = []; // No dynamic charges selected
+
+            let updated = false;
+            mapped.forEach((m: any) => {
+              if (!this.dynamicChargeFields.find(df => df.key === m.key)) {
+                this.dynamicChargeFields.push(m);
+                updated = true;
+              }
+            });
+            if (updated) {
+              this.dynamicChargeFields = [...this.dynamicChargeFields];
+              this.cdr.detectChanges();
+            }
           }
         },
         error: () => {
-          this.dynamicChargeFields = []; // Fallback to no dynamic charges
+          // Do nothing on error to avoid overwriting legacy charges
         }
       });
   }
@@ -433,20 +486,21 @@ export class BookingFormComponent implements OnInit, OnDestroy {
 
   private handleEnterKey(event: KeyboardEvent): void {
     const target = event.target as HTMLElement;
-    const tagName = target.tagName.toLowerCase();
+    const actualTarget = (target.closest('mat-select') || target) as HTMLElement;
+    const tagName = actualTarget.tagName.toLowerCase();
 
     if (tagName === 'textarea' || target.closest('button')) {
       return;
     }
 
     if (tagName === 'mat-select' &&
-      (target.getAttribute('aria-expanded') === 'true' || document.querySelector('.mat-mdc-select-panel'))) {
+      (actualTarget.getAttribute('aria-expanded') === 'true' || document.querySelector('.mat-mdc-select-panel'))) {
       return;
     }
 
     if (tagName === 'input' &&
-      target.getAttribute('aria-expanded') === 'true' &&
-      target.getAttribute('aria-activedescendant')) {
+      actualTarget.getAttribute('aria-expanded') === 'true' &&
+      actualTarget.getAttribute('aria-activedescendant')) {
       return;
     }
 
@@ -463,16 +517,19 @@ export class BookingFormComponent implements OnInit, OnDestroy {
     const elements = Array.from(form.querySelectorAll(selectors.join(',')))
       .filter((el: any) => {
         const style = window.getComputedStyle(el);
+        if (el.tagName.toLowerCase() !== 'mat-select' && el.closest('mat-select')) {
+          return false;
+        }
         return style.display !== 'none' && style.visibility !== 'hidden' && el.offsetParent !== null;
       }) as HTMLElement[];
 
-    const currentIndex = elements.indexOf(target);
+    const currentIndex = elements.indexOf(actualTarget as HTMLElement);
 
     if (currentIndex > -1 && currentIndex < elements.length - 1) {
       event.preventDefault();
       const nextElement = elements[currentIndex + 1];
 
-      target.blur();
+      actualTarget.blur();
       if (nextElement.tagName.toLowerCase() === 'mat-select') {
         const trigger = nextElement.querySelector('.mat-mdc-select-trigger') as HTMLElement;
         if (trigger) trigger.focus();
@@ -633,6 +690,20 @@ export class BookingFormComponent implements OnInit, OnDestroy {
     );
   }
 
+  filterGstPaidBy(val: any): void {
+    const search = (typeof val === 'string' ? val : val?.value || '').toLowerCase().trim();
+    this.filteredGstPaidByOptions = this.gstPaidByOptions.filter(o =>
+      o.toLowerCase().includes(search)
+    );
+  }
+
+  filterDeliveryType(val: any): void {
+    const search = (typeof val === 'string' ? val : val?.value || '').toLowerCase().trim();
+    this.filteredDeliveryTypeOptions = this.deliveryTypeOptions.filter(o =>
+      o.toLowerCase().includes(search)
+    );
+  }
+
   private normalizeForComparison(data: any): string {
     if (!data) return '';
     const cloned = JSON.parse(JSON.stringify(data));
@@ -660,6 +731,31 @@ export class BookingFormComponent implements OnInit, OnDestroy {
     if (!this.isEditMode) return true;
     if (!this.loadedBookingSnapshot) return false;
     return this.normalizeForComparison(this.form.getRawValue()) !== this.loadedBookingSnapshot;
+  }
+
+  private getIgnoreCase(obj: any, key: string): any {
+    if (!obj) return undefined;
+    const lowerKey = key.toLowerCase();
+    const foundKey = Object.keys(obj).find(k => k.toLowerCase() === lowerKey);
+    return foundKey ? obj[foundKey] : undefined;
+  }
+
+  private formatGstPaidBy(val: any): string {
+    if (!val) return '';
+    const lower = String(val).trim().toLowerCase();
+    if (lower === 'consignor') return 'Consignor';
+    if (lower === 'consignee') return 'Consignee';
+    if (lower === 'transporter') return 'Transporter';
+    if (lower === 'not applicable') return 'Not Applicable';
+    return String(val).trim();
+  }
+
+  private formatDeliveryType(val: any): string {
+    if (!val) return '';
+    const lower = String(val).trim().toLowerCase();
+    if (lower === 'door delivery' || lower === 'doordelivery') return 'Door Delivery';
+    if (lower === 'godown delivery' || lower === 'godowndelivery') return 'Godown Delivery';
+    return String(val).trim();
   }
 
   private loadNextLR(): void {
@@ -768,6 +864,8 @@ export class BookingFormComponent implements OnInit, OnDestroy {
         invoiceValue: null,
         ewayBill: '',
         ewayBillList: [],
+        gstPaidBy: '',
+        deliveryType: '',
         remarks: '',
         paidVia: 'CASH',
         ...this.defaultChargeValues(),
@@ -777,7 +875,7 @@ export class BookingFormComponent implements OnInit, OnDestroy {
     }
 
     while (this.articles.length > 1) this.articles.removeAt(1);
-    this.articles.at(0).reset({ article: 'Article', artQuantity: null, artType: null, saidToContain: null, artAmount: null });
+    this.articles.at(0).reset({ article: 'Article', artQuantity: null, artType: null, saidToContain: null, actualWeight: null, chargeWeight: null, artAmount: null });
     this.articles.controls.forEach(ctrl => {
       ctrl.markAsUntouched();
       ctrl.markAsPristine();
@@ -847,6 +945,8 @@ export class BookingFormComponent implements OnInit, OnDestroy {
       artQty: String(a.artQuantity),
       artType: a.artType,
       saidToContain: a.saidToContain,
+      actualWeight: a.actualWeight,
+      chargeWeight: a.chargeWeight,
       artAmt: String(a.artAmount),
       total: String(+a.artQuantity * +a.artAmount),
       companyCode: this.auth.companyCode,
@@ -869,6 +969,8 @@ export class BookingFormComponent implements OnInit, OnDestroy {
       invoiceValue: raw.invoiceValue,
       eWayBillNumber: raw.ewayBill,
       eWayBillNumbers: raw.ewayBillList || [],
+      gstPaidBy: raw.gstPaidBy,
+      deliveryType: raw.deliveryType,
       remarks: raw.remarks,
       freight: raw.freight,
       lrCharge: raw.lrCharge,
@@ -965,10 +1067,36 @@ export class BookingFormComponent implements OnInit, OnDestroy {
           saidToContain: a.saidToContain,
           article: a.article,
           artType: a.artType,
+          actualWeight: a.actualWeight,
+          chargeWeight: a.chargeWeight,
           artAmt: String(a.artAmount),
           total: String(+a.artQuantity * +a.artAmount)
         }))
       };
+    }
+
+    // Auto save custom contacts to backend
+    if (raw.consignorName) {
+      this.contactSvc.save({
+        type: 'consignor',
+        name: raw.consignorName,
+        mobile: raw.consignorMobile,
+        gst: raw.consignorGST,
+        address: raw.consignorAddress,
+        branchCode: this.auth.branchCode,
+        companyCode: this.auth.companyCode
+      }).pipe(takeUntil(this.destroy$)).subscribe({ error: () => { } });
+    }
+    if (raw.consigneeName) {
+      this.contactSvc.save({
+        type: 'consignee',
+        name: raw.consigneeName,
+        mobile: raw.consigneeMobile,
+        gst: raw.consigneeGST,
+        address: raw.consigneeAddress,
+        branchCode: this.auth.branchCode,
+        companyCode: this.auth.companyCode
+      }).pipe(takeUntil(this.destroy$)).subscribe({ error: () => { } });
     }
 
     const msg = this.isEditMode

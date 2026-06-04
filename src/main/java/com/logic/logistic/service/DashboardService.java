@@ -29,6 +29,9 @@ public class DashboardService {
     @Autowired
     private VehicleRepository vehicleRepo;
 
+    @Autowired
+    private com.logic.logistic.repository.BookingChargeDetailsRepo bookingChargeDetailsRepo;
+
     public DashboardSummaryDTO getSummary(String branchCode) {
         if (branchCode != null) branchCode = branchCode.trim();
         final String finalBranchCode = branchCode;
@@ -126,6 +129,28 @@ public class DashboardService {
             .sorted(Comparator.comparing(Booking::getBookingDate, Comparator.nullsLast(Comparator.reverseOrder())))
             .limit(10)
             .collect(Collectors.toList());
+
+        if (!recent.isEmpty()) {
+            List<String> lrList = recent.stream().map(Booking::getLoadingReciept).collect(Collectors.toList());
+            List<com.logic.logistic.dto.BookingChargeDetails> chargesList = bookingChargeDetailsRepo.findByLoadingRecieptIn(lrList);
+            Map<String, com.logic.logistic.dto.BookingChargeDetails> chargesMap = chargesList.stream()
+                .collect(Collectors.toMap(com.logic.logistic.dto.BookingChargeDetails::getLoadingReciept, c -> c));
+
+            for (Booking b : recent) {
+                com.logic.logistic.dto.BookingChargeDetails c = chargesMap.get(b.getLoadingReciept());
+                if (c != null) {
+                    b.setTotalAmount(c.getTotalAmount());
+                    b.setLrCharge(c.getLrCharge());
+                    b.setHamali(c.getHamali());
+                    b.setStationary(c.getStationary());
+                    b.setOtherCharges(c.getOtherCharges());
+                    b.setOtherTransportCharges(c.getOtherTransportCharges());
+                    b.setMiscellaneous(c.getMiscellaneous());
+                    b.setCrossingAmount(c.getCrossingAmount());
+                }
+            }
+        }
+
         summary.setRecentBookings(recent);
 
         return summary;

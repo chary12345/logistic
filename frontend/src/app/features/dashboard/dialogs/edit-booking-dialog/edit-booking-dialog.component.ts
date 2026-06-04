@@ -358,7 +358,16 @@ export class EditBookingDialogComponent implements OnInit, OnDestroy {
     }, 0);
     const loading = +this.form.get('loadingCharge')?.value || 0;
     const lr = +this.form.get('lrCharge')?.value || 0;
-    const base = freight + loading + lr;
+    
+    let otherChargesSum = 0;
+    if (this.booking) {
+      const fields = ['hamali', 'stationary', 'otherCharges', 'otherTransportCharges', 'miscellaneous', 'crossingAmount', 'podCharges', 'doorDelivery', 'doorPickup', 'ddc', 'dcc', 'demurrage', 'unloading', 'localVehicle', 'crossingHire'];
+      fields.forEach(f => {
+        otherChargesSum += Number(this.booking[f]) || 0;
+      });
+    }
+
+    const base = freight + loading + lr + otherChargesSum;
 
     const consignorGST = this.form.get('consignorGST')?.value;
     const consigneeGST = this.form.get('consigneeGST')?.value;
@@ -431,6 +440,21 @@ export class EditBookingDialogComponent implements OnInit, OnDestroy {
       freight: raw.freight,
       loading: raw.loadingCharge,
       loadingCharge: raw.lrCharge,
+      hamali: this.booking?.hamali || 0,
+      stationary: this.booking?.stationary || 0,
+      otherCharges: this.booking?.otherCharges || 0,
+      otherTransportCharges: this.booking?.otherTransportCharges || 0,
+      miscellaneous: this.booking?.miscellaneous || 0,
+      crossingAmount: this.booking?.crossingAmount || 0,
+      podCharges: this.booking?.podCharges || 0,
+      doorDelivery: this.booking?.doorDelivery || 0,
+      doorPickup: this.booking?.doorPickup || 0,
+      ddc: this.booking?.ddc || 0,
+      dcc: this.booking?.dcc || 0,
+      demurrage: this.booking?.demurrage || 0,
+      unloading: this.booking?.unloading || 0,
+      localVehicle: this.booking?.localVehicle || 0,
+      crossingHire: this.booking?.crossingHire || 0,
       sgst: raw.sgst,
       cgst: raw.cgst,
       igst: raw.igst,

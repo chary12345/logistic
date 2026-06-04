@@ -84,6 +84,7 @@
           <tr>
             <th>Type</th>
             <th>Total Freight</th>
+            <th>Other Charges</th>
             <th>GST (SGST+CGST+IGST)</th>
             <th>Grand Total</th>
           </tr>
@@ -92,6 +93,7 @@
           <tr *ngFor="let row of summaryRows" [class.total-row]="row.type === 'Total'">
             <td>{{ row.type }}</td>
             <td>{{ row.totalFreight | number:'1.2-2' }}</td>
+            <td>{{ row.totalOtherCharges | number:'1.2-2' }}</td>
             <td>{{ row.gst | number:'1.2-2' }}</td>
             <td>{{ row.grandTotal | number:'1.2-2' }}</td>
           </tr>

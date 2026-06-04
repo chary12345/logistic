@@ -59,8 +59,8 @@ import { LrSearchDialogComponent } from '../../dialogs/lr-search-dialog/lr-searc
       <mat-progress-bar *ngIf="loading" mode="indeterminate"></mat-progress-bar>
       <div class="summary-stats" *ngIf="rowData.length">
         <div class="stat-card"><div class="stat-label">Records</div><div class="stat-value">{{ rowData.length }}</div></div>
-        <div class="stat-card"><div class="stat-label">Total Amount</div><div class="stat-value">₹{{ totalAmount | number:'1.0-0' }}</div></div>
         <div class="stat-card success"><div class="stat-label">Freight Total</div><div class="stat-value">₹{{ freightTotal | number:'1.0-0' }}</div></div>
+        <div class="stat-card warning"><div class="stat-label">Other Charges</div><div class="stat-value">₹{{ otherChargesTotal | number:'1.0-0' }}</div></div>
       </div>
       <div class="action-bar" *ngIf="rowData.length">
         <button mat-stroked-button (click)="exportPDF('download')"><mat-icon>picture_as_pdf</mat-icon> PDF</button>
@@ -91,6 +91,7 @@ import { LrSearchDialogComponent } from '../../dialogs/lr-search-dialog/lr-searc
                 <th>Payment Mode</th>
                 <th>Count</th>
                 <th>Freight</th>
+                <th>Other Charges</th>
                 <th>Total Amount</th>
               </tr>
             </thead>
@@ -99,12 +100,14 @@ import { LrSearchDialogComponent } from '../../dialogs/lr-search-dialog/lr-searc
                 <td [class]="'payment-mode ' + this.getModeClass(row.paymentMode)">{{ row.paymentMode }}</td>
                 <td>{{ row.count }}</td>
                 <td>₹{{ row.freight | number:'1.2-2' }}</td>
+                <td>₹{{ row.otherCharges | number:'1.2-2' }}</td>
                 <td>₹{{ row.total | number:'1.2-2' }}</td>
               </tr>
               <tr class="total-row">
                 <td><strong>Total</strong></td>
                 <td><strong>{{ rowData.length }}</strong></td>
                 <td><strong>₹{{ freightTotal | number:'1.2-2' }}</strong></td>
+                <td><strong>₹{{ otherChargesTotal | number:'1.2-2' }}</strong></td>
                 <td><strong>₹{{ totalAmount | number:'1.2-2' }}</strong></td>
               </tr>
             </tbody>
@@ -226,6 +229,8 @@ export class StatementsComponent implements OnDestroy {
       cellClass: (p) => 'payment-cell ' + this.pmClass(p.value) },
     { headerName: 'Freight', field: 'freight', minWidth: 100, sortable: true,
       valueFormatter: p => '₹' + (p.value || 0).toFixed(2) },
+    { headerName: 'Other Charges', field: 'otherCharges', minWidth: 110, sortable: true,
+      valueFormatter: p => '₹' + (p.value || 0).toFixed(2) },
     { headerName: 'Total', field: 'total', minWidth: 110, sortable: true,
       valueFormatter: p => '₹' + (p.value || 0).toFixed(2),
       cellStyle: { fontWeight: '700' } },
@@ -238,7 +243,8 @@ export class StatementsComponent implements OnDestroy {
   isMobile = window.innerWidth <= 768;
   totalAmount = 0;
   freightTotal = 0;
-  summaryData: Array<{ paymentMode: string; count: number; freight: number; total: number }> = [];
+  otherChargesTotal = 0;
+  summaryData: Array<{ paymentMode: string; count: number; freight: number; otherCharges: number; total: number }> = [];
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -283,6 +289,7 @@ export class StatementsComponent implements OnDestroy {
           this.loading = false; this.rowData = d;
           this.totalAmount = d.reduce((s, r) => s + (r.total || 0), 0);
           this.freightTotal = d.reduce((s, r) => s + (r.freight || 0), 0);
+          this.otherChargesTotal = d.reduce((s, r) => s + (r.otherCharges || 0), 0);
           this.calculateSummary();
         },
         error: () => { this.loading = false; this.snack.error('Failed to load statements.'); }
@@ -290,14 +297,15 @@ export class StatementsComponent implements OnDestroy {
   }
 
   private calculateSummary(): void {
-    const summary: Record<string, { count: number; freight: number; total: number }> = {};
+    const summary: Record<string, { count: number; freight: number; otherCharges: number; total: number }> = {};
     this.rowData.forEach(row => {
       const mode = row.billType || 'UNKNOWN';
       if (!summary[mode]) {
-        summary[mode] = { count: 0, freight: 0, total: 0 };
+        summary[mode] = { count: 0, freight: 0, otherCharges: 0, total: 0 };
       }
       summary[mode].count++;
       summary[mode].freight += row.freight || 0;
+      summary[mode].otherCharges += row.otherCharges || 0;
       summary[mode].total += row.total || 0;
     });
     this.summaryData = Object.entries(summary)
@@ -316,15 +324,15 @@ export class StatementsComponent implements OnDestroy {
   }
 
   exportPDF(action: 'download' | 'print'): void {
-    const headers = ['LR No', 'Date', 'Consignor', 'Consignee', 'Payment', 'Freight', 'Total'];
-    const rows = this.rowData.map(r => [r.loadingReciept, r.bookingDate, r.consignorName, r.consigneeName, r.billType, r.freight, r.total]);
+    const headers = ['LR No', 'Date', 'Consignor', 'Consignee', 'Payment', 'Freight', 'Other Charges', 'Total'];
+    const rows = this.rowData.map(r => [r.loadingReciept, r.bookingDate, r.consignorName, r.consigneeName, r.billType, r.freight, r.otherCharges, r.total]);
     this.exportSvc.exportPDF('Statement Report', headers, rows as any, action, 'statement.pdf');
   }
 
   exportExcel(): void {
     this.exportSvc.exportExcel(this.rowData.map(r => ({
       'LR': r.loadingReciept, 'Date': r.bookingDate, 'Consignor': r.consignorName, 'Consignee': r.consigneeName,
-      'Payment': r.billType, 'Freight': r.freight, 'Total': r.total
+      'Payment': r.billType, 'Freight': r.freight, 'Other Charges': r.otherCharges, 'Total': r.total
     })), 'statement.xlsx');
   }
 

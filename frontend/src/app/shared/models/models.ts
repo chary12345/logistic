@@ -46,6 +46,8 @@ export interface ArticleDetailDto {
   saidToContain: string;
   artAmt: string;
   total: string;
+  actualWeight?: string;
+  chargeWeight?: string;
 }
 
 // ---- Booking charges (booking_charge_details table) ----
@@ -127,6 +129,7 @@ export interface BookingDTO {
   cgst?: number;
   igst?: number;
   totalAmount?: number;
+  grandTotal?: number;
   articleDetails?: ArticleDetailDto[];
   bookingDate?: string;
   consignStatus?: string;
@@ -136,6 +139,8 @@ export interface BookingDTO {
   partyName?: string;
   remarks?: string;
   eWayBillNumbers?: string[];
+  gstPaidBy?: string;
+  deliveryType?: string;
 }
 
 export interface Booking {
@@ -178,6 +183,7 @@ export interface Booking {
   cgst?: number;
   igst?: number;
   totalAmount?: number;
+  grandTotal?: number;
   articleDetails?: ArticleDetailDto[];
   bookingDate?: string;
   consignStatus?: string;
@@ -194,6 +200,8 @@ export interface Booking {
   partyName?: string;
   remarks?: string;
   eWayBillNumbers?: string[];
+  gstPaidBy?: string;
+  deliveryType?: string;
 }
 
 export interface BookingPageResponse {
@@ -261,7 +269,8 @@ export interface OperationFilter {
   toDate?: string;
   region?: string;
   subregion?: string;    // lowercase 'r' — must match Java OperationFilter field
-  branchCode?: string;
+  fromBranchCode?: string;
+  ToBranchCode?: string;
   employeeName?: string;
   status?: string;
 }
@@ -272,8 +281,9 @@ export interface BranchOption {
 }
 
 export interface BookingSummaryRow {
-  type: string;
+  type?: string;
   totalFreight: number;
+  totalOtherCharges: number;
   gst: number;
   grandTotal: number;
 }
@@ -348,6 +358,7 @@ export interface StatementDto {
   freight?: number;
   loading?: number;
   loadingCharge?: number;
+  otherCharges?: number;
   sgst?: number;
   cgst?: number;
   igst?: number;
