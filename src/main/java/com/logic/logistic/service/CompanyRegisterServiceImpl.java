@@ -251,6 +251,10 @@ public class CompanyRegisterServiceImpl implements CompanyRegisterService {
 		java.util.Map<String, String[]> changes = new java.util.LinkedHashMap<>();
 
 		// Branch Fields tracking
+		if (updatedBranch.getBranchName() != null && !java.util.Objects.equals(existing.getBranchName(), updatedBranch.getBranchName())) {
+			changes.put("Branch Name", new String[]{existing.getBranchName(), updatedBranch.getBranchName()});
+			existing.setBranchName(updatedBranch.getBranchName());
+		}
 		if (updatedBranch.getBranchType() != null && !java.util.Objects.equals(existing.getBranchType(), updatedBranch.getBranchType())) {
 			changes.put("Branch Type", new String[]{existing.getBranchType(), updatedBranch.getBranchType()});
 			existing.setBranchType(updatedBranch.getBranchType());
