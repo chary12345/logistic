@@ -51,6 +51,104 @@ public class BookingService {
 	@Autowired
 	private CompanyRegisterrepo companyRegisterrepo;
 	
+	/**
+	 * Returns true if a booking with the given LR already exists.
+	 * Used for real-time duplicate validation on the frontend.
+	 */
+	public boolean lrExists(String lr) {
+		return bookingRepo.findByLoadingReciept(lr) != null;
+	}
+
+	/**
+	 * Creates a manual booking where the LR number and booking date are
+	 * supplied by the user. Does NOT touch BookingReceiptSequence.
+	 * Always sets bookingtype = "MANUAL".
+	 */
+	@Transactional
+	public BookingResponseDTO saveManualBooking(BookingDTO dto) {
+		String lr = dto.getLoadingReciept();
+		if (lr == null || lr.isBlank()) {
+			throw new IllegalArgumentException("LR Number is required for manual booking");
+		}
+		// Server-side duplicate guard (defence-in-depth)
+		if (bookingRepo.findByLoadingReciept(lr) != null) {
+			throw new IllegalArgumentException("LR Number already exists: " + lr);
+		}
+
+		Booking booking = new Booking();
+		booking.setLoadingReciept(lr);
+		booking.setBookingtype("MANUAL");
+		booking.setConsignStatus("BOOKED");
+
+		// Use the user-supplied booking date; fall back to now
+		LocalDateTime bookingDate = (dto.getBookingDate() != null)
+				? dto.getBookingDate()
+				: LocalDateTime.now();
+		booking.setBookingDate(bookingDate);
+
+		if (dto.getConsignorName() != null) booking.setConsignorName(dto.getConsignorName());
+		if (dto.getConsignorMobile() != null) booking.setConsignorMobile(dto.getConsignorMobile());
+		if (dto.getConsignorAddress() != null) booking.setConsignorAddress(dto.getConsignorAddress());
+		if (dto.getConsignorGST() != null) booking.setConsignorGST(dto.getConsignorGST());
+		if (dto.getConsigneeName() != null) booking.setConsigneeName(dto.getConsigneeName());
+		if (dto.getConsigneeMobile() != null) booking.setConsigneeMobile(dto.getConsigneeMobile());
+		if (dto.getConsigneeAddress() != null) booking.setConsigneeAddress(dto.getConsigneeAddress());
+		if (dto.getConsigneeGST() != null) booking.setConsigneeGST(dto.getConsigneeGST());
+		if (dto.getPartyName() != null) booking.setPartyName(dto.getPartyName());
+		if (dto.getGstPaidBy() != null) booking.setGstPaidBy(dto.getGstPaidBy());
+		if (dto.getDeliveryType() != null) booking.setDeliveryType(dto.getDeliveryType());
+		if (dto.getInvoiceNumber() != null) booking.setInvoiceNumber(dto.getInvoiceNumber());
+		booking.setInvoiceValue(dto.getInvoiceValue());
+		if (dto.geteWayBillNumber() != null) booking.seteWayBillNumber(dto.geteWayBillNumber());
+		if (dto.getBillType() != null) booking.setBillType(dto.getBillType());
+		if (dto.getBranchCode() != null) booking.setBranchCode(dto.getBranchCode());
+		if (dto.getDestinationBranchCode() != null) booking.setDestinationBranchCode(dto.getDestinationBranchCode());
+		if (dto.getEmployeeName() != null) booking.setEmployeeName(dto.getEmployeeName());
+		if (dto.getPaidVia() != null) booking.setPaidVia(dto.getPaidVia());
+		if (dto.getRemarks() != null) booking.setRemarks(dto.getRemarks());
+
+		if (dto.geteWayBillNumbers() != null && !dto.geteWayBillNumbers().isEmpty()) {
+			booking.seteWayBillNumbers(String.join(",", dto.geteWayBillNumbers()));
+			booking.seteWayBillNumber(dto.geteWayBillNumbers().get(0));
+		}
+
+		// Sync charge summary fields to booking row
+		booking.setFreight(dto.getFreight());
+		booking.setLoading(dto.getLoading());
+		booking.setLoadingCharge(dto.getLoadingCharge());
+		booking.setSgst(dto.getSgst());
+		booking.setCgst(dto.getCgst());
+		booking.setIgst(dto.getIgst());
+
+		List<ArticleDetailDto> articleDetailDtos = saveBookingArticles(lr, dto.getArticleDetails());
+		BookingChargeDetails bookingChargeDetails = saveBookingCharges(lr, dto);
+
+		Booking saved = bookingRepo.save(booking);
+		logger.info("manual booking saved :: " + saved.getLoadingReciept());
+
+		// Send email notification (same as regular booking)
+		try {
+			dto.setLoadingReciept(lr);
+			String branchCodeToUse = dto.getBranchCode();
+			String companyCodeToUse = dto.getCompanyCode();
+			com.logic.logistic.dto.BranchDTO branch = branchCodeToUse != null ? branchRepo.getBranchBybranchCode(branchCodeToUse) : null;
+			com.logic.logistic.dto.CompanyDto company = companyCodeToUse != null ? companyRegisterrepo.getCompanyByID(companyCodeToUse) : null;
+			if (branch != null && branch.getBranchEmail() != null && !branch.getBranchEmail().isBlank()) {
+				emailService.sendBookingEmail(branch.getBranchEmail(), dto,
+						company != null ? company.getCompanyFullName() : "",
+						branch.getBranchName(), false);
+			}
+		} catch (Exception ex) {
+			logger.error("Failed to trigger manual booking email: " + ex.getMessage());
+		}
+
+		BookingResponseDTO response = new BookingResponseDTO();
+		response.setBooking(saved);
+		response.setArticles(articleDetailDtos);
+		response.setCharges(bookingChargeDetails);
+		return response;
+	}
+
 	@Transactional
 	public BookingResponseDTO saveBooking(BookingDTO dto) {
 		String key =  dto.getBranchCode();

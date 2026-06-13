@@ -44,6 +44,23 @@ public class BookingController {
 		return ResponseEntity.ok(bookingResponseDTO);
 	}
 
+	@PostMapping("/manualBookLoad")
+	public ResponseEntity<?> createManualBooking(@RequestBody BookingDTO dto) {
+		try {
+			BookingResponseDTO response = bookingService.saveManualBooking(dto);
+			return ResponseEntity.ok(response);
+		} catch (IllegalArgumentException e) {
+			return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Manual booking failed: " + e.getMessage());
+		}
+	}
+
+	@GetMapping("/checkLrExists")
+	public ResponseEntity<Boolean> checkLrExists(@RequestParam String lr) {
+		return ResponseEntity.ok(bookingService.lrExists(lr));
+	}
+
 	@PutMapping("/updateBookLoad")
 	public ResponseEntity<?> updateBooking(@RequestParam String lr, @RequestBody BookingDTO dto) {
 		try {
