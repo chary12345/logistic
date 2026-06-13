@@ -31,36 +31,95 @@
             <kbd>F9</kbd> TBB
           </button>
         </div>
+        <!-- A / M Booking Mode Toggle -->
+        <div class="bm-toggle-wrap">
+          <span class="bm-label">Booking:</span>
+          <button type="button" class="pm-key bm-key" [class.active]="bookingMode==='A'"
+            (click)="setBookingMode('A')" matTooltip="Auto Booking (system-generated LR)"
+            [disabled]="isEditMode">
+            A
+          </button>
+          <button type="button" class="pm-key bm-key" [class.active]="bookingMode==='M'"
+            (click)="setBookingMode('M')" matTooltip="Manual Booking (enter LR manually)"
+            [disabled]="isEditMode">
+            M
+          </button>
+        </div>
       </div>
 
       <div class="form-col">
 
         <div class="page-card">
           <div class="section-title">📍 Delivery Destination</div>
-          <mat-form-field class="dest-field">
-            <mat-label>Select destination</mat-label>
-            <input matInput formControlName="deliveryDestination" [matAutocomplete]="autoDest"
-              placeholder="Type to search destination...">
-            <mat-autocomplete #autoDest="matAutocomplete">
-              <mat-option *ngFor="let d of filteredDestinations" [value]="d.branchName + ' (' + d.branchCode + ')'"
-                [disabled]="d.branchActive === false"
-                [ngClass]="{'deactivated-branch-option': d.branchActive === false}">
-                {{ d.branchName }} ({{ d.branchCode }})
-                <span class="deactivated-lbl" *ngIf="d.branchActive === false">(Deactivated)</span>
-              </mat-option>
-              <mat-option *ngIf="filteredDestinations.length === 0" disabled>
-                No branches found
-              </mat-option>
-            </mat-autocomplete>
-            <button type="button" mat-icon-button matSuffix *ngIf="form.get('deliveryDestination')?.value"
-              (click)="form.get('deliveryDestination')?.setValue(''); $event.stopPropagation()" aria-label="Clear">
-              <mat-icon>close</mat-icon>
-            </button>
-            <mat-error
-              *ngIf="form.get('deliveryDestination')?.hasError('required') && form.get('deliveryDestination')?.touched">
-              Destination is required
-            </mat-error>
-          </mat-form-field>
+          
+          <div [ngClass]="{'manual-lr-grid': bookingMode === 'M', 'form-grid': bookingMode === 'A'}">
+            <mat-form-field class="dest-field">
+              <mat-label>Select destination</mat-label>
+              <input matInput formControlName="deliveryDestination" [matAutocomplete]="autoDest"
+                placeholder="Type to search destination...">
+              <mat-autocomplete #autoDest="matAutocomplete" (optionSelected)="onDestinationSelected($event)">
+                <mat-option *ngFor="let d of filteredDestinations" [value]="d.branchName + ' (' + d.branchCode + ')'"
+                  [disabled]="d.branchActive === false"
+                  [ngClass]="{'deactivated-branch-option': d.branchActive === false}">
+                  {{ d.branchName }} ({{ d.branchCode }})
+                  <span class="deactivated-lbl" *ngIf="d.branchActive === false">(Deactivated)</span>
+                </mat-option>
+                <mat-option *ngIf="filteredDestinations.length === 0" disabled>
+                  No branches found
+                </mat-option>
+              </mat-autocomplete>
+              <button type="button" mat-icon-button matSuffix *ngIf="form.get('deliveryDestination')?.value"
+                (click)="form.get('deliveryDestination')?.setValue(''); $event.stopPropagation()" aria-label="Clear">
+                <mat-icon>close</mat-icon>
+              </button>
+              <mat-error
+                *ngIf="form.get('deliveryDestination')?.hasError('required') && form.get('deliveryDestination')?.touched">
+                Destination is required
+              </mat-error>
+            </mat-form-field>
+
+            <!-- Manual LR fields — visible only when M mode is active -->
+            <ng-container *ngIf="bookingMode === 'M'">
+              <!-- LR Number (suffix only; prefix is shown as matTextPrefix) -->
+              <mat-form-field>
+                <mat-label>LR Number</mat-label>
+                <span matTextPrefix class="lr-prefix">{{ manualLrPrefix }}&nbsp;</span>
+                <input matInput formControlName="manualLrSuffix"
+                       id="manual-lr-number"
+                       placeholder="e.g. 025"
+                       (blur)="onManualLrBlur($any($event.target).value)"
+                       autocomplete="off"
+                       [readonly]="isEditMode">
+                <div matSuffix class="lr-suffix-container">
+                  <mat-spinner *ngIf="manualLrChecking" diameter="18"></mat-spinner>
+                  <mat-icon *ngIf="manualLrValid && !manualLrChecking" class="valid-check-icon">check_circle</mat-icon>
+                </div>
+                <mat-error *ngIf="form.get('manualLrSuffix')?.hasError('required') && form.get('manualLrSuffix')?.touched">
+                  LR Number is required
+                </mat-error>
+                <mat-error *ngIf="form.get('manualLrSuffix')?.hasError('duplicateLR')">
+                  This LR already exists. Enter a unique number.
+                </mat-error>
+              </mat-form-field>
+
+              <!-- LR Date (uses same Material datepicker as rest of the app) -->
+              <mat-form-field>
+                <mat-label>LR Date</mat-label>
+                <input matInput
+                       id="manual-lr-date"
+                       [matDatepicker]="lrDatePicker"
+                       formControlName="lrDate"
+                       placeholder="DD/MM/YYYY"
+                       (input)="onLrDateInput($event)"
+                       (keyup.enter)="onLrDateInput($event)">
+                <mat-datepicker-toggle matIconSuffix [for]="lrDatePicker"></mat-datepicker-toggle>
+                <mat-datepicker #lrDatePicker [touchUi]="isMobile"></mat-datepicker>
+                <mat-error *ngIf="form.get('lrDate')?.hasError('required') && form.get('lrDate')?.touched">
+                  LR Date is required
+                </mat-error>
+              </mat-form-field>
+            </ng-container>
+          </div>
         </div>
 
         <div class="page-card">

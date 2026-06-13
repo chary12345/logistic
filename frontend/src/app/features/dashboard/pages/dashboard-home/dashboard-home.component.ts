@@ -20,6 +20,7 @@ import { BranchService } from '../../../../core/services/branch.service';
 import { DashboardService } from '../../../../core/services/dashboard.service';
 import { Booking, BookingPageResponse, VehicleDTO, DashboardSummary } from '../../../../shared/models/models';
 import { calcBookingGrandTotal } from '../../../../shared/utils/booking-report.util';
+import { formatAppDate } from '../../../../shared/utils/date.util';
 
 interface KpiCard {
   title: string;
@@ -374,11 +375,8 @@ export class DashboardHomeComponent implements OnInit, OnDestroy {
     }
   }
 
-  private formatDate(d: Date): string {
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const dd = String(d.getDate()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}`;
+  formatAppDate(dateVal: any): string {
+    return formatAppDate(dateVal);
   }
 
   ngOnDestroy(): void {

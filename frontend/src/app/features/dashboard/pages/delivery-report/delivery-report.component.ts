@@ -1,5 +1,5 @@
 import { Component, OnDestroy } from '@angular/core';
-import { CommonModule, DatePipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -17,6 +17,7 @@ import { AuthService } from '../../../../core/auth/auth.service';
 import { SnackbarService } from '../../../../core/services/snackbar.service';
 import { Booking, BookingSummaryRow } from '../../../../shared/models/models';
 import { calcBookingGrandTotal, mapReportContent, calcOtherCharges } from '../../../../shared/utils/booking-report.util';
+import { formatAppDate } from '../../../../shared/utils/date.util';
 import { LrSearchDialogComponent } from '../../dialogs/lr-search-dialog/lr-search-dialog.component';
 
 @Component({
@@ -165,7 +166,6 @@ import { LrSearchDialogComponent } from '../../dialogs/lr-search-dialog/lr-searc
 })
 export class DeliveryReportComponent implements OnDestroy {
   private gridApi!: GridApi;
-  private datePipe = new DatePipe('en-US');
 
   form = this.fb.group({ fromDate: ['', Validators.required], toDate: ['', Validators.required] });
 
@@ -187,7 +187,7 @@ export class DeliveryReportComponent implements OnDestroy {
       }
     },
     { headerName: 'Delivery Date', field: 'deliveryDate', minWidth: 140, sortable: true,
-      valueFormatter: p => this.datePipe.transform(p.value, 'dd/MM/yy HH:mm') || '' },
+      valueFormatter: p => formatAppDate(p.value) },
     { headerName: 'Consignor', field: 'consignorName', minWidth: 120, sortable: true, filter: true },
     { headerName: 'Consignee', field: 'consigneeName', minWidth: 120, sortable: true, filter: true },
     { headerName: 'Destination', field: 'destinationBranchCode', minWidth: 110, sortable: true, filter: true },
@@ -324,7 +324,7 @@ export class DeliveryReportComponent implements OnDestroy {
 
   exportExcel(): void {
     this.exportSvc.exportExcel(this.rowData.map(b => ({
-      'LR No': b.loadingReciept, 'Delivery Date': b.deliveryDate, 'Consignor': b.consignorName,
+      'LR No': b.loadingReciept, 'Delivery Date': formatAppDate(b.deliveryDate), 'Consignor': b.consignorName,
       'Consignee': b.consigneeName, 'Destination': b.destinationBranchCode, 'Bill Type': b.billType,
       'Total': calcBookingGrandTotal(b),
     })), 'delivery-report.xlsx');
@@ -332,7 +332,7 @@ export class DeliveryReportComponent implements OnDestroy {
 
   downloadPDF(action: 'download' | 'print'): void {
     const headers = ['LR No', 'Delivery Date', 'Consignor', 'Consignee', 'Destination', 'Bill Type', 'Total'];
-    const rows = this.rowData.map(b => [b.loadingReciept, b.deliveryDate, b.consignorName, b.consigneeName,
+    const rows = this.rowData.map(b => [b.loadingReciept, formatAppDate(b.deliveryDate), b.consignorName, b.consigneeName,
       b.destinationBranchCode, b.billType, calcBookingGrandTotal(b)]);
     this.exportSvc.exportPDF('Delivery Report', headers, rows as any, action, 'delivery-report.pdf');
   }

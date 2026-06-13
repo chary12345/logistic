@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule, DatePipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -17,10 +17,10 @@ import { RegionService } from '../../../../core/services/region.service';
 import { VehicleService } from '../../../../core/services/vehicle.service';
 import { SnackbarService } from '../../../../core/services/snackbar.service';
 import { Booking, BranchOption, BookingSummaryRow, VehicleDTO } from '../../../../shared/models/models';
-import { State, City } from 'country-state-city';
 import { DispatchDetailsDialogComponent } from '../../dialogs/dispatch-details-dialog/dispatch-details-dialog.component';
 import { LrSearchDialogComponent } from '../../dialogs/lr-search-dialog/lr-search-dialog.component';
 import { calcOtherCharges, calcBookingGrandTotal } from '../../../../shared/utils/booking-report.util';
+import { formatAppDate } from '../../../../shared/utils/date.util';
 
 @Component({
   selector: 'app-dispatch-operations',
@@ -36,14 +36,12 @@ import { calcOtherCharges, calcBookingGrandTotal } from '../../../../shared/util
 })
 export class DispatchOperationsComponent implements OnInit, OnDestroy {
   private gridApi!: GridApi;
-  private datePipe = new DatePipe('en-US');
-
   filterForm = this.fb.group({
     region: [''], subRegion: [''], branchCode: [''],
   });
 
-  states: any[] = [];
-  cities: any[] = [];
+  regions: string[] = [];
+  subRegions: string[] = [];
   branchOptions: BranchOption[] = [];
   vehicles: VehicleDTO[] = [];
 
@@ -99,7 +97,7 @@ export class DispatchOperationsComponent implements OnInit, OnDestroy {
     { headerName: 'Consign Status', field: 'consignStatus', minWidth: 120, sortable: true, filter: true,
       cellClass: (p) => 'status-cell ' + (p.value === 'BOOKED' ? 'booked' : '') },
     { headerName: 'Booking Date', field: 'bookingDate', minWidth: 120, sortable: true,
-      valueFormatter: p => this.datePipe.transform(p.value, 'M/dd/yyyy') || '' },
+      valueFormatter: p => formatAppDate(p.value) },
   ];
 
   defaultColDef: ColDef = {
@@ -129,7 +127,9 @@ export class DispatchOperationsComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.states = State.getStatesOfCountry('IN');
+    this.regionSvc.getRegions(this.auth.companyCode)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({ next: r => this.regions = r || [], error: () => {} });
 
     this.vehSvc.getActive(this.auth.branchCode)
       .pipe(takeUntil(this.destroy$))
@@ -149,23 +149,22 @@ export class DispatchOperationsComponent implements OnInit, OnDestroy {
     this.selectedRows = event.api.getSelectedRows();
   }
 
-  onRegion(stateCode: string): void {
-    this.cities = []; this.branchOptions = [];
+  onRegion(regionName: string): void {
+    this.subRegions = []; this.branchOptions = [];
     this.filterForm.patchValue({ subRegion: '', branchCode: '' });
-    if (!stateCode) return;
-    this.cities = City.getCitiesOfState('IN', stateCode);
+    if (!regionName) return;
+    
+    this.regionSvc.getSubRegions(regionName)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({ next: c => this.subRegions = c || [], error: () => {} });
   }
 
-  onSubRegion(cityName: string): void {
+  onSubRegion(subRegionName: string): void {
     this.branchOptions = []; this.filterForm.patchValue({ branchCode: '' });
-    const stateCode = this.filterForm.value.region;
-    if (!cityName || !stateCode) return;
-    
-    // Find state name
-    const stateObj = this.states.find(s => s.isoCode === stateCode);
-    const stateName = stateObj ? stateObj.name : stateCode;
+    const regionName = this.filterForm.value.region;
+    if (!subRegionName || !regionName) return;
 
-    this.regionSvc.getBranches(stateName, cityName).pipe(takeUntil(this.destroy$)).subscribe({
+    this.regionSvc.getBranches(regionName, subRegionName).pipe(takeUntil(this.destroy$)).subscribe({
       next: (branches: string[]) => {
         // Backend returns "BranchName-BranchCode" format — parse into { label, code }
         this.branchOptions = branches.map(b => {
@@ -182,11 +181,10 @@ export class DispatchOperationsComponent implements OnInit, OnDestroy {
   fetchBookings(): void {
     this.loading = true; this.selectedRows = []; this.summaryRows = [];
     const v = this.filterForm.value;
-    const stateObj = this.states.find(s => s.isoCode === v.region);
-    const stateName = stateObj ? stateObj.name : (v.region || undefined);
+    const regionName = v.region || undefined;
     
     this.opSvc.getBookingsWithFilter({
-      region: stateName,
+      region: regionName,
       subregion: v.subRegion || undefined,
       fromBranchCode: this.auth.branchCode,
       ToBranchCode: v.branchCode || undefined,
@@ -204,7 +202,7 @@ export class DispatchOperationsComponent implements OnInit, OnDestroy {
 
   resetFilters(): void {
     this.filterForm.reset({ region: '', subRegion: '', branchCode: '' });
-    this.cities = []; this.branchOptions = [];
+    this.subRegions = []; this.branchOptions = [];
     this.rowData = []; this.selectedRows = []; this.summaryRows = [];
   }
 

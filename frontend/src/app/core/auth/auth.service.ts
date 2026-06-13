@@ -48,6 +48,10 @@ export class AuthService {
   get branchCode(): string  {
     return (this.currentUser?.companyAndBranchDeatils?.branchCode || this.currentUser?.branchCode) ?? '';
   }
+
+  get branchName(): string {
+    return (this.currentUser?.companyAndBranchDeatils?.branchName || this.currentUser?.branchName) ?? '';
+  }
   get userFullName(): string {
     const u = this.currentUser;
     return u ? `${u.firstName} ${u.lastName}` : '';

@@ -1,5 +1,5 @@
 import { Component, OnDestroy } from '@angular/core';
-import { CommonModule, DatePipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -17,6 +17,7 @@ import { SnackbarService } from '../../../../core/services/snackbar.service';
 import { Booking, DispatchedResponseDTO, LoadingSheetInfo } from '../../../../shared/models/models';
 import { LrSearchDialogComponent } from '../../dialogs/lr-search-dialog/lr-search-dialog.component';
 import { calcBookingGrandTotal, calcOtherCharges } from '../../../../shared/utils/booking-report.util';
+import { formatAppDate } from '../../../../shared/utils/date.util';
 
 @Component({
   selector: 'app-receive-operations',
@@ -31,7 +32,6 @@ import { calcBookingGrandTotal, calcOtherCharges } from '../../../../shared/util
 })
 export class ReceiveOperationsComponent implements OnDestroy {
   private gridApi!: GridApi;
-  private datePipe = new DatePipe('en-US');
   private destroy$ = new Subject<void>();
 
   searchForm = this.fb.group({ searchType: ['lsId'], searchValue: [''] });
@@ -78,9 +78,9 @@ export class ReceiveOperationsComponent implements OnDestroy {
       valueFormatter: p => '₹' + (p.value || 0).toFixed(2),
       cellStyle: { fontWeight: '700' } },
     { headerName: 'Booking Date', field: 'bookingDate', minWidth: 120, sortable: true,
-      valueFormatter: p => this.datePipe.transform(p.value, 'dd/MM/yy HH:mm') || '' },
+      valueFormatter: p => formatAppDate(p.value) },
     { headerName: 'Dispatch Date', field: 'dispatchDate', minWidth: 120, sortable: true,
-      valueFormatter: p => this.datePipe.transform(p.value, 'dd/MM/yy HH:mm') || '' },
+      valueFormatter: p => formatAppDate(p.value) },
   ];
 
   defaultColDef: ColDef = { resizable: true, flex: 1, minWidth: 70, sortable: true, autoHeaderHeight: true, wrapHeaderText: true };

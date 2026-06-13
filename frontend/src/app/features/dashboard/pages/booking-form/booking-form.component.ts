@@ -17,6 +17,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { Subject, debounceTime, takeUntil, map, startWith } from 'rxjs';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { BookingService } from '../../../../core/services/booking.service';
@@ -48,6 +49,7 @@ import { ChangeDetectorRef } from '@angular/core';
     MatSelectModule, MatButtonModule, MatIconModule,
     MatProgressSpinnerModule, MatTableModule,
     MatTooltipModule, MatDividerModule, MatAutocompleteModule,
+    MatDatepickerModule,
   ],
   templateUrl: './booking-form.component.html',
   styleUrls: ['./booking-form.component.scss']
@@ -86,6 +88,13 @@ export class BookingFormComponent implements OnInit, OnDestroy {
   readonly allChargeFields = CHARGE_FIELD_CONFIG;
   dynamicChargeFields: { key: string, label: string }[] = [];
 
+  // ── Manual Booking ──────────────────────────────────────────────────────────
+  bookingMode: 'A' | 'M' = 'A';  // A = Auto (default), M = Manual
+  manualLrChecking = false;        // spinner while verifying LR uniqueness
+  manualLrValid = false;           // green-tick after unique check passes
+  manualLrPrefix = '';             // Dynamic prefix (e.g. HYD_M/)
+  isMobile = window.innerWidth <= 768;
+
   private destroy$ = new Subject<void>();
 
   get articles(): FormArray { return this.form.get('articles') as FormArray; }
@@ -94,7 +103,7 @@ export class BookingFormComponent implements OnInit, OnDestroy {
   constructor(
     private fb: FormBuilder,
     private route: ActivatedRoute,
-    private auth: AuthService,
+    public auth: AuthService,
     private bookingSvc: BookingService,
     private contactSvc: ContactService,
     private branchSvc: BranchService,
@@ -108,6 +117,7 @@ export class BookingFormComponent implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit(): void {
+    this.manualLrPrefix = this.auth.branchCode + '_M/';
     this.buildForm();
     this.loadSaidToContains();
     this.loadArticleTypes();
@@ -120,6 +130,9 @@ export class BookingFormComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe(value => {
       this.filterDestinations(value || '');
+      if (!value) {
+        this.form.get('consigneeAddress')?.setValue('');
+      }
     });
 
     this.paymentModeSvc.getPaymentMode()
@@ -149,7 +162,7 @@ export class BookingFormComponent implements OnInit, OnDestroy {
       consignorName: ['', Validators.required],
       consignorMobile: ['', [Validators.required, Validators.pattern(/^\d{10}$/)]],
       consignorGST: ['', this.gstValidator.bind(this)],
-      consignorAddress: ['', Validators.required],
+      consignorAddress: [this.auth.branchName || '', Validators.required],
       consigneeName: ['', Validators.required],
       consigneeMobile: ['', [Validators.required, Validators.pattern(/^\d{10}$/)]],
       consigneeGST: ['', this.gstValidator.bind(this)],
@@ -186,6 +199,9 @@ export class BookingFormComponent implements OnInit, OnDestroy {
       igst: [{ value: 0, disabled: true }],
       grandTotal: [{ value: 0, disabled: true }],
       articles: this.fb.array([this.makeArticleRow()]),
+      // Manual booking fields (always present; validators applied only in M mode)
+      manualLrSuffix: [''],
+      lrDate: [null],
     });
 
     this.form.get('consignorGST')?.valueChanges
@@ -221,6 +237,24 @@ export class BookingFormComponent implements OnInit, OnDestroy {
       next: (booking: any) => {
         this.loadingBooking = false;
         if (!booking) { this.snack.error('Booking not found.'); return; }
+
+        // Auto-detect manual booking from LR format
+        if (lr.includes('_M/')) {
+          this.setBookingMode('M');
+          const parts = lr.split('_M/');
+          this.manualLrPrefix = parts[0] + '_M/';
+          this.form.get('manualLrSuffix')?.setValue(parts[1] || '');
+          this.form.get('manualLrSuffix')?.disable();
+          this.form.get('lrDate')?.disable();
+          this.manualLrValid = true; // since it's an existing LR
+          if (booking.bookingDate) {
+            this.form.get('lrDate')?.setValue(new Date(booking.bookingDate));
+          }
+        } else {
+          this.setBookingMode('A');
+          this.manualLrPrefix = this.auth.branchCode + '_M/';
+        }
+
         this.filterSaidToContains('');
         this.filterArticleTypes('');
 
@@ -472,6 +506,86 @@ export class BookingFormComponent implements OnInit, OnDestroy {
     this.paymentMode = mode;
     this.paymentModeSvc.setPaymentMode(mode);
     this.updatePartyNameValidation(mode);
+  }
+
+  // ── Manual Booking Mode ──────────────────────────────────────────────────────
+
+  /** Switch between Auto (A) and Manual (M) booking modes. */
+  setBookingMode(mode: 'A' | 'M'): void {
+    if (this.bookingMode === mode) return;
+    this.bookingMode = mode;
+    const lrCtrl = this.form.get('manualLrSuffix')!;
+    const dateCtrl = this.form.get('lrDate')!;
+    if (mode === 'M') {
+      lrCtrl.setValidators([Validators.required]);
+      dateCtrl.setValidators([Validators.required]);
+      if (!dateCtrl.value) dateCtrl.setValue(new Date());
+    } else {
+      lrCtrl.clearValidators();
+      lrCtrl.reset('');
+      lrCtrl.setErrors(null);
+      lrCtrl.markAsUntouched();
+      dateCtrl.clearValidators();
+      dateCtrl.reset(null);
+      dateCtrl.setErrors(null);
+      dateCtrl.markAsUntouched();
+      this.manualLrValid = false;
+      this.manualLrChecking = false;
+    }
+    lrCtrl.updateValueAndValidity();
+    dateCtrl.updateValueAndValidity();
+  }
+
+  /** Called on blur of the manual LR suffix input — checks uniqueness in real time. */
+  onManualLrBlur(value: string): void {
+    if (this.isEditMode) return;
+    const trimmed = (value || '').trim();
+    const lrCtrl = this.form.get('manualLrSuffix');
+    if (!trimmed) {
+      this.manualLrValid = false;
+      return;
+    }
+    const fullLr = `${this.manualLrPrefix}${trimmed}`;
+    this.manualLrChecking = true;
+    this.manualLrValid = false;
+    this.bookingSvc.checkLRExists(fullLr)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (exists) => {
+          this.manualLrChecking = false;
+          if (exists) {
+            lrCtrl?.setErrors({ duplicateLR: true });
+            this.manualLrValid = false;
+          } else {
+            // Clear only the duplicate error; keep required if needed
+            const errs = { ...(lrCtrl?.errors || {}) };
+            delete errs['duplicateLR'];
+            lrCtrl?.setErrors(Object.keys(errs).length ? errs : null);
+            this.manualLrValid = true;
+          }
+        },
+        error: () => { this.manualLrChecking = false; }
+      });
+  }
+
+  /**
+   * Smart date auto-completion for the LR Date field.
+   * If the user types a bare 1- or 2-digit number (e.g. "2") and blurs/Enter,
+   * it is auto-completed to the 2nd of the current month/year (02/06/2026).
+   */
+  onLrDateInput(event: Event): void {
+    const raw = ((event.target as HTMLInputElement).value || '').trim();
+    if (!raw) return;
+    if (/^\d{1,2}$/.test(raw)) {
+      const day = parseInt(raw, 10);
+      if (day >= 1 && day <= 31) {
+        const now = new Date();
+        const completed = new Date(now.getFullYear(), now.getMonth(), day);
+        if (!isNaN(completed.getTime())) {
+          this.form.get('lrDate')?.setValue(completed);
+        }
+      }
+    }
   }
 
   @HostListener('window:keydown', ['$event'])
@@ -793,6 +907,19 @@ export class BookingFormComponent implements OnInit, OnDestroy {
     );
   }
 
+  onDestinationSelected(event: any): void {
+    const value = event.option?.value;
+    if (!value) return;
+    
+    const matched = this.destinationSuggestions.find(d => `${d.branchName} (${d.branchCode})` === value);
+    if (matched) {
+      this.form.patchValue({
+        consigneeAddress: matched.branchName
+      });
+      this.form.get('consigneeAddress')?.markAsTouched();
+    }
+  }
+
   searchConsignor(q: string): void {
     if (!q || q.length < 2) { this.consignorSuggestions = []; return; }
     this.contactSvc.search('consignor', q, this.auth.branchCode)
@@ -828,48 +955,34 @@ export class BookingFormComponent implements OnInit, OnDestroy {
   }
 
   resetForm(): void {
+    const resetValues = {
+      deliveryDestination: '',
+      partyName: '',
+      consignorName: '',
+      consignorMobile: '',
+      consignorGST: '',
+      consignorAddress: this.auth.branchName || '',
+      consigneeName: '',
+      consigneeMobile: '',
+      consigneeGST: '',
+      consigneeAddress: '',
+      invoiceNo: '',
+      invoiceValue: null,
+      ewayBill: '',
+      ewayBillList: [],
+      gstPaidBy: '',
+      deliveryType: '',
+      remarks: '',
+      paidVia: 'CASH',
+      manualLrSuffix: '',
+      lrDate: null,
+      ...this.defaultChargeValues(),
+    };
+
     if (this.formDirective) {
-      this.formDirective.resetForm({
-        deliveryDestination: '',
-        partyName: '',
-        consignorName: '',
-        consignorMobile: '',
-        consignorGST: '',
-        consignorAddress: '',
-        consigneeName: '',
-        consigneeMobile: '',
-        consigneeGST: '',
-        consigneeAddress: '',
-        invoiceNo: '',
-        invoiceValue: null,
-        ewayBill: '',
-        ewayBillList: [],
-        remarks: '',
-        paidVia: 'CASH',
-        ...this.defaultChargeValues(),
-      });
+      this.formDirective.resetForm(resetValues);
     } else {
-      this.form.reset({
-        deliveryDestination: '',
-        partyName: '',
-        consignorName: '',
-        consignorMobile: '',
-        consignorGST: '',
-        consignorAddress: '',
-        consigneeName: '',
-        consigneeMobile: '',
-        consigneeGST: '',
-        consigneeAddress: '',
-        invoiceNo: '',
-        invoiceValue: null,
-        ewayBill: '',
-        ewayBillList: [],
-        gstPaidBy: '',
-        deliveryType: '',
-        remarks: '',
-        paidVia: 'CASH',
-        ...this.defaultChargeValues(),
-      });
+      this.form.reset(resetValues);
       this.form.markAsUntouched();
       this.form.markAsPristine();
     }
@@ -895,6 +1008,19 @@ export class BookingFormComponent implements OnInit, OnDestroy {
     this.consigneeSuggestions = [];
     this.loadedBookingSnapshot = null;
 
+    // Reset manual booking mode to Auto
+    this.bookingMode = 'A';
+    this.manualLrValid = false;
+    this.manualLrChecking = false;
+    this.manualLrPrefix = this.auth.branchCode + '_M/';
+    // Clear validators set by M mode
+    this.form.get('manualLrSuffix')?.enable();
+    this.form.get('lrDate')?.enable();
+    this.form.get('manualLrSuffix')?.clearValidators();
+    this.form.get('manualLrSuffix')?.updateValueAndValidity();
+    this.form.get('lrDate')?.clearValidators();
+    this.form.get('lrDate')?.updateValueAndValidity();
+
     this.recalcCharges();
 
     this.router.navigate([], {
@@ -905,9 +1031,28 @@ export class BookingFormComponent implements OnInit, OnDestroy {
   }
 
   submit(): void {
+    // In M mode: ensure LR has been uniqueness-checked
+    if (this.bookingMode === 'M' && !this.manualLrValid && !this.isEditMode) {
+      const lrCtrl = this.form.get('manualLrSuffix');
+      const suffix = (lrCtrl?.value || '').trim();
+      if (!suffix) {
+        lrCtrl?.setErrors({ required: true });
+        lrCtrl?.markAsTouched();
+      } else if (!this.manualLrChecking) {
+        // trigger check if user skipped blur
+        this.onManualLrBlur(suffix);
+      }
+    }
+
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       this.snack.warning('Please fill all required fields.');
+      return;
+    }
+
+    // Block manual submit if duplicate LR check hasn't passed yet
+    if (this.bookingMode === 'M' && !this.manualLrValid && !this.isEditMode) {
+      this.snack.warning('Please enter a valid unique LR Number.');
       return;
     }
 
@@ -1000,6 +1145,17 @@ export class BookingFormComponent implements OnInit, OnDestroy {
       articleDetails,
     };
 
+    // For manual bookings: override LR and booking date
+    if (this.bookingMode === 'M' && !this.isEditMode) {
+      const suffix = (raw.manualLrSuffix || '').trim();
+      dto.loadingReciept = `${this.manualLrPrefix}${suffix}`;
+      // Convert date to LocalDateTime-compatible string
+      if (raw.lrDate) {
+        const d = raw.lrDate instanceof Date ? raw.lrDate : new Date(raw.lrDate);
+        dto.bookingDate = d.toISOString().slice(0, 19); // "2026-06-02T00:00:00"
+      }
+    }
+
     this.loading = true;
 
     const onError = (e: any) => {
@@ -1009,6 +1165,13 @@ export class BookingFormComponent implements OnInit, OnDestroy {
 
     if (this.isEditMode) {
       this.bookingSvc.update(this.editLR, dto)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: saved => this.handleBookingSaveSuccess(saved, raw),
+          error: onError,
+        });
+    } else if (this.bookingMode === 'M') {
+      this.bookingSvc.createManual(dto)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: saved => this.handleBookingSaveSuccess(saved, raw),

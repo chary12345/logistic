@@ -17,6 +17,7 @@ import { StatementService } from '../../../../core/services/statement.service';
 import { ExportService } from '../../../../core/services/export.service';
 import { SnackbarService } from '../../../../core/services/snackbar.service';
 import { StatementDto } from '../../../../shared/models/models';
+import { formatAppDate } from '../../../../shared/utils/date.util';
 import { LrSearchDialogComponent } from '../../dialogs/lr-search-dialog/lr-search-dialog.component';
 
 @Component({
@@ -222,7 +223,7 @@ export class StatementsComponent implements OnDestroy {
       }
     },
     { headerName: 'Date', field: 'bookingDate', minWidth: 110, sortable: true,
-      valueFormatter: p => p.value ? new Date(p.value).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '' },
+      valueFormatter: p => formatAppDate(p.value) },
     { headerName: 'Consignor', field: 'consignorName', minWidth: 120, sortable: true, filter: true },
     { headerName: 'Consignee', field: 'consigneeName', minWidth: 120, sortable: true, filter: true },
     { headerName: 'Payment', field: 'billType', minWidth: 100, sortable: true,
@@ -325,13 +326,13 @@ export class StatementsComponent implements OnDestroy {
 
   exportPDF(action: 'download' | 'print'): void {
     const headers = ['LR No', 'Date', 'Consignor', 'Consignee', 'Payment', 'Freight', 'Other Charges', 'Total'];
-    const rows = this.rowData.map(r => [r.loadingReciept, r.bookingDate, r.consignorName, r.consigneeName, r.billType, r.freight, r.otherCharges, r.total]);
+    const rows = this.rowData.map(r => [r.loadingReciept, formatAppDate(r.bookingDate), r.consignorName, r.consigneeName, r.billType, r.freight, r.otherCharges, r.total]);
     this.exportSvc.exportPDF('Statement Report', headers, rows as any, action, 'statement.pdf');
   }
 
   exportExcel(): void {
     this.exportSvc.exportExcel(this.rowData.map(r => ({
-      'LR': r.loadingReciept, 'Date': r.bookingDate, 'Consignor': r.consignorName, 'Consignee': r.consigneeName,
+      'LR': r.loadingReciept, 'Date': formatAppDate(r.bookingDate), 'Consignor': r.consignorName, 'Consignee': r.consigneeName,
       'Payment': r.billType, 'Freight': r.freight, 'Other Charges': r.otherCharges, 'Total': r.total
     })), 'statement.xlsx');
   }

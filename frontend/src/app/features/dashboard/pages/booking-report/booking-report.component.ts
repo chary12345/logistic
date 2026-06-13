@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule, DatePipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -17,6 +17,7 @@ import { AuthService } from '../../../../core/auth/auth.service';
 import { SnackbarService } from '../../../../core/services/snackbar.service';
 import { Booking, BookingSummaryRow } from '../../../../shared/models/models';
 import { calcBookingGrandTotal, mapReportContent, calcOtherCharges } from '../../../../shared/utils/booking-report.util';
+import { formatAppDate } from '../../../../shared/utils/date.util';
 import { LrSearchDialogComponent } from '../../dialogs/lr-search-dialog/lr-search-dialog.component';
 
 @Component({
@@ -32,7 +33,6 @@ import { LrSearchDialogComponent } from '../../dialogs/lr-search-dialog/lr-searc
 })
 export class BookingReportComponent implements OnInit, OnDestroy {
   private gridApi!: GridApi;
-  private datePipe = new DatePipe('en-US');
 
   form = this.fb.group({
     fromDate: ['', Validators.required],
@@ -57,7 +57,7 @@ export class BookingReportComponent implements OnInit, OnDestroy {
       }
     },
     { headerName: 'Date', field: 'bookingDate', minWidth: 130, sortable: true,
-      valueFormatter: p => this.datePipe.transform(p.value, 'dd/MM/yy HH:mm') || '' },
+      valueFormatter: p => formatAppDate(p.value) },
     { headerName: 'Consignor / Party', field: 'consignorName', minWidth: 120, sortable: true, filter: true },
     { headerName: 'Consignee', field: 'consigneeName', minWidth: 120, sortable: true, filter: true },
     { headerName: 'Destination', field: 'destinationBranchCode', minWidth: 110, sortable: true, filter: true },
@@ -207,7 +207,7 @@ export class BookingReportComponent implements OnInit, OnDestroy {
   downloadPDF(action: 'download'|'print' = 'download'): void {
     const headers = ['LR No','Date','Consignor','Consignee','Destination','Payment','Total','Status'];
     const rows = this.rowData.map(b => [
-      b.loadingReciept, b.bookingDate, b.consignorName, b.consigneeName,
+      b.loadingReciept, formatAppDate(b.bookingDate), b.consignorName, b.consigneeName,
       b.destinationBranchCode, b.billType, calcBookingGrandTotal(b), b.consignStatus
     ]);
     this.exportSvc.exportPDF('Booking Report', headers, rows as any, action, 'booking-report.pdf');
@@ -216,7 +216,7 @@ export class BookingReportComponent implements OnInit, OnDestroy {
   downloadExcel(): void {
     this.exportSvc.exportExcel(
       this.rowData.map(b => ({
-        'LR No': b.loadingReciept, 'Date': b.bookingDate, 'Consignor': b.consignorName,
+        'LR No': b.loadingReciept, 'Date': formatAppDate(b.bookingDate), 'Consignor': b.consignorName,
         'Consignee': b.consigneeName, 'Destination': b.destinationBranchCode,
         'Payment': b.billType, 'Total': calcBookingGrandTotal(b), 'Status': b.consignStatus,
       })),

@@ -11,6 +11,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 import { PartyService, Party } from '../../../../core/services/party.service';
 import { StatementService } from '../../../../core/services/statement.service';
 import { AuthService } from '../../../../core/auth/auth.service';
@@ -22,7 +24,8 @@ import { SnackbarService } from '../../../../core/services/snackbar.service';
   imports: [
     CommonModule, ReactiveFormsModule, MatCardModule, MatFormFieldModule,
     MatInputModule, MatSelectModule, MatButtonModule, MatIconModule,
-    MatAutocompleteModule, MatProgressSpinnerModule
+    MatAutocompleteModule, MatProgressSpinnerModule,
+    MatDatepickerModule, MatNativeDateModule
   ],
   template: `
     <div class="page-card">
@@ -40,18 +43,28 @@ import { SnackbarService } from '../../../../core/services/snackbar.service';
           </mat-autocomplete>
         </mat-form-field>
 
-        <!-- Month Dropdown -->
-        <mat-form-field appearance="outline">
-          <mat-label>Select Month</mat-label>
-          <mat-select formControlName="monthIndex">
-            <mat-option *ngFor="let m of monthsList; let i = index" [value]="i">
-              {{ m.label }}
-            </mat-option>
-          </mat-select>
+        <!-- Date Range Picker -->
+        <mat-form-field appearance="outline" class="date-range-field">
+          <mat-label>Date Range</mat-label>
+          <mat-date-range-input [rangePicker]="picker">
+            <input matStartDate formControlName="fromDate" placeholder="Start date">
+            <input matEndDate formControlName="toDate" placeholder="End date">
+          </mat-date-range-input>
+          <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+          <mat-date-range-picker #picker></mat-date-range-picker>
         </mat-form-field>
 
+        <!-- Quick Select Months -->
+        <div class="quick-months">
+          <button mat-stroked-button type="button" *ngFor="let m of monthsList" 
+                  (click)="selectMonth(m)"
+                  [class.active]="isMonthSelected(m)">
+            {{ m.label }}
+          </button>
+        </div>
+
         <!-- Submit Button -->
-        <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid || loading">
+        <button mat-flat-button color="primary" type="submit" class="submit-btn" [disabled]="form.invalid || loading">
           <mat-icon>search</mat-icon> Generate
         </button>
       </form>
@@ -90,7 +103,7 @@ import { SnackbarService } from '../../../../core/services/snackbar.service';
 
       <div class="empty-state" *ngIf="!statementData && !loading && hasSearched">
         <mat-icon>info</mat-icon>
-        <p>No records found for the selected consignor and month.</p>
+        <p>No records found for the selected consignor and date range.</p>
       </div>
     </div>
   `,
@@ -128,7 +141,32 @@ import { SnackbarService } from '../../../../core/services/snackbar.service';
           display: none;
         }
       }
-      button {
+      .date-range-field {
+        max-width: 320px;
+      }
+      .quick-months {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+        
+        button {
+          height: 40px;
+          border-radius: 8px;
+          padding: 0 16px;
+          font-weight: 500;
+          font-size: 13px;
+          color: #475569;
+          border-color: #cbd5e1;
+          
+          &.active {
+            background-color: #e0e7ff;
+            color: var(--primary);
+            border-color: var(--primary);
+          }
+        }
+      }
+      .submit-btn {
         height: 40px;
         border-radius: 8px;
         padding: 0 20px;
@@ -210,13 +248,18 @@ import { SnackbarService } from '../../../../core/services/snackbar.service';
       }
       p { margin: 0; font-size: 16px; }
     }
-    @media (max-width: 768px) {
+    @media (max-width: 900px) {
       .filter-row {
         flex-direction: column;
         align-items: stretch;
 
         mat-form-field { max-width: 100%; }
-        button { width: 100%; margin-top: 0; height: 48px; font-size: 14px !important; }
+        .date-range-field { max-width: 100%; }
+        .quick-months {
+          justify-content: flex-start;
+          button { flex: 1; min-width: 100px; text-align: center; }
+        }
+        .submit-btn { width: 100%; height: 48px; font-size: 14px !important; }
       }
       .invoice-summary-card .summary-grid { grid-template-columns: 1fr 1fr; }
     }
@@ -246,7 +289,8 @@ export class TbbInvoiceComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.form = this.fb.group({
       consignorName: ['', Validators.required],
-      monthIndex: [0, Validators.required] // Default to the first (most recent) month
+      fromDate: [this.monthsList[0]?.fromDate, Validators.required],
+      toDate: [this.monthsList[0]?.toDate, Validators.required]
     });
 
     this.loadParties();
@@ -295,6 +339,29 @@ export class TbbInvoiceComponent implements OnInit, OnDestroy {
     }
   }
 
+  selectMonth(month: any) {
+    this.form.patchValue({
+      fromDate: month.fromDate,
+      toDate: month.toDate
+    });
+  }
+
+  isMonthSelected(month: any): boolean {
+    const f = this.form.get('fromDate')?.value;
+    const t = this.form.get('toDate')?.value;
+    if (!f || !t) return false;
+    
+    const isStartMatch = f.getFullYear() === month.fromDate.getFullYear() && 
+                         f.getMonth() === month.fromDate.getMonth() && 
+                         f.getDate() === 1;
+                         
+    const isEndMatch = t.getFullYear() === month.toDate.getFullYear() && 
+                       t.getMonth() === month.toDate.getMonth() && 
+                       t.getDate() === month.toDate.getDate();
+                       
+    return isStartMatch && isEndMatch;
+  }
+
   searchConsignor(q: string) {
     if (!q) { this.consignorSuggestions = []; return; }
     const search = q.toLowerCase().trim();
@@ -324,13 +391,18 @@ export class TbbInvoiceComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const { consignorName, monthIndex } = this.form.value;
-    const selectedMonth = this.monthsList[monthIndex];
+    let { consignorName, fromDate, toDate } = this.form.value;
+
+    // If a custom end date is selected (time is likely 00:00:00), adjust to end of day to include all records
+    if (toDate && toDate.getHours() === 0 && toDate.getMinutes() === 0) {
+      toDate = new Date(toDate);
+      toDate.setHours(23, 59, 59, 999);
+    }
 
     const payload = {
       consignorName: consignorName,
-      fromDate: this.toISOLocal(selectedMonth.fromDate),
-      toDate: this.toISOLocal(selectedMonth.toDate)
+      fromDate: this.toISOLocal(fromDate),
+      toDate: this.toISOLocal(toDate)
     };
 
     this.loading = true;
@@ -342,12 +414,9 @@ export class TbbInvoiceComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (res) => {
           this.loading = false;
-          // Check if totalLrs > 0 or if backend just returns 0s. 
-          // If 0, we can show empty state or just show the 0 values.
           if (res && res.totalLrs > 0) {
             this.statementData = res;
           } else {
-            // Treat 0 LRs as "No records found"
             this.statementData = null;
           }
         },

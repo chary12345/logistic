@@ -55,5 +55,15 @@ export class BookingService {
   createArticleType(payload: { articleType: string; companyCode: string }): Observable<any> {
     return this.http.post<any>('/api/bookings/createArticleType', payload);
   }
+
+  /** Check if a given LR number already exists in the system (used for manual booking validation). */
+  checkLRExists(lr: string): Observable<boolean> {
+    return this.http.get<boolean>(`/api/bookings/checkLrExists?lr=${encodeURIComponent(lr)}`);
+  }
+
+  /** Submit a manual booking via the dedicated endpoint (does not increment the auto-sequence). */
+  createManual(dto: any): Observable<any> {
+    return this.http.post<any>('/api/bookings/manualBookLoad', dto);
+  }
 }
 

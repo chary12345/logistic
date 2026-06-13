@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import { formatAppDate } from '../../shared/utils/date.util';
 
 export type TableRow = Record<string, any>;
 
@@ -23,7 +24,7 @@ export class ExportService {
     doc.text(title, 14, 15);
     doc.setFontSize(9);
     doc.setTextColor(100);
-    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 21);
+    doc.text(`Generated: ${formatAppDate(new Date())}`, 14, 21);
 
     autoTable(doc, {
       head: [headers],
@@ -99,7 +100,7 @@ export class ExportService {
 
       // --- ROW 1 (Date, LR No, Payment Mode) ---
       doc.setFontSize(8);
-      const dateStr = booking['bookingDate'] ? new Date(booking['bookingDate']).toLocaleDateString() : new Date().toLocaleDateString();
+      const dateStr = booking['bookingDate'] ? formatAppDate(booking['bookingDate']) : formatAppDate(new Date());
       doc.text(`Date: ${dateStr}`, 12, boxY + 4.5);
       
       doc.setFont('helvetica', 'bold');
