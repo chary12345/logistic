@@ -15,7 +15,10 @@ public interface LoadingSheetRepository extends JpaRepository<LoadingSheetDTO, L
 	@Query("""
 			    SELECT l
 			    FROM LoadingSheetDTO l
-			    WHERE l.destinationBranch = :destinationBranch
+			    WHERE (
+			        l.destinationBranch = :destinationBranch
+			        OR l.destinationBranch LIKE CONCAT('%(', :destinationBranch, ')')
+			    )
 			    AND (
 			            l.status IS NULL
 			            OR l.status NOT IN ('COMPLETED','RECEIVED')
