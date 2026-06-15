@@ -18,4 +18,13 @@ public interface OperationService {
 
 	void deliverSelectedLrs(List<String> lrIds);
 	List<LoadingSheetDTO> getLoadingSheetList(String companyCode, String destinationBranch);
+
+	List<DispatchedResponseDTO> getDispatchedListByBranch(String destinationBranch);
+
+	// LS management operations
+	void cancelLS(Long lsId);
+	void editLrInLS(Long lsId, String lrId, String unloadingBranch, String vehicleNumber);
+	void removeLrFromLS(Long lsId, String lrId);
+	void addLrToLS(Long lsId, String lrId);
+	DispatchedResponseDTO searchLSByNumber(Long lsNumber);
 }
