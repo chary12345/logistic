@@ -34,7 +34,7 @@ import { Booking, VehicleDTO } from '../../../../shared/models/models';
         <mat-form-field>
           <mat-label>Select Vehicle</mat-label>
           <mat-select formControlName="truckNumber" (selectionChange)="onVehicleSelect($event.value)">
-            <mat-option *ngFor="let v of data.vehicles" [value]="v.truckNumber">{{ v.truckNumber }} — {{ v.vehicleName }}</mat-option>
+            <mat-option *ngFor="let v of data.vehicles" [value]="v.truckNumber">{{ v.truckNumber }}</mat-option>
           </mat-select>
           <mat-error *ngIf="form.get('truckNumber')?.hasError('required') && form.get('truckNumber')?.touched">Required</mat-error>
         </mat-form-field>
@@ -49,11 +49,12 @@ import { Booking, VehicleDTO } from '../../../../shared/models/models';
         </mat-form-field>
         <mat-form-field>
           <mat-label>Driver Phone</mat-label>
-          <input matInput type="number" formControlName="driverPhone">
+          <input matInput type="text" formControlName="driverPhone" maxlength="10" (keypress)="allowNumbersOnly($event)">
           <mat-error *ngIf="form.get('driverPhone')?.hasError('required') && form.get('driverPhone')?.touched">Required</mat-error>
+          <mat-error *ngIf="form.get('driverPhone')?.hasError('pattern') && form.get('driverPhone')?.touched">Must be a valid 10-digit number</mat-error>
         </mat-form-field>
         <mat-form-field class="dest-field">
-          <mat-label>Destination Branch</mat-label>
+          <mat-label>Unloading Branch</mat-label>
           <mat-select formControlName="destinationBranch">
             <!-- Search box inside select -->
             <div class="dest-search-box" (keydown)="$event.stopPropagation()" (click)="$event.stopPropagation()">
@@ -133,7 +134,7 @@ export class DispatchDetailsDialogComponent implements OnInit, OnDestroy {
     truckNumber:      ['', Validators.required],
     vehicleName:      [''],
     driverName:       ['', Validators.required],
-    driverPhone:      ['', Validators.required],
+    driverPhone:      ['', [Validators.required, Validators.pattern('^[0-9]{10}$')]],
     destinationBranch:['', Validators.required],
   });
 
@@ -200,6 +201,14 @@ export class DispatchDetailsDialogComponent implements OnInit, OnDestroy {
     );
   }
 
+  allowNumbersOnly(event: KeyboardEvent): boolean {
+    const charCode = event.which ? event.which : event.keyCode;
+    if (charCode > 31 && (charCode < 48 || charCode > 57)) {
+      return false;
+    }
+    return true;
+  }
+
   onVehicleSelect(truckNumber: string): void {
     const v = this.data.vehicles.find(v => v.truckNumber === truckNumber);
     if (v) this.form.patchValue({ vehicleName: v.vehicleName });
@@ -220,7 +229,7 @@ export class DispatchDetailsDialogComponent implements OnInit, OnDestroy {
       next: r => {
         this.loading = false;
         this.snack.success(`${r.bookings?.length || 0} load(s) dispatched successfully!`);
-        this.ref.close(true);
+        this.ref.close(r);
       },
       error: e => { this.loading = false; this.error = e?.error?.message || 'Dispatch failed.'; }
     });

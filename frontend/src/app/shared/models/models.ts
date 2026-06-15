@@ -255,6 +255,14 @@ export interface LoadingSheetInfo {
   lrIdsJson?: string;
   createdAt?: string;
   status?: string;
+  fromBranch?: string;  // populated by frontend before passing to dialog
+  bookings?: Booking[];
+}
+
+/** Request body for editing an LR within an LS */
+export interface EditLrInLsRequest {
+  unloadingBranch: string;
+  vehicleNumber?: string;
 }
 
 export interface DispatchedResponseDTO {

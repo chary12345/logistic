@@ -1,5 +1,5 @@
 import { Component, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -9,15 +9,11 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatRadioModule } from '@angular/material/radio';
 import { AgGridAngular } from 'ag-grid-angular';
 import { ColDef, GridApi, GridReadyEvent, GridSizeChangedEvent, SelectionChangedEvent } from 'ag-grid-community';
-import { MatDialog } from '@angular/material/dialog';
 import { Subject, takeUntil } from 'rxjs';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { OperationService } from '../../../../core/services/operation.service';
 import { SnackbarService } from '../../../../core/services/snackbar.service';
 import { Booking, DispatchedResponseDTO, LoadingSheetInfo } from '../../../../shared/models/models';
-import { LrSearchDialogComponent } from '../../dialogs/lr-search-dialog/lr-search-dialog.component';
-import { calcBookingGrandTotal, calcOtherCharges } from '../../../../shared/utils/booking-report.util';
-import { formatAppDate } from '../../../../shared/utils/date.util';
 
 @Component({
   selector: 'app-receive-operations',
@@ -32,9 +28,10 @@ import { formatAppDate } from '../../../../shared/utils/date.util';
 })
 export class ReceiveOperationsComponent implements OnDestroy {
   private gridApi!: GridApi;
+  private datePipe = new DatePipe('en-US');
   private destroy$ = new Subject<void>();
 
-  searchForm = this.fb.group({ searchType: ['lsId'], searchValue: [''] });
+  searchForm = this.fb.group({ searchValue: [''] });
 
   rowData: Booking[] = [];
   selectedRows: Booking[] = [];
@@ -43,23 +40,7 @@ export class ReceiveOperationsComponent implements OnDestroy {
 
   columnDefs: ColDef[] = [
     { headerName: '', headerCheckboxSelection: true, checkboxSelection: true, maxWidth: 50, pinned: 'left', sortable: false, filter: false, resizable: false, suppressMovable: true },
-    { 
-      headerName: 'LR No', 
-      field: 'loadingReciept', 
-      minWidth: 130, 
-      pinned: 'left', 
-      sortable: true, 
-      filter: true,
-      cellRenderer: (p: any) => {
-        if (!p.value) return '';
-        return `<a class="lr-link" style="color: #0b5ed7; font-weight: 600; text-decoration: underline; cursor: pointer;">${p.value}</a>`;
-      },
-      onCellClicked: (params: any) => {
-        if (params.value) {
-          this.openLRDetails(params.value);
-        }
-      }
-    },
+    { headerName: 'LR No', field: 'loadingReciept', minWidth: 130, pinned: 'left', sortable: true, filter: true },
     { headerName: 'Status', field: 'consignStatus', minWidth: 110, sortable: true, filter: true,
       cellClass: (p) => 'status-cell ' + (p.value === 'DISPATCHED' ? 'dispatched' : p.value === 'RECEIVED' ? 'received' : '') },
     { headerName: 'Consignor', field: 'consignorName', minWidth: 130, sortable: true, filter: true },
@@ -71,16 +52,14 @@ export class ReceiveOperationsComponent implements OnDestroy {
       cellClass: (p) => 'payment-cell ' + this.getPaymentClass(p.value) },
     { headerName: 'Freight', field: 'freight', minWidth: 90, sortable: true, filter: 'agNumberColumnFilter',
       valueFormatter: p => '₹' + (p.value ?? 0).toLocaleString() },
-    { headerName: 'Other Charges', minWidth: 110, sortable: true, filter: 'agNumberColumnFilter',
-      valueGetter: p => calcOtherCharges(p.data), valueFormatter: p => '₹' + (p.value || 0).toFixed(2) },
     { headerName: 'Total', minWidth: 110, sortable: true,
-      valueGetter: p => calcBookingGrandTotal(p.data),
+      valueGetter: p => this.calcTotal(p.data),
       valueFormatter: p => '₹' + (p.value || 0).toFixed(2),
       cellStyle: { fontWeight: '700' } },
     { headerName: 'Booking Date', field: 'bookingDate', minWidth: 120, sortable: true,
-      valueFormatter: p => formatAppDate(p.value) },
+      valueFormatter: p => this.datePipe.transform(p.value, 'dd/MM/yy HH:mm') || '' },
     { headerName: 'Dispatch Date', field: 'dispatchDate', minWidth: 120, sortable: true,
-      valueFormatter: p => formatAppDate(p.value) },
+      valueFormatter: p => this.datePipe.transform(p.value, 'dd/MM/yy HH:mm') || '' },
   ];
 
   defaultColDef: ColDef = { resizable: true, flex: 1, minWidth: 70, sortable: true, autoHeaderHeight: true, wrapHeaderText: true };
@@ -90,15 +69,7 @@ export class ReceiveOperationsComponent implements OnDestroy {
     private auth: AuthService,
     private opSvc: OperationService,
     private snack: SnackbarService,
-    private dialog: MatDialog,
   ) {}
-
-  openLRDetails(lr: string): void {
-    this.dialog.open(LrSearchDialogComponent, {
-      width: '500px',
-      data: { lr, hideEdit: true }
-    });
-  }
 
   onGridReady(params: GridReadyEvent): void { this.gridApi = params.api; this.gridApi.sizeColumnsToFit(); }
   onGridSizeChanged(params: GridSizeChangedEvent): void { params.api.sizeColumnsToFit(); }
@@ -115,9 +86,8 @@ export class ReceiveOperationsComponent implements OnDestroy {
     this.selectedRows = [];
     this.loadingSheet = null;
 
-    const type = this.searchForm.value.searchType;
-    const lsId = type === 'lsId' ? Number(val) : undefined;
-    const vehicleNo = type === 'vehicleNo' ? val : undefined;
+    const lsId = Number(val);
+    const vehicleNo = undefined;
 
     this.opSvc.getDispatchedList(lsId, vehicleNo)
       .pipe(takeUntil(this.destroy$))
@@ -156,10 +126,15 @@ export class ReceiveOperationsComponent implements OnDestroy {
   }
 
   reset(): void {
-    this.searchForm.reset({ searchType: 'lsId', searchValue: '' });
+    this.searchForm.reset({ searchValue: '' });
     this.rowData = [];
     this.selectedRows = [];
     this.loadingSheet = null;
+  }
+
+  calcTotal(b: Booking): number {
+    if (!b) return 0;
+    return (b.freight || 0) + (b.loading || 0) + (b.loadingCharge || 0) + (b.sgst || 0) + (b.cgst || 0) + (b.igst || 0);
   }
 
   getPaymentClass(m?: string): string {
