@@ -7,6 +7,8 @@ public class DispatchRequest {
 	private String vehicleNumber;
 	private String vehicleName;
 	private String destinationBranch;
+    private String fromBranch;
+    private String unloadPoint;
 	private String driverName;
 	private String driverPhone;
 	private List<String> lrIds;
@@ -30,7 +32,24 @@ public class DispatchRequest {
 	public void setDestinationBranch(String destinationBranch) {
 		this.destinationBranch = destinationBranch;
 	}
-	public String getDriverName() {
+
+    public String getUnloadPoint() {
+        return unloadPoint;
+    }
+
+    public void setUnloadPoint(String unloadPoint) {
+        this.unloadPoint = unloadPoint;
+    }
+
+    public String getFromBranch() {
+        return fromBranch;
+    }
+
+    public void setFromBranch(String fromBranch) {
+        this.fromBranch = fromBranch;
+    }
+
+    public String getDriverName() {
 		return driverName;
 	}
 	public void setDriverName(String driverName) {

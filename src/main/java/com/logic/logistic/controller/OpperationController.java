@@ -34,8 +34,8 @@ public class OpperationController {
 	
 	@GetMapping("/dispatchedListByBranch")
 	public ResponseEntity<List<DispatchedResponseDTO>> getDispatchedListByBranch(
-			@RequestParam String destinationBranch) {
-		return ResponseEntity.ok(operationService.getDispatchedListByBranch(destinationBranch));
+			@RequestParam String destinationBranch,@RequestParam String fromBranch) {
+		return ResponseEntity.ok(operationService.getDispatchedListByBranch(destinationBranch,fromBranch));
 	}
 
 	@GetMapping("/loadingSheet/list")
