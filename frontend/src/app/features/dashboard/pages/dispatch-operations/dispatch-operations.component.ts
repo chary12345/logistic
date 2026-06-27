@@ -184,14 +184,23 @@ export class DispatchOperationsComponent implements OnInit, OnDestroy {
   onRegion(regionName: string): void {
     this.subRegions = []; this.branchOptions = [];
     this.filterForm.patchValue({ subRegion: '', branchCode: '' });
+    this.filterForm.get('branchCode')?.enable();
     if (!regionName) return;
     this.regionSvc.getSubRegions(regionName).pipe(takeUntil(this.destroy$))
-      .subscribe({ next: c => this.subRegions = c || [], error: () => {} });
+      .subscribe({ next: c => this.subRegions = c ? ['All', ...c] : ['All'], error: () => {} });
   }
 
   onSubRegion(subRegionName: string): void {
     this.branchOptions = []; this.filterForm.patchValue({ branchCode: '' });
-    const regionName = this.filterForm.value.region;
+    const regionName = this.filterForm.getRawValue().region;
+    
+    if (subRegionName === 'All') {
+      this.filterForm.get('branchCode')?.disable();
+      return;
+    } else {
+      this.filterForm.get('branchCode')?.enable();
+    }
+    
     if (!subRegionName || !regionName) return;
     this.regionSvc.getBranches(regionName, subRegionName).pipe(takeUntil(this.destroy$)).subscribe({
       next: (branches: string[]) => {
@@ -208,12 +217,14 @@ export class DispatchOperationsComponent implements OnInit, OnDestroy {
 
   fetchBookings(): void {
     this.loading = true; this.selectedRows = []; this.summaryRows = [];
-    const v = this.filterForm.value;
+    const rawV = this.filterForm.getRawValue();
+    const reqSubregion = rawV.subRegion === 'All' ? undefined : (rawV.subRegion || undefined);
+    const reqBranchCode = rawV.subRegion === 'All' ? undefined : (rawV.branchCode || undefined);
     this.opSvc.getBookingsWithFilter({
-      region: v.region || undefined,
-      subregion: v.subRegion || undefined,
+      region: rawV.region || undefined,
+      subregion: reqSubregion,
       fromBranchCode: this.auth.branchCode,
-      ToBranchCode: v.branchCode || undefined,
+      ToBranchCode: reqBranchCode,
       status: 'BOOKED',
     }).pipe(takeUntil(this.destroy$)).subscribe({
       next: b => { this.loading = false; this.rowData = b; this.computeSummary(b); },
@@ -223,6 +234,7 @@ export class DispatchOperationsComponent implements OnInit, OnDestroy {
 
   resetFilters(): void {
     this.filterForm.reset({ region: '', subRegion: '', branchCode: '' });
+    this.filterForm.get('branchCode')?.enable();
     this.subRegions = []; this.branchOptions = [];
     this.rowData = []; this.selectedRows = []; this.summaryRows = [];
   }

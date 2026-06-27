@@ -368,12 +368,14 @@
           </div>
 
           <div *ngIf="showPaidVia" class="paid-via-wrap">
-            <label class="paid-via-label">Paid Via*</label>
             <mat-form-field>
-              <mat-select formControlName="paidVia">
-                <mat-option value="CASH">Cash</mat-option>
-                <mat-option value="ONLINE">Online</mat-option>
-              </mat-select>
+              <mat-label>Paid Via*</mat-label>
+              <input matInput formControlName="paidVia" [matAutocomplete]="autoPaidVia" placeholder="Select Paid Via" (focus)="filterPaidVia(form.get('paidVia')?.value)" (input)="filterPaidVia($any($event.target).value)">
+              <mat-autocomplete #autoPaidVia="matAutocomplete">
+                <mat-option *ngFor="let option of filteredPaidViaOptions" [value]="option">
+                  {{ option }}
+                </mat-option>
+              </mat-autocomplete>
             </mat-form-field>
           </div>
         </div>

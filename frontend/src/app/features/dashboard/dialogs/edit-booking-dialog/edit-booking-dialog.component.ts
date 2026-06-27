@@ -64,6 +64,9 @@ export class EditBookingDialogComponent implements OnInit, OnDestroy {
   filteredArticleOptions: string[] = ARTICLE_OPTIONS;
   articleFilterCtrl = new FormControl('');
 
+  readonly paidViaOptions: string[] = ['Cash', 'Online'];
+  filteredPaidViaOptions: string[] = this.paidViaOptions;
+
   booking: any = null;
 
   private destroy$ = new Subject<void>();
@@ -139,9 +142,9 @@ export class EditBookingDialogComponent implements OnInit, OnDestroy {
       invoiceNo: [''],
       invoiceValue: [null],
       ewayBill: [''],
-      paidVia: ['CASH'],
-      loadingCharge: [0, [Validators.min(0)]],
-      lrCharge: [0, [Validators.min(0)]],
+      paidVia: ['Cash'],
+      loadingCharge: [null, [Validators.min(0)]],
+      lrCharge: [null, [Validators.min(0)]],
       freight: [{ value: 0, disabled: true }],
       sgst: [{ value: 0, disabled: true }],
       cgst: [{ value: 0, disabled: true }],
@@ -188,9 +191,9 @@ export class EditBookingDialogComponent implements OnInit, OnDestroy {
           invoiceNo: booking.invoiceNumber,
           invoiceValue: booking.invoiceValue,
           ewayBill: booking.eWayBillNumber,
-          paidVia: booking.paidVia || 'CASH',
-          loadingCharge: booking.loading || 0,
-          lrCharge: booking.loadingCharge || 0,
+          paidVia: booking.paidVia || 'Cash',
+          loadingCharge: booking.loading || null,
+          lrCharge: booking.loadingCharge || null,
         });
 
         while (this.articles.length > 0) this.articles.removeAt(0);
@@ -291,6 +294,11 @@ export class EditBookingDialogComponent implements OnInit, OnDestroy {
     this.filteredSaidToContains = this.saidToContainsList.filter(s =>
       s.toLowerCase().includes(search)
     );
+  }
+
+  filterPaidVia(val: any): void {
+    const search = (typeof val === 'string' ? val : val?.value || '').toLowerCase().trim();
+    this.filteredPaidViaOptions = this.paidViaOptions.filter(o => o.toLowerCase().includes(search));
   }
 
   searchConsignor(q: string): void {

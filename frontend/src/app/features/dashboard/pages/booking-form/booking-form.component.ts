@@ -78,6 +78,8 @@ export class BookingFormComponent implements OnInit, OnDestroy {
   filteredGstPaidByOptions: string[] = this.gstPaidByOptions;
   readonly deliveryTypeOptions: string[] = ['Door Delivery', 'Godown Delivery'];
   filteredDeliveryTypeOptions: string[] = this.deliveryTypeOptions;
+  readonly paidViaOptions: string[] = ['Cash', 'Online'];
+  filteredPaidViaOptions: string[] = this.paidViaOptions;
   nextLR = '';
   hasValidConsignorGST = false;
   hasValidConsigneeGST = false;
@@ -174,25 +176,25 @@ export class BookingFormComponent implements OnInit, OnDestroy {
       gstPaidBy: [''],
       deliveryType: [''],
       remarks: [''],
-      paidVia: ['CASH'],
-      lrCharge: [0, [Validators.min(0)]],
-      hamali: [0, [Validators.min(0)]],
-      loading: [0, [Validators.min(0)]],
-      loadingCharge: [0, [Validators.min(0)]],
-      stationary: [0, [Validators.min(0)]],
-      otherCharges: [0, [Validators.min(0)]],
-      otherTransportCharges: [0, [Validators.min(0)]],
-      miscellaneous: [0, [Validators.min(0)]],
-      crossingAmount: [0, [Validators.min(0)]],
-      podCharges: [0, [Validators.min(0)]],
-      doorDelivery: [0, [Validators.min(0)]],
-      doorPickup: [0, [Validators.min(0)]],
-      ddc: [0, [Validators.min(0)]],
-      dcc: [0, [Validators.min(0)]],
-      demurrage: [0, [Validators.min(0)]],
-      unloading: [0, [Validators.min(0)]],
-      localVehicle: [0, [Validators.min(0)]],
-      crossingHire: [0, [Validators.min(0)]],
+      paidVia: ['Cash'],
+      lrCharge: [null, [Validators.min(0)]],
+      hamali: [null, [Validators.min(0)]],
+      loading: [null, [Validators.min(0)]],
+      loadingCharge: [null, [Validators.min(0)]],
+      stationary: [null, [Validators.min(0)]],
+      otherCharges: [null, [Validators.min(0)]],
+      otherTransportCharges: [null, [Validators.min(0)]],
+      miscellaneous: [null, [Validators.min(0)]],
+      crossingAmount: [null, [Validators.min(0)]],
+      podCharges: [null, [Validators.min(0)]],
+      doorDelivery: [null, [Validators.min(0)]],
+      doorPickup: [null, [Validators.min(0)]],
+      ddc: [null, [Validators.min(0)]],
+      dcc: [null, [Validators.min(0)]],
+      demurrage: [null, [Validators.min(0)]],
+      unloading: [null, [Validators.min(0)]],
+      localVehicle: [null, [Validators.min(0)]],
+      crossingHire: [null, [Validators.min(0)]],
       freight: [{ value: 0, disabled: true }],
       sgst: [{ value: 0, disabled: true }],
       cgst: [{ value: 0, disabled: true }],
@@ -287,25 +289,25 @@ export class BookingFormComponent implements OnInit, OnDestroy {
           gstPaidBy: this.formatGstPaidBy(this.getIgnoreCase(booking, 'gstpaidby')),
           deliveryType: this.formatDeliveryType(this.getIgnoreCase(booking, 'deliverytype')),
           remarks: booking.remarks || '',
-          paidVia: booking.paidVia || 'CASH',
-          lrCharge: booking.lrCharge ?? 0,
-          hamali: booking.hamali ?? 0,
-          loading: booking.loading ?? 0,
-          loadingCharge: booking.loadingCharge ?? 0,
-          stationary: booking.stationary ?? 0,
-          otherCharges: booking.otherCharges ?? 0,
-          otherTransportCharges: booking.otherTransportCharges ?? 0,
-          miscellaneous: booking.miscellaneous ?? 0,
-          crossingAmount: booking.crossingAmount ?? 0,
-          podCharges: booking.podCharges ?? 0,
-          doorDelivery: booking.doorDelivery ?? 0,
-          doorPickup: booking.doorPickup ?? 0,
-          ddc: booking.ddc ?? 0,
-          dcc: booking.dcc ?? 0,
-          demurrage: booking.demurrage ?? 0,
-          unloading: booking.unloading ?? 0,
-          localVehicle: booking.localVehicle ?? 0,
-          crossingHire: booking.crossingHire ?? 0,
+          paidVia: booking.paidVia || 'Cash',
+          lrCharge: booking.lrCharge || null,
+          hamali: booking.hamali || null,
+          loading: booking.loading || null,
+          loadingCharge: booking.loadingCharge || null,
+          stationary: booking.stationary || null,
+          otherCharges: booking.otherCharges || null,
+          otherTransportCharges: booking.otherTransportCharges || null,
+          miscellaneous: booking.miscellaneous || null,
+          crossingAmount: booking.crossingAmount || null,
+          podCharges: booking.podCharges || null,
+          doorDelivery: booking.doorDelivery || null,
+          doorPickup: booking.doorPickup || null,
+          ddc: booking.ddc || null,
+          dcc: booking.dcc || null,
+          demurrage: booking.demurrage || null,
+          unloading: booking.unloading || null,
+          localVehicle: booking.localVehicle || null,
+          crossingHire: booking.crossingHire || null,
         });
 
         if (booking.eWayBillNumbers) {
@@ -804,6 +806,11 @@ export class BookingFormComponent implements OnInit, OnDestroy {
     );
   }
 
+  filterPaidVia(val: any): void {
+    const search = (typeof val === 'string' ? val : val?.value || '').toLowerCase().trim();
+    this.filteredPaidViaOptions = this.paidViaOptions.filter(o => o.toLowerCase().includes(search));
+  }
+
   filterGstPaidBy(val: any): void {
     const search = (typeof val === 'string' ? val : val?.value || '').toLowerCase().trim();
     this.filteredGstPaidByOptions = this.gstPaidByOptions.filter(o =>
@@ -910,7 +917,7 @@ export class BookingFormComponent implements OnInit, OnDestroy {
   onDestinationSelected(event: any): void {
     const value = event.option?.value;
     if (!value) return;
-    
+
     const matched = this.destinationSuggestions.find(d => `${d.branchName} (${d.branchCode})` === value);
     if (matched) {
       this.form.patchValue({
@@ -1308,7 +1315,7 @@ export class BookingFormComponent implements OnInit, OnDestroy {
 
   private defaultChargeValues(): any {
     const values: any = {};
-    this.allChargeFields.forEach((f: any) => { values[f.key] = 0; });
+    this.allChargeFields.forEach((f: any) => { values[f.key] = null; });
     return values;
   }
 
