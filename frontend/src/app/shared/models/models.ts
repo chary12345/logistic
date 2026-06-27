@@ -232,6 +232,8 @@ export interface DispatchRequest {
   driverName: string;
   driverPhone: string;
   destinationBranch: string;
+  fromBranch?: string;
+  unloadPoint?: string;
 }
 
 export interface DispatchResponse {
@@ -256,6 +258,7 @@ export interface LoadingSheetInfo {
   createdAt?: string;
   status?: string;
   fromBranch?: string;  // populated by frontend before passing to dialog
+  unloadPoint?: string;
   bookings?: Booking[];
 }
 

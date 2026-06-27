@@ -271,8 +271,8 @@ export class DispatchOperationsComponent implements OnInit, OnDestroy {
         this.fetchBookings();
         if (res.loadingSheet) {
           // Attach full branch names for UI and PDF
-          const lrDestBranch = dispatchedBookings[0]?.destinationBranchCode || this.auth.branchName;
-          res.loadingSheet.fromBranch = this.getFullBranchName(lrDestBranch);
+          // Use the loadingSheet.fromBranch from the backend directly if available
+          res.loadingSheet.fromBranch = res.loadingSheet.fromBranch || this.getFullBranchName(this.auth.branchName);
           res.loadingSheet.destinationBranch = this.getFullBranchName(res.loadingSheet.destinationBranch);
           
           // Use the saved rows rather than raw response to guarantee full charge mappings
@@ -381,7 +381,7 @@ export class DispatchOperationsComponent implements OnInit, OnDestroy {
 
   // ── Print / Download LS ──────────────────────────────────────────────────
   getFromBranch(entry: DispatchedResponseDTO): string {
-    const code = entry.bookings?.[0]?.destinationBranchCode || entry.loadingSheet?.fromBranch || this.auth.branchName;
+    const code = entry.loadingSheet?.fromBranch || entry.bookings?.[0]?.branchCode || this.auth.branchName;
     return this.getFullBranchName(code);
   }
 
@@ -392,7 +392,7 @@ export class DispatchOperationsComponent implements OnInit, OnDestroy {
   private _formatBookingsForPdf(entry: DispatchedResponseDTO): Booking[] {
     return (entry.bookings || []).map(b => ({
       ...b,
-      formattedFrom: this.getFullBranchName(b.destinationBranchCode),
+      formattedFrom: this.getFullBranchName(b.branchCode),
       formattedTo: this.getFullBranchName((b as any)['unloadingBranch'] || entry.loadingSheet?.destinationBranch)
     }));
   }

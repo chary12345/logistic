@@ -131,11 +131,11 @@ import { Booking, VehicleDTO } from '../../../../shared/models/models';
 })
 export class DispatchDetailsDialogComponent implements OnInit, OnDestroy {
   form = this.fb.group({
-    truckNumber:      ['', Validators.required],
-    vehicleName:      [''],
-    driverName:       ['', Validators.required],
-    driverPhone:      ['', [Validators.required, Validators.pattern('^[0-9]{10}$')]],
-    destinationBranch:['', Validators.required],
+    truckNumber: ['', Validators.required],
+    vehicleName: [''],
+    driverName: ['', Validators.required],
+    driverPhone: ['', [Validators.required, Validators.pattern('^[0-9]{10}$')]],
+    destinationBranch: ['', Validators.required],
   });
 
   destinationSuggestions: string[] = [];
@@ -143,7 +143,7 @@ export class DispatchDetailsDialogComponent implements OnInit, OnDestroy {
   destinationFilterCtrl = new FormControl('');
 
   loading = false;
-  error   = '';
+  error = '';
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -153,7 +153,7 @@ export class DispatchDetailsDialogComponent implements OnInit, OnDestroy {
     private branchSvc: BranchService,
     private snack: SnackbarService,
     private ref: MatDialogRef<DispatchDetailsDialogComponent>
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadBranchDestinations();
@@ -218,13 +218,25 @@ export class DispatchDetailsDialogComponent implements OnInit, OnDestroy {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.loading = true; this.error = '';
     const f = this.form.value;
+
+    let fromBranchName = '';
+    try {
+      const raw = sessionStorage.getItem('user');
+      if (raw) {
+        const u = JSON.parse(raw);
+        fromBranchName = u.companyAndBranchDeatils?.branchName || u.branchName || '';
+      }
+    } catch (e) { }
+
     this.bookSvc.dispatchLoad({
-      lrIds:             this.data.selected.map(b => b.loadingReciept!),
-      vehicleNumber:     f.truckNumber!,
-      vehicleName:       f.vehicleName!,
-      driverName:        f.driverName!,
-      driverPhone:       f.driverPhone!,
+      lrIds: this.data.selected.map(b => b.loadingReciept!),
+      vehicleNumber: f.truckNumber!,
+      vehicleName: f.vehicleName!,
+      driverName: f.driverName!,
+      driverPhone: f.driverPhone!,
       destinationBranch: f.destinationBranch!,
+      fromBranch: fromBranchName,
+      unloadPoint: f.destinationBranch!
     }).subscribe({
       next: r => {
         this.loading = false;

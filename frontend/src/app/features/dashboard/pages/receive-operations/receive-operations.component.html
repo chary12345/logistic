@@ -37,8 +37,12 @@
         <span class="ls-value">{{ loadingSheet.driverName || '—' }} {{ loadingSheet.driverPhone ? '(' + loadingSheet.driverPhone + ')' : '' }}</span>
       </div>
       <div class="ls-info-item">
-        <span class="ls-label">Destination</span>
-        <span class="ls-value">{{ loadingSheet.destinationBranch || '—' }}</span>
+        <span class="ls-label">From</span>
+        <span class="ls-value">{{ loadingSheet.fromBranch || '—' }}</span>
+      </div>
+      <div class="ls-info-item">
+        <span class="ls-label">Unloading Point</span>
+        <span class="ls-value">{{ loadingSheet.unloadPoint || loadingSheet.destinationBranch || '—' }}</span>
       </div>
       <div class="ls-info-item">
         <span class="ls-label">Status</span>

@@ -425,7 +425,7 @@ export class ExportService {
     // Right Details
     const rightColX = pageW / 2 + 20;
     doc.setFont('helvetica', 'bold');
-    doc.text('To :', rightColX, startY); doc.setFont('helvetica', 'normal'); doc.text(` ${ls['destinationBranch'] || '—'}`, rightColX + 8, startY);
+    doc.text('To :', rightColX, startY); doc.setFont('helvetica', 'normal'); doc.text(` ${ls['unloadPoint'] || ls['destinationBranch'] || '—'}`, rightColX + 8, startY);
     doc.setFont('helvetica', 'bold');
     doc.text('Date :', rightColX, startY + 6); doc.setFont('helvetica', 'normal'); doc.text(` ${dateStr}`, rightColX + 11, startY + 6);
     doc.setFont('helvetica', 'bold');

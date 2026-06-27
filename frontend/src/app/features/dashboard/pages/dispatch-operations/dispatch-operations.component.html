@@ -145,14 +145,14 @@
                   </span>
                 </div>
                 <div class="ls-info-chips">
-                  <span class="ls-chip"><mat-icon>directions_car</mat-icon>{{ entry.loadingSheet?.vehicleNumber }}</span>
+                  <span class="ls-chip"><mat-icon>local_shipping</mat-icon>{{ entry.loadingSheet?.vehicleNumber }}</span>
                   <span class="ls-chip" *ngIf="entry.loadingSheet?.vehicleName">({{ entry.loadingSheet?.vehicleName }})</span>
                   <span class="ls-chip" *ngIf="entry.loadingSheet?.driverName">
                     <mat-icon>person</mat-icon>{{ entry.loadingSheet?.driverName }}
                     <span *ngIf="entry.loadingSheet?.driverPhone"> ({{ entry.loadingSheet?.driverPhone }})</span>
                   </span>
                   <span class="ls-chip" matTooltip="From Branch &rarr; To Branch">
-                    <mat-icon>location_on</mat-icon>{{ getFromBranch(entry) }} <mat-icon style="font-size: 14px; width: 14px; height: 14px; margin: 0 4px;">arrow_forward</mat-icon> {{ entry.loadingSheet?.destinationBranch || '—' }}
+                    <mat-icon>location_on</mat-icon>{{ getFromBranch(entry) }} <mat-icon style="font-size: 14px; width: 14px; height: 14px; margin: 0 4px;">arrow_forward</mat-icon> {{ entry.loadingSheet?.unloadPoint || entry.loadingSheet?.destinationBranch || '—' }}
                   </span>
                 </div>
               </div>
