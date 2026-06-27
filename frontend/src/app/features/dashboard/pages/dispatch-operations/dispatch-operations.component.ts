@@ -247,8 +247,9 @@ export class DispatchOperationsComponent implements OnInit, OnDestroy {
       gst: list.reduce((s, b) => s + (b.sgst || 0) + (b.cgst || 0) + (b.igst || 0), 0),
       grandTotal: list.reduce((s, b) => s + calcBookingGrandTotal(b), 0),
     });
-    const auto = bookings.filter(b => b.bookingtype !== 'Manual');
-    const manual = bookings.filter(b => b.bookingtype === 'Manual');
+    const isManual = (b: Booking) => b.bookingtype === 'Manual' || (b.loadingReciept && b.loadingReciept.includes('_M'));
+    const auto = bookings.filter(b => !isManual(b));
+    const manual = bookings.filter(b => isManual(b));
     this.summaryRows = [
       { type: 'Auto', ...calc(auto) },
       { type: 'Manual', ...calc(manual) },

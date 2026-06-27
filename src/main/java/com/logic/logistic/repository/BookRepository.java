@@ -17,41 +17,41 @@ import jakarta.transaction.Transactional;
 @Transactional
 public interface BookRepository extends JpaRepository<Booking, String> {
 	@Query("""
-		    SELECT b
-		    FROM Booking b
-		    WHERE
-		    b.consignStatus = :status
-		    AND b.BranchCode = :fromBranch
-		    AND b.destinationBranchCode = :destinationBranch
-		    ORDER BY b.bookingDate DESC
-		""")
+			    SELECT b
+			    FROM Booking b
+			    WHERE
+			    b.consignStatus = :status
+			    AND b.BranchCode = :fromBranch
+			    AND b.destinationBranchCode = :destinationBranch
+			    ORDER BY b.bookingDate DESC
+			""")
 	List<Booking> getBookingsWithFilter(@Param("status") String status,
-			@Param("fromBranch") String branchCode,@Param("destinationBranch") String destinationBranchCode);
+			@Param("fromBranch") String branchCode, @Param("destinationBranch") String destinationBranchCode);
 
 	@Query("""
-		    SELECT b
-		    FROM Booking b
-		    WHERE
-		    b.consignStatus = :status
-		    AND b.BranchCode = :fromBranch
-		    AND b.destinationBranchCode IN :destBranches
-		    ORDER BY b.bookingDate DESC
-		""")
+			    SELECT b
+			    FROM Booking b
+			    WHERE
+			    b.consignStatus = :status
+			    AND b.BranchCode = :fromBranch
+			    AND b.destinationBranchCode IN :destBranches
+			    ORDER BY b.bookingDate DESC
+			""")
 	List<Booking> getBookingsWithFilterByDestBranches(
-            @Param("status") String status,
+			@Param("status") String status,
 			@Param("fromBranch") String branchCode,
-            @Param("destBranches") List<String> destBranches);
+			@Param("destBranches") List<String> destBranches);
 
 	@Query("""
-		    SELECT b
-		    FROM Booking b
-		    WHERE
-		    b.consignStatus = :status
-		    AND b.BranchCode = :fromBranch
-		    ORDER BY b.bookingDate DESC
-		""")
+			    SELECT b
+			    FROM Booking b
+			    WHERE
+			    b.consignStatus = :status
+			    AND b.BranchCode = :fromBranch
+			    ORDER BY b.bookingDate DESC
+			""")
 	List<Booking> getBookingsWithFilterNoDest(
-            @Param("status") String status,
+			@Param("status") String status,
 			@Param("fromBranch") String branchCode);
 
 	@Query(value = """

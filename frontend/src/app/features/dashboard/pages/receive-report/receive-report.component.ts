@@ -307,8 +307,9 @@ export class ReceiveReportComponent implements OnDestroy {
       const grandTotal = list.reduce((s, b) => s + calcBookingGrandTotal(b), 0);
       return { totalFreight, totalOtherCharges, gst, grandTotal };
     };
-    const auto = bookings.filter(b => b.bookingtype !== 'Manual');
-    const manual = bookings.filter(b => b.bookingtype === 'Manual');
+    const isManual = (b: Booking) => b.bookingtype === 'Manual' || (b.loadingReciept && b.loadingReciept.includes('_M'));
+    const auto = bookings.filter(b => !isManual(b));
+    const manual = bookings.filter(b => isManual(b));
     const all = calc(bookings);
     this.summaryRows = [
       { type: 'Auto', ...calc(auto) },

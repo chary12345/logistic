@@ -41,25 +41,37 @@ export class ReceiveOperationsComponent implements OnDestroy {
   columnDefs: ColDef[] = [
     { headerName: '', headerCheckboxSelection: true, checkboxSelection: true, maxWidth: 50, pinned: 'left', sortable: false, filter: false, resizable: false, suppressMovable: true },
     { headerName: 'LR No', field: 'loadingReciept', minWidth: 130, pinned: 'left', sortable: true, filter: true },
-    { headerName: 'Status', field: 'consignStatus', minWidth: 110, sortable: true, filter: true,
-      cellClass: (p) => 'status-cell ' + (p.value === 'DISPATCHED' ? 'dispatched' : p.value === 'RECEIVED' ? 'received' : '') },
+    {
+      headerName: 'Status', field: 'consignStatus', minWidth: 110, sortable: true, filter: true,
+      cellClass: (p) => 'status-cell ' + (p.value === 'DISPATCHED' ? 'dispatched' : p.value === 'RECEIVED' ? 'received' : '')
+    },
     { headerName: 'Consignor', field: 'consignorName', minWidth: 130, sortable: true, filter: true },
     { headerName: 'Consignor Mobile', field: 'consignorMobile', minWidth: 130, sortable: true, filter: true },
     { headerName: 'Consignee', field: 'consigneeName', minWidth: 130, sortable: true, filter: true },
     { headerName: 'Consignee Mobile', field: 'consigneeMobile', minWidth: 130, sortable: true, filter: true },
     { headerName: 'Destination', field: 'destinationBranchCode', minWidth: 110, sortable: true, filter: true },
-    { headerName: 'Bill Type', field: 'billType', minWidth: 100, sortable: true, filter: true,
-      cellClass: (p) => 'payment-cell ' + this.getPaymentClass(p.value) },
-    { headerName: 'Freight', field: 'freight', minWidth: 90, sortable: true, filter: 'agNumberColumnFilter',
-      valueFormatter: p => '₹' + (p.value ?? 0).toLocaleString() },
-    { headerName: 'Total', minWidth: 110, sortable: true,
+    {
+      headerName: 'Bill Type', field: 'billType', minWidth: 100, sortable: true, filter: true,
+      cellClass: (p) => 'payment-cell ' + this.getPaymentClass(p.value)
+    },
+    {
+      headerName: 'Freight', field: 'freight', minWidth: 90, sortable: true, filter: 'agNumberColumnFilter',
+      valueFormatter: p => '₹' + (p.value ?? 0).toLocaleString()
+    },
+    {
+      headerName: 'Total', minWidth: 110, sortable: true,
       valueGetter: p => this.calcTotal(p.data),
       valueFormatter: p => '₹' + (p.value || 0).toFixed(2),
-      cellStyle: { fontWeight: '700' } },
-    { headerName: 'Booking Date', field: 'bookingDate', minWidth: 120, sortable: true,
-      valueFormatter: p => this.datePipe.transform(p.value, 'dd/MM/yy HH:mm') || '' },
-    { headerName: 'Dispatch Date', field: 'dispatchDate', minWidth: 120, sortable: true,
-      valueFormatter: p => this.datePipe.transform(p.value, 'dd/MM/yy HH:mm') || '' },
+      cellStyle: { fontWeight: '700' }
+    },
+    {
+      headerName: 'Booking Date', field: 'bookingDate', minWidth: 120, sortable: true,
+      valueFormatter: p => this.datePipe.transform(p.value, 'dd/MM/yy HH:mm') || ''
+    },
+    {
+      headerName: 'Dispatch Date', field: 'dispatchDate', minWidth: 120, sortable: true,
+      valueFormatter: p => this.datePipe.transform(p.value, 'dd/MM/yy HH:mm') || ''
+    },
   ];
 
   defaultColDef: ColDef = { resizable: true, flex: 1, minWidth: 70, sortable: true, autoHeaderHeight: true, wrapHeaderText: true };
@@ -69,7 +81,7 @@ export class ReceiveOperationsComponent implements OnDestroy {
     private auth: AuthService,
     private opSvc: OperationService,
     private snack: SnackbarService,
-  ) {}
+  ) { }
 
   onGridReady(params: GridReadyEvent): void { this.gridApi = params.api; this.gridApi.sizeColumnsToFit(); }
   onGridSizeChanged(params: GridSizeChangedEvent): void { params.api.sizeColumnsToFit(); }
