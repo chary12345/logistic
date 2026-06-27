@@ -21,6 +21,12 @@ public interface RegionMasterRepository extends JpaRepository<RegionMasterDto, R
 	@Query("SELECT DISTINCT b.id.subRegion FROM RegionMasterDto b WHERE b.id.region = :region")
 	List<String> findDistinctSubRegionByRegion(String region);
 
+	@Query("SELECT DISTINCT b.id.branchCode FROM RegionMasterDto b WHERE b.id.region = :region")
+	List<String> findBranchCodesByRegion(String region);
+
+	@Query("SELECT DISTINCT b.id.branchCode FROM RegionMasterDto b WHERE b.id.region = :region AND b.id.subRegion = :subRegion")
+	List<String> findBranchCodesByRegionAndSubRegion(String region, String subRegion);
+
 	@Query("SELECT new com.logic.logistic.model.BranchNameList(b.id.branchCode, b.branch) "
 			+ "FROM RegionMasterDto b " + "WHERE b.id.region = :region AND b.id.subRegion = :subRegion")
 	List<BranchNameList> findBranchData(String region, String subRegion);
