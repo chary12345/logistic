@@ -19,7 +19,7 @@ public interface OperationService {
 	void deliverSelectedLrs(List<String> lrIds);
 	List<LoadingSheetDTO> getLoadingSheetList(String companyCode, String destinationBranch);
 
-	List<DispatchedResponseDTO> getDispatchedListByBranch(String destinationBranch);
+	List<DispatchedResponseDTO> getDispatchedListByBranch(String destinationBranch,String fromBranch);
 
 	// LS management operations
 	void cancelLS(Long lsId);

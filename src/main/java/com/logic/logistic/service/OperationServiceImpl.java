@@ -277,13 +277,13 @@ public class OperationServiceImpl implements OperationService {
 	}
 
 	@Override
-	public List<DispatchedResponseDTO> getDispatchedListByBranch(String destinationBranch) {
+	public List<DispatchedResponseDTO> getDispatchedListByBranch(String destinationBranch,String fromBranch) {
 		if (destinationBranch == null || destinationBranch.isBlank()) {
 			throw new RuntimeException("destinationBranch is required");
 		}
 
 		List<LoadingSheetDTO> lsList = loadingSheetRepository
-				.findByDestinationBranchAndStatusNotOrNull(destinationBranch, "COMPLETED");
+				.findByDestinationBranchAndStatusNotOrNull(destinationBranch, fromBranch);
 
 		List<DispatchedResponseDTO> result = new ArrayList<>();
 
