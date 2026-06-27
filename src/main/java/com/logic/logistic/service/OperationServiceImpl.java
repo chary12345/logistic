@@ -33,7 +33,8 @@ public class OperationServiceImpl implements OperationService {
 	private com.logic.logistic.repository.BookingChargeDetailsRepo bookingChargeRepo;
 
 	private void enrichBookingsWithCharges(List<Booking> bookings) {
-		if (bookings == null || bookings.isEmpty()) return;
+		if (bookings == null || bookings.isEmpty())
+			return;
 		List<String> lrIds = bookings.stream().map(Booking::getLoadingReciept).toList();
 		List<BookingChargeDetails> charges = bookingChargeRepo.findByLoadingRecieptIn(lrIds);
 		Map<String, BookingChargeDetails> chargeMap = new HashMap<>();
@@ -71,7 +72,8 @@ public class OperationServiceImpl implements OperationService {
 
 		if ("DISPATCHED".equalsIgnoreCase(status) && filter.getToBranchCode() != null) {
 			// Receive page: fetch DISPATCHED LRs destined for this branch
-			results = bookingRepository.findByConsignStatusAndDestinationBranchCode("DISPATCHED", filter.getToBranchCode());
+			results = bookingRepository.findByConsignStatusAndDestinationBranchCode("DISPATCHED",
+					filter.getToBranchCode());
 		} else {
 			if (filter.getToBranchCode() != null && !filter.getToBranchCode().trim().isEmpty()) {
 				results = bookingRepository.getBookingsWithFilter(status,
@@ -79,12 +81,14 @@ public class OperationServiceImpl implements OperationService {
 			} else if (filter.getRegion() != null && !filter.getRegion().trim().isEmpty()) {
 				List<String> destBranches;
 				if (filter.getSubregion() != null && !filter.getSubregion().trim().isEmpty()) {
-					destBranches = regionMasterRepository.findBranchCodesByRegionAndSubRegion(filter.getRegion(), filter.getSubregion());
+					destBranches = regionMasterRepository.findBranchCodesByRegionAndSubRegion(filter.getRegion(),
+							filter.getSubregion());
 				} else {
 					destBranches = regionMasterRepository.findBranchCodesByRegion(filter.getRegion());
 				}
 				if (destBranches != null && !destBranches.isEmpty()) {
-					results = bookingRepository.getBookingsWithFilterByDestBranches(status, filter.getFromBranchCode(), destBranches);
+					results = bookingRepository.getBookingsWithFilterByDestBranches(status, filter.getFromBranchCode(),
+							destBranches);
 				} else {
 					results = new ArrayList<>();
 				}
@@ -210,7 +214,8 @@ public class OperationServiceImpl implements OperationService {
 					boolean allReceived = updatedList.stream().allMatch(item -> "RECEIVED".equals(item.get("status")));
 					ls.setStatus(allReceived ? "RECEIVED" : "PARTIAL");
 					loadingSheetRepository.save(ls);
-				} catch (Exception e) { /* non-fatal */ }
+				} catch (Exception e) {
+					/* non-fatal */ }
 			}
 		}
 	}
@@ -234,7 +239,8 @@ public class OperationServiceImpl implements OperationService {
 			return list;
 		}
 
-		List<Booking> bookings = bookingRepository.findByConsignStatusAndDestinationBranchCode("RECEIVED", destinationBranchCode);
+		List<Booking> bookings = bookingRepository.findByConsignStatusAndDestinationBranchCode("RECEIVED",
+				destinationBranchCode);
 		enrichBookingsWithCharges(bookings);
 		return bookings;
 	}
@@ -277,7 +283,7 @@ public class OperationServiceImpl implements OperationService {
 	}
 
 	@Override
-	public List<DispatchedResponseDTO> getDispatchedListByBranch(String destinationBranch,String fromBranch) {
+	public List<DispatchedResponseDTO> getDispatchedListByBranch(String destinationBranch, String fromBranch) {
 		if (destinationBranch == null || destinationBranch.isBlank()) {
 			throw new RuntimeException("destinationBranch is required");
 		}
@@ -352,7 +358,8 @@ public class OperationServiceImpl implements OperationService {
 
 		// Update booking fields
 		Booking booking = bookingRepository.findByLoadingReciept(lrId);
-		if (booking == null) throw new RuntimeException("LR not found: " + lrId);
+		if (booking == null)
+			throw new RuntimeException("LR not found: " + lrId);
 
 		if (unloadingBranch != null && !unloadingBranch.isBlank()) {
 			booking.setDestinationBranchCode(unloadingBranch);
@@ -392,7 +399,8 @@ public class OperationServiceImpl implements OperationService {
 				.orElseThrow(() -> new RuntimeException("LS not found: " + lsId));
 
 		Booking booking = bookingRepository.findByLoadingReciept(lrId);
-		if (booking == null) throw new RuntimeException("LR not found: " + lrId);
+		if (booking == null)
+			throw new RuntimeException("LR not found: " + lrId);
 		if (!"BOOKED".equalsIgnoreCase(booking.getConsignStatus())) {
 			throw new RuntimeException("LR is not in BOOKED state");
 		}
@@ -444,37 +452,49 @@ public class OperationServiceImpl implements OperationService {
 		return dto;
 	}
 
-	/** Extract all LR IDs from JSON (both old string[] and new {lrId,status}[] formats) */
+	/**
+	 * Extract all LR IDs from JSON (both old string[] and new {lrId,status}[]
+	 * formats)
+	 */
 	private List<String> getAllLrIds(String json) {
 		List<String> result = new ArrayList<>();
-		if (json == null || json.isBlank()) return result;
+		if (json == null || json.isBlank())
+			return result;
 		ObjectMapper mapper = new ObjectMapper();
 		try {
 			if (!json.contains("lrId")) {
-				result.addAll(mapper.readValue(json, new TypeReference<List<String>>() {}));
+				result.addAll(mapper.readValue(json, new TypeReference<List<String>>() {
+				}));
 			} else {
-				List<Map<String, String>> list = mapper.readValue(json, new TypeReference<List<Map<String, String>>>() {});
-				for (Map<String, String> item : list) result.add(item.get("lrId"));
+				List<Map<String, String>> list = mapper.readValue(json, new TypeReference<List<Map<String, String>>>() {
+				});
+				for (Map<String, String> item : list)
+					result.add(item.get("lrId"));
 			}
-		} catch (Exception e) { throw new RuntimeException("Error parsing LR JSON"); }
+		} catch (Exception e) {
+			throw new RuntimeException("Error parsing LR JSON");
+		}
 		return result;
 	}
 
 	/** Parse lrIdsJson into [{lrId, status}] format, normalising old format */
 	private List<Map<String, String>> parseLrJson(String json, ObjectMapper mapper) throws Exception {
 		List<Map<String, String>> result = new ArrayList<>();
-		if (json == null || json.isBlank()) return result;
+		if (json == null || json.isBlank())
+			return result;
 		if (!json.contains("lrId")) {
-			List<String> ids = mapper.readValue(json, new TypeReference<List<String>>() {});
+			List<String> ids = mapper.readValue(json, new TypeReference<List<String>>() {
+			});
 			for (String id : ids) {
 				Map<String, String> m = new HashMap<>();
-				m.put("lrId", id); m.put("status", "DISPATCHED");
+				m.put("lrId", id);
+				m.put("status", "DISPATCHED");
 				result.add(m);
 			}
 		} else {
-			result.addAll(mapper.readValue(json, new TypeReference<List<Map<String, String>>>() {}));
+			result.addAll(mapper.readValue(json, new TypeReference<List<Map<String, String>>>() {
+			}));
 		}
 		return result;
 	}
 }
-
