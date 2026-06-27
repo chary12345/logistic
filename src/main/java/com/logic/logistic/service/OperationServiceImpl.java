@@ -15,12 +15,16 @@ import org.springframework.stereotype.Service;
 
 import com.logic.logistic.model.OperationFilter;
 import com.logic.logistic.repository.BookRepository;
+import com.logic.logistic.repository.RegionMasterRepository;
 
 @Service
 public class OperationServiceImpl implements OperationService {
 
 	@Autowired
 	private BookRepository bookingRepository;
+
+	@Autowired
+	private RegionMasterRepository regionMasterRepository;
 
 	@Autowired
 	private LoadingSheetRepository loadingSheetRepository;
@@ -69,8 +73,24 @@ public class OperationServiceImpl implements OperationService {
 			// Receive page: fetch DISPATCHED LRs destined for this branch
 			results = bookingRepository.findByConsignStatusAndDestinationBranchCode("DISPATCHED", filter.getToBranchCode());
 		} else {
-			results = bookingRepository.getBookingsWithFilter(status,
-					filter.getFromBranchCode(), filter.getToBranchCode());
+			if (filter.getToBranchCode() != null && !filter.getToBranchCode().trim().isEmpty()) {
+				results = bookingRepository.getBookingsWithFilter(status,
+						filter.getFromBranchCode(), filter.getToBranchCode());
+			} else if (filter.getRegion() != null && !filter.getRegion().trim().isEmpty()) {
+				List<String> destBranches;
+				if (filter.getSubregion() != null && !filter.getSubregion().trim().isEmpty()) {
+					destBranches = regionMasterRepository.findBranchCodesByRegionAndSubRegion(filter.getRegion(), filter.getSubregion());
+				} else {
+					destBranches = regionMasterRepository.findBranchCodesByRegion(filter.getRegion());
+				}
+				if (destBranches != null && !destBranches.isEmpty()) {
+					results = bookingRepository.getBookingsWithFilterByDestBranches(status, filter.getFromBranchCode(), destBranches);
+				} else {
+					results = new ArrayList<>();
+				}
+			} else {
+				results = bookingRepository.getBookingsWithFilterNoDest(status, filter.getFromBranchCode());
+			}
 		}
 
 		enrichBookingsWithCharges(results);
