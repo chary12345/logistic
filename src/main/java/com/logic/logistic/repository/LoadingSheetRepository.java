@@ -26,4 +26,24 @@ public interface LoadingSheetRepository extends JpaRepository<LoadingSheetDTO, L
 			""")
 	List<LoadingSheetDTO> findByDestinationBranchAndStatusNotOrNull(
 			@Param("destinationBranch") String destinationBranch, @Param("status") String status);
+
+    @Query("""
+    SELECT l
+    FROM LoadingSheetDTO l
+    WHERE (
+        l.destinationBranch = :destinationBranch
+        OR l.destinationBranch LIKE CONCAT('%(', :destinationBranch, ')')
+    )
+    AND (
+        l.fromBranch = :fromBranch
+        OR l.fromBranch LIKE CONCAT('%(', :fromBranch, ')')
+    )
+    AND (
+        l.status IS NULL
+        OR l.status NOT IN ('COMPLETED', 'RECEIVED')
+    )
+""")
+    List<LoadingSheetDTO> findByDestinationBranchAndFromBranchAndStatusNotOrNull(
+            @Param("destinationBranch") String destinationBranch,
+            @Param("fromBranch") String fromBranch);
 }

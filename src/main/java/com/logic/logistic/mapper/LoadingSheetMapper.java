@@ -13,6 +13,8 @@ public class LoadingSheetMapper {
         ls.setVehicleNumber(request.getVehicleNumber());
         ls.setVehicleName(request.getVehicleName());
         ls.setDestinationBranch(request.getDestinationBranch());
+        ls.setFromBranch(request.getFromBranch());
+        ls.setUnloadPoint(request.getUnloadPoint());
         ls.setDriverName(request.getDriverName());
         ls.setDriverPhone(request.getDriverPhone());
         ls.setCreatedAt(LocalDateTime.now());
