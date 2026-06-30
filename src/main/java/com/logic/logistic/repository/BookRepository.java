@@ -193,10 +193,13 @@ public interface BookRepository extends JpaRepository<Booking, String> {
 			    b.billType = 'TBB'
 			    AND (b.partyName = :consignorName OR b.consignorName = :consignorName)
 			    AND b.bookingDate BETWEEN :from AND :to
+			    AND b.BranchCode = :fromBranch
+			    AND (b.cancelLr IS NULL OR b.cancelLr = false)
 			ORDER BY b.bookingDate DESC
 			""")
 	List<Booking> findTbbBookings(
 			@Param("consignorName") String consignorName,
+            @Param("fromBranch") String fromBranch,
 			@Param("from") LocalDateTime from,
 			@Param("to") LocalDateTime to);
 	/*

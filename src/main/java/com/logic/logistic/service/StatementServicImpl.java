@@ -100,6 +100,7 @@ public class StatementServicImpl implements StatementService{
 
 		List<Booking> bookings = bookingRepository.findTbbBookings(
 				request.getConsignorName(),
+                request.getFromBranch(),
 				request.getFromDate(),
 				request.getToDate()
 		);
