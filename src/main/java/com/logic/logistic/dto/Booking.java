@@ -93,6 +93,9 @@ public class Booking {
     
     @Column(name = "dest_branch_code")
     private String destinationBranchCode;
+
+    @Column(name = "cancel_lr")
+    private Boolean cancelLr;
     
     @Column(name = "booking_type")
     private String bookingtype;
@@ -514,4 +517,12 @@ public class Booking {
 
 	public double getGrandTotal() { return grandTotal; }
 	public void setGrandTotal(double grandTotal) { this.grandTotal = grandTotal; }
+
+    public Boolean getCancelLr() {
+        return cancelLr;
+    }
+
+    public void setCancelLr(Boolean cancelLr) {
+        this.cancelLr = cancelLr;
+    }
 }

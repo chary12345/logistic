@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 public class TbbSummaryRequest {
 
     private String consignorName;
+    private String fromBranch;
     private LocalDateTime fromDate;
     private LocalDateTime toDate;
 
@@ -19,6 +20,14 @@ public class TbbSummaryRequest {
 
     public String getConsignorName() {
         return consignorName;
+    }
+
+    public String getFromBranch() {
+        return fromBranch;
+    }
+
+    public void setFromBranch(String fromBranch) {
+        this.fromBranch = fromBranch;
     }
 
     public void setConsignorName(String consignorName) {
