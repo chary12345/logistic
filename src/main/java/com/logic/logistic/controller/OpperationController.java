@@ -96,7 +96,7 @@ public class OpperationController {
 	}
 
 	/** Remove LR from LS — reverts LR to BOOKED */
-	@DeleteMapping("/ls/{lsId}/lr")
+	@DeleteMapping("/remove/ls/{lsId}/lr")
 	public ResponseEntity<String> removeLrFromLS(
 			@PathVariable Long lsId,
 			@RequestParam String lrId) {
@@ -105,7 +105,7 @@ public class OpperationController {
 	}
 
 	/** Add a BOOKED LR to an existing LS */
-	@PostMapping("/ls/{lsId}/lr")
+	@PostMapping("/add/ls/{lsId}/lr")
 	public ResponseEntity<String> addLrToLS(
 			@PathVariable Long lsId,
 			@RequestParam String lrId) {
