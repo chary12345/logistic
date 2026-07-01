@@ -32,6 +32,9 @@ public class OperationServiceImpl implements OperationService {
 	@Autowired
 	private com.logic.logistic.repository.BookingChargeDetailsRepo bookingChargeRepo;
 
+	@Autowired
+	private com.logic.logistic.repository.ArticleDetailRepository articleDetailRepo;
+
 	private void enrichBookingsWithCharges(List<Booking> bookings) {
 		if (bookings == null || bookings.isEmpty())
 			return;
@@ -41,7 +44,16 @@ public class OperationServiceImpl implements OperationService {
 		for (BookingChargeDetails c : charges) {
 			chargeMap.put(c.getLoadingReciept(), c);
 		}
+		
+		List<ArticleDetailDto> articles = articleDetailRepo.findByLoadingRecieptIn(lrIds);
+		Map<String, List<ArticleDetailDto>> articleMap = new HashMap<>();
+		for (ArticleDetailDto a : articles) {
+			articleMap.computeIfAbsent(a.getLoadingReciept(), k -> new ArrayList<>()).add(a);
+		}
+
 		for (Booking b : bookings) {
+			b.setArticleDetails(articleMap.get(b.getLoadingReciept()));
+			
 			BookingChargeDetails c = chargeMap.get(b.getLoadingReciept());
 			if (c != null) {
 				b.setLrCharge(c.getLrCharge());

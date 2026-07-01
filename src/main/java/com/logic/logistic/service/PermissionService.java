@@ -180,6 +180,9 @@ public class PermissionService {
             permission.setDeliveryReport(
                     dto.getDeliveryReport());
 
+            permission.setTbbBillReport(
+                    dto.getTbbBillReport());
+
             // ================= STATEMENTS =================
 
             permission.setViewStatements(
@@ -240,6 +243,7 @@ public class PermissionService {
         map.put("dispatchReport", p.getDispatchReport());
         map.put("receiveReport", p.getReceiveReport());
         map.put("deliveryReport", p.getDeliveryReport());
+        map.put("tbbBillReport", p.getTbbBillReport());
 
         map.put("viewStatements", p.getViewStatements());
         map.put("tbbInvoice", p.getTbbInvoice());

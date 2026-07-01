@@ -17,6 +17,8 @@ public interface ArticleDetailRepository extends JpaRepository<ArticleDetailDto,
 	// Fetch all articles for a given LR
 	List<ArticleDetailDto> findByLoadingReciept(String loadingReciept);
 
+	List<ArticleDetailDto> findByLoadingRecieptIn(List<String> loadingReciepts);
+
 	// delete all articles for an LR (for edit-case overwrite)
 	void deleteByLoadingReciept(String loadingReciept);
 

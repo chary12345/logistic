@@ -1,6 +1,7 @@
 package com.logic.logistic.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -518,11 +519,22 @@ public class Booking {
 	public double getGrandTotal() { return grandTotal; }
 	public void setGrandTotal(double grandTotal) { this.grandTotal = grandTotal; }
 
+	@Transient
+	private List<ArticleDetailDto> articleDetails;
+
     public Boolean getCancelLr() {
         return cancelLr;
     }
 
     public void setCancelLr(Boolean cancelLr) {
         this.cancelLr = cancelLr;
+    }
+
+    public List<ArticleDetailDto> getArticleDetails() {
+        return articleDetails;
+    }
+
+    public void setArticleDetails(List<ArticleDetailDto> articleDetails) {
+        this.articleDetails = articleDetails;
     }
 }
