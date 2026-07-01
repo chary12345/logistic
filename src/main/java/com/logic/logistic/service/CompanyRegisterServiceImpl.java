@@ -4,6 +4,7 @@ import java.sql.Date;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.logic.logistic.dto.AddressDto;
 import com.logic.logistic.dto.BookingReceiptSequence;
@@ -50,6 +52,9 @@ public class CompanyRegisterServiceImpl implements CompanyRegisterService {
 
 	@Autowired
 	private BookingReceiptSequenceRepository sequenceRepo;
+
+	@Autowired
+	private EmailService emailService;
 
 	@Override
 	public String isCompanyCodeExists(String companyCode) {
@@ -107,6 +112,28 @@ public class CompanyRegisterServiceImpl implements CompanyRegisterService {
 						System.out.println("address created successfully");
 						logger.info("address created successfully");
 						status = "SUCCESS";
+
+						// ── Send branch welcome email (async, non-blocking) ─────────────────
+						if (branchData.getBranchEmail() != null && !branchData.getBranchEmail().isBlank()) {
+							Address addr = branchData.getBranchAddress();
+							emailService.sendBranchWelcomeEmail(
+									branchData.getBranchEmail(),
+									branchData.getBranchCode(),
+									branchData.getBranchName(),
+									branchData.getBranchType(),
+									branchData.getCompanyCode(),
+									addr != null ? addr.getCountry() : null,
+									addr != null ? addr.getState() : null,
+									addr != null ? addr.getCity() : null,
+									addr != null ? addr.getAreaOrStreetline() : null,
+									addr != null ? addr.getPostalCode() : null,
+									branchData.getBranchPhone(),
+									branchData.getBranchPhoneAlt(),
+									branchData.getGstIn(),
+									branchData.getContactPersonName(),
+									branchData.getBranchCreatedBy());
+						}
+						// ───────────────────────────────────────────────────────────────────
 					}
 				}
 			} else {
@@ -221,24 +248,41 @@ public class CompanyRegisterServiceImpl implements CompanyRegisterService {
 		BranchDTO existing = branchRepo.findById(branchCode)
 				.orElseThrow(() -> new RuntimeException("Branch not found"));
 
-		// ✅ Null checks before setting
-		if (updatedBranch.getBranchType() != null) {
+		java.util.Map<String, String[]> changes = new java.util.LinkedHashMap<>();
+
+		// Branch Fields tracking
+		if (updatedBranch.getBranchName() != null && !java.util.Objects.equals(existing.getBranchName(), updatedBranch.getBranchName())) {
+			changes.put("Branch Name", new String[]{existing.getBranchName(), updatedBranch.getBranchName()});
+			existing.setBranchName(updatedBranch.getBranchName());
+		}
+		if (updatedBranch.getBranchType() != null && !java.util.Objects.equals(existing.getBranchType(), updatedBranch.getBranchType())) {
+			changes.put("Branch Type", new String[]{existing.getBranchType(), updatedBranch.getBranchType()});
 			existing.setBranchType(updatedBranch.getBranchType());
 		}
-		if (updatedBranch.getBranchPhone() != null) {
+		if (updatedBranch.getBranchPhone() != null && !java.util.Objects.equals(existing.getBranchPhone(), updatedBranch.getBranchPhone())) {
+			changes.put("Primary Phone", new String[]{existing.getBranchPhone(), updatedBranch.getBranchPhone()});
 			existing.setBranchPhone(updatedBranch.getBranchPhone());
 		}
-		if (updatedBranch.getBranchPhoneAlt() != null) {
+		if (updatedBranch.getBranchPhoneAlt() != null && !java.util.Objects.equals(existing.getBranchPhoneAlt(), updatedBranch.getBranchPhoneAlt())) {
+			changes.put("Alternate Phone", new String[]{existing.getBranchPhoneAlt(), updatedBranch.getBranchPhoneAlt()});
 			existing.setBranchPhoneAlt(updatedBranch.getBranchPhoneAlt());
 		}
-		if (updatedBranch.getBranchEmail() != null) {
+		if (updatedBranch.getBranchEmail() != null && !java.util.Objects.equals(existing.getBranchEmail(), updatedBranch.getBranchEmail())) {
+			changes.put("Branch Email", new String[]{existing.getBranchEmail(), updatedBranch.getBranchEmail()});
 			existing.setBranchEmail(updatedBranch.getBranchEmail());
 		}
-		if (updatedBranch.getGstIn() != null) {
+		if (updatedBranch.getGstIn() != null && !java.util.Objects.equals(existing.getGstIn(), updatedBranch.getGstIn())) {
+			changes.put("GSTIN", new String[]{existing.getGstIn(), updatedBranch.getGstIn()});
 			existing.setGstIn(updatedBranch.getGstIn());
 		}
-		if (updatedBranch.getContactPersonName() != null) {
+		if (updatedBranch.getContactPersonName() != null && !java.util.Objects.equals(existing.getContactPersonName(), updatedBranch.getContactPersonName())) {
+			changes.put("Contact Person", new String[]{existing.getContactPersonName(), updatedBranch.getContactPersonName()});
 			existing.setContactPersonName(updatedBranch.getContactPersonName());
+		}
+		// Sync active status explicitly
+		if (existing.isBranchActive() != updatedBranch.isBranchActive()) {
+			changes.put("Branch Status", new String[]{existing.isBranchActive() ? "ACTIVE" : "DEACTIVATED", updatedBranch.isBranchActive() ? "ACTIVE" : "DEACTIVATED"});
+			existing.setBranchActive(updatedBranch.isBranchActive());
 		}
 
 		// ✅ set current SQL date
@@ -249,17 +293,33 @@ public class CompanyRegisterServiceImpl implements CompanyRegisterService {
 		if (address != null && updatedBranch.getBranchAddress() != null) {
 			Address updatedAddr = updatedBranch.getBranchAddress();
 
-			if (updatedAddr.getAreaOrStreetline() != null) {
+			if (updatedAddr.getAreaOrStreetline() != null && !java.util.Objects.equals(address.getAreaOrStreetline(), updatedAddr.getAreaOrStreetline())) {
+				changes.put("Street Area", new String[]{address.getAreaOrStreetline(), updatedAddr.getAreaOrStreetline()});
 				address.setAreaOrStreetline(updatedAddr.getAreaOrStreetline());
 			}
-			if (updatedAddr.getFlatOrApartmentNumber() != null) {
+			if (updatedAddr.getFlatOrApartmentNumber() != null && !java.util.Objects.equals(address.getFlatOrApartmentNumber(), updatedAddr.getFlatOrApartmentNumber())) {
+				changes.put("Flat / Appt No", new String[]{address.getFlatOrApartmentNumber(), updatedAddr.getFlatOrApartmentNumber()});
 				address.setFlatOrApartmentNumber(updatedAddr.getFlatOrApartmentNumber());
 			}
-			if (updatedAddr.getLandMark() != null) {
+			if (updatedAddr.getLandMark() != null && !java.util.Objects.equals(address.getLandMark(), updatedAddr.getLandMark())) {
+				changes.put("Landmark", new String[]{address.getLandMark(), updatedAddr.getLandMark()});
 				address.setLandMark(updatedAddr.getLandMark());
 			}
-			if (updatedAddr.getPostalCode() != null) {
+			if (updatedAddr.getPostalCode() != null && !java.util.Objects.equals(address.getPostalCode(), updatedAddr.getPostalCode())) {
+				changes.put("Postal Code", new String[]{address.getPostalCode(), updatedAddr.getPostalCode()});
 				address.setPostalCode(updatedAddr.getPostalCode());
+			}
+			if (updatedAddr.getState() != null && !java.util.Objects.equals(address.getState(), updatedAddr.getState())) {
+				changes.put("State", new String[]{address.getState(), updatedAddr.getState()});
+				address.setState(updatedAddr.getState());
+			}
+			if (updatedAddr.getCity() != null && !java.util.Objects.equals(address.getCity(), updatedAddr.getCity())) {
+				changes.put("City", new String[]{address.getCity(), updatedAddr.getCity()});
+				address.setCity(updatedAddr.getCity());
+			}
+			if (updatedAddr.getCountry() != null && !java.util.Objects.equals(address.getCountry(), updatedAddr.getCountry())) {
+				changes.put("Country", new String[]{address.getCountry(), updatedAddr.getCountry()});
+				address.setCountry(updatedAddr.getCountry());
 			}
 
 			address.setUpdatedDate(Date.valueOf(LocalDate.now()));
@@ -268,7 +328,30 @@ public class CompanyRegisterServiceImpl implements CompanyRegisterService {
 
 		branchRepo.save(existing);
 
-		return BranchAndAddressMapper.DtostoBranchMap(existing, address);
+		Branch result = BranchAndAddressMapper.DtostoBranchMap(existing, address);
+
+		if (result.getBranchEmail() != null && !result.getBranchEmail().isBlank()) {
+			Address addr = result.getBranchAddress();
+			emailService.sendBranchUpdateEmail(
+					result.getBranchEmail(),
+					result.getBranchCode(),
+					result.getBranchName(),
+					result.getBranchType(),
+					result.getCompanyCode(),
+					addr != null ? addr.getCountry() : null,
+					addr != null ? addr.getState() : null,
+					addr != null ? addr.getCity() : null,
+					addr != null ? addr.getAreaOrStreetline() : null,
+					addr != null ? addr.getPostalCode() : null,
+					result.getBranchPhone(),
+					result.getBranchPhoneAlt(),
+					result.getGstIn(),
+					result.getContactPersonName(),
+					result.isBranchActive(),
+					changes);
+		}
+
+		return result;
 	}
 
 }

@@ -31,6 +31,14 @@ public class UserDto {
 	private String blockedBy;
 	private String companyCode;
 	private String branchCode;
+	private boolean isEmployeeActive = true;
+	
+	public boolean isEmployeeActive() {
+		return isEmployeeActive;
+	}
+	public void setEmployeeActive(boolean isEmployeeActive) {
+		this.isEmployeeActive = isEmployeeActive;
+	}
 	public String getBranchCode() {
 		return branchCode;
 	}
@@ -145,6 +153,5 @@ public class UserDto {
 	public void setUserId(String userId) {
 		this.userId = userId;
 	}
-	
-	
+
 }

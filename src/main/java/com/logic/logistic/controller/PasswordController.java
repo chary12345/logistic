@@ -16,17 +16,27 @@ public class PasswordController {
 
     @PostMapping("/change-password")
     public ResponseEntity<?> changePassword(@RequestBody PasswordChangeRequest request) {
-        boolean isChanged = userService.changeUserPassword(
+        String status = userService.changeUserPassword(
                 request.getUsername(),
                 request.getCurrentPassword(),
-                request.getNewPassword()
+                request.getNewPassword(),
+                request.getGroup()
         );
 
-        if (isChanged) {
+        if ("SUCCESS".equals(status)) {
             return ResponseEntity.ok(Collections.singletonMap("success", true));
+        } else if ("USER_NOT_FOUND".equals(status)) {
+            return ResponseEntity.badRequest()
+                    .body(Collections.singletonMap("message", "User profile not found in system."));
+        } else if ("INCORRECT_PASSWORD".equals(status)) {
+            return ResponseEntity.badRequest()
+                    .body(Collections.singletonMap("message", "The current password you entered is incorrect."));
+        } else if ("SAME_AS_CURRENT".equals(status)) {
+            return ResponseEntity.badRequest()
+                    .body(Collections.singletonMap("message", "The new password cannot be the same as the current password."));
         } else {
             return ResponseEntity.badRequest()
-                    .body(Collections.singletonMap("message", "Failed to change password. Incorrect credentials."));
+                    .body(Collections.singletonMap("message", "Unable to update password. Critical system error."));
         }
     }
 }

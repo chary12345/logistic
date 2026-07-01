@@ -3,6 +3,8 @@ package com.logic.logistic.service;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.logic.logistic.dto.UserPermissionDTO;
+import jakarta.transaction.Transactional;
 import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -27,56 +29,107 @@ public class LoginServiceImpl implements LoginService {
 	@Autowired
 	private CompanyRegisterrepo companyrepo;
 
+	@Autowired
+	private PermissionService permissionService;
+
 	@Override
 	public Map<String, Object> userLogin(LoginRequest request) {
 		Map<String, Object> map = new HashMap<String, Object>();
 		String status = null;
 		LoginResponse loginResponse = new LoginResponse();
 		try {
-			UserDto userData = userRepository.findByUsername(request.getUsername()+request.getGroup());
+			// 1. Verify Company Existence
+			com.logic.logistic.dto.CompanyDto company = companyrepo.getCompanyByID(request.getGroup());
+			if (company == null) {
+				status = "FAILURE";
+				map.put("status", status);
+				map.put("message", "Given company code is invalid");
+				map.put("loginResponse", "");
+				return map;
+			}
 
-			if (userData != null) {
-				if (!userData.getPassword().equalsIgnoreCase(request.getPassword())) {
-					status = "FAILURE";
-					map.put("status", status);
-					map.put("message", "invalid password");
-					map.put("loginResponse", "");
-				} else if (!userData.getCompanyCode().equalsIgnoreCase(request.getGroup())) {
-					status = "FAILURE";
-					map.put("status", status);
-					map.put("message", "invalid company name");
-					map.put("loginResponse", "");
-				} else if (userData.isBlockUser()) {
-					status = "FAILURE";
-					map.put("status", status);
-					map.put("message", "user is inactive");
-					map.put("loginResponse", "");
-				} else if (userData.getCompanyCode() != null && userData.getBranchCode() != null) {
-					CompanyAndBranch companyAndBranchData = companyrepo
-							.fetchCompanyAndBranchdetgails(userData.getCompanyCode(), userData.getBranchCode());
-					if (companyAndBranchData.isCompanyActive()) {
-						status = "FAILURE";
-						map.put("status", status);
-						map.put("message", "your company hasblocked please contact Master Admin");
-						map.put("loginResponse", "");
-					} else {
-						loginResponse.setCompanyAndBranchDeatils(companyAndBranchData);
+			// 2. Verify User Existence
+			UserDto userData = userRepository.findByUserNameAndCompanyCode(request.getUsername(), request.getGroup());
 
-						loginResponse = mapDtoToLoginResponse(userData, loginResponse);
-						status = "SUCCESS";
-						map.put("status", status);
-						map.put("loginResponse", loginResponse);
-					}
+			if (userData == null) {
+				status = "FAILURE";
+				map.put("status", status);
+				map.put("message", "Given username is invalid");
+				map.put("loginResponse", "");
+				return map;
+			}
+
+			// 3. Verify Password
+			if (!userData.getPassword().equalsIgnoreCase(request.getPassword())) {
+				status = "FAILURE";
+				map.put("status", status);
+				map.put("message", "Given password is invalid");
+				map.put("loginResponse", "");
+				return map;
+			}
+
+			// 4. Verify Account Status (Activity & Blocking)
+			if (!userData.isEmployeeActive()) {
+				status = "FAILURE";
+				map.put("status", status);
+				map.put("message", "This employee account has been deactivated. Please contact your administrator.");
+				map.put("loginResponse", "");
+				return map;
+			}
+			
+			if (userData.isBlockUser()) {
+				status = "FAILURE";
+				map.put("status", status);
+				String reason = userData.getBlockReason() != null ? ": " + userData.getBlockReason() : "";
+				map.put("message", "This account is currently blocked" + reason);
+				map.put("loginResponse", "");
+				return map;
+			}
+
+			// 5. Check Branch and Company Block status
+			if (userData.getCompanyCode() != null && userData.getBranchCode() != null) {
+				com.logic.logistic.model.CompanyAndBranchProjection projection = companyrepo
+						.fetchCompanyAndBranchdetgails(userData.getCompanyCode(), userData.getBranchCode());
+				CompanyAndBranch companyAndBranchData = null;
+				if (projection != null) {
+					companyAndBranchData = new CompanyAndBranch();
+					companyAndBranchData.setCompanyCode(projection.getCompanyCode());
+					companyAndBranchData.setCompanyName(projection.getCompanyName());
+					companyAndBranchData.setGroupName(projection.getGroupName());
+					companyAndBranchData.setPlan(projection.getPlan());
+					companyAndBranchData.setCompanyLogo(projection.getCompanyLogo());
+					companyAndBranchData.setBranchCode(projection.getBranchCode());
+					companyAndBranchData.setBranchName(projection.getBranchName());
+					companyAndBranchData.setBranchType(projection.getBranchType());
+					companyAndBranchData.setCompanyActive(Boolean.TRUE.equals(projection.getIsCompanyActive()));
+				}
+
+				if (companyAndBranchData == null) {
+					status = "FAILURE";
+					map.put("status", status);
+					map.put("message", "Critical: Branch mapping for this user was not found.");
+					map.put("loginResponse", "");
+				} else if (companyAndBranchData.isCompanyActive()) { // Note: true means Blocked in this mapping context
+					status = "FAILURE";
+					map.put("status", status);
+					map.put("message", "Your Company has been blocked. Please contact Master Admin.");
+					map.put("loginResponse", "");
 				} else {
-					status = "FAILURE";
+					loginResponse.setCompanyAndBranchDeatils(companyAndBranchData);
+					loginResponse = mapDtoToLoginResponse(userData, loginResponse);
+
+					// Fetch permissions by role (added in upstream/develop)
+					Map<String, Boolean> permissionsByRole = permissionService.getPermissionsByRole(userData);
+					loginResponse.setPermissions(permissionsByRole);
+
+					status = "SUCCESS";
 					map.put("status", status);
-					map.put("message", "user companydata is missing");
-					map.put("loginResponse", "");
+					map.put("loginResponse", loginResponse);
 				}
 			} else {
 				status = "FAILURE";
 				map.put("status", status);
-				map.put("message", "invalid credentials");
+				map.put("message", "User profile configuration is incomplete (missing company/branch reference).");
 				map.put("loginResponse", "");
 			}
 			logger.info("Print userData :" +userData);
@@ -94,6 +147,15 @@ public class LoginServiceImpl implements LoginService {
 		return map;
 	}
 
+	@Override
+	@Transactional
+	public UserPermissionDTO saveOrUpdatePermissions(UserPermissionDTO dto) {
+
+		return permissionService.saveOrUpdatePermissions(dto);
+	}
+
+
+
 	private LoginResponse mapDtoToLoginResponse(UserDto userDto, LoginResponse loginResponse) {
 		if (userDto != null) {
 			// Manually checking for null before assigning
@@ -107,7 +169,7 @@ public class LoginServiceImpl implements LoginService {
 			loginResponse.setUpdatedDate(userDto.getUpdatedDate() != null ? userDto.getUpdatedDate() : null);
 			loginResponse.setExpiryDate(userDto.getExpiryDate() != null ? userDto.getExpiryDate() : null);
 			loginResponse.setLogo(userDto.getLogo() != null ? userDto.getLogo() : null);
-			loginResponse.setPermissions(userDto.getPermissions() != null ? userDto.getPermissions() : null);
+			//loginResponse.setPermissions(userDto.getPermissions() != null ? userDto.getPermissions() : null);
 			loginResponse.setBlockReason(userDto.getBlockReason() != null ? userDto.getBlockReason() : null);
 			loginResponse.setBlockUser(userDto.isBlockUser()); // Boolean field, no need to check for null
 			loginResponse.setBlockedBy(userDto.getBlockedBy() != null ? userDto.getBlockedBy() : null);

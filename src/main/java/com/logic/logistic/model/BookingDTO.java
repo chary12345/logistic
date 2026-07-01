@@ -9,19 +9,60 @@ public class BookingDTO {
     private String consignorName;
     private String consignorMobile;
     private String consignorAddress;
+    private String consignorGST;
 
     private String consigneeName;
     private String consigneeMobile;
     private String consigneeAddress;
+    private String consigneeGST;
 
     private List<ArticleDetail> articleDetails;
-  
-    private double freight;
-    private double sgst;
-    private double cgst;
-    private double igst;
-    private double loading;
-    private double loadingCharge;
+
+	private double lrCharge;
+
+	private double hamali;
+
+	private double loading;
+
+	private double stationary;
+
+	private double otherCharges;
+
+	private double otherTransportCharges;
+
+	private double miscellaneous;
+
+	private double crossingAmount;
+
+	private double podCharges;
+
+	private double doorDelivery;
+
+	private double doorPickup;
+
+	private double ddc;
+
+	private double dcc;
+
+	private double demurrage;
+
+	private double unloading;
+
+	private double localVehicle;
+
+	private double crossingHire;
+
+	private double freight;
+
+	private double sgst;
+
+	private double cgst;
+
+	private double igst;
+
+	private double loadingCharge;
+
+	private double totalAmount;
 
     private LocalDateTime bookingDate;
     private LocalDateTime dispatchDate;
@@ -29,7 +70,7 @@ public class BookingDTO {
     private LocalDateTime deliveryDate;
 
     private String companyCode;
-    private String branchCode;
+    private String branchCode;  //sending branch
     private String destinationBranchCode;
     private String consignStatus;
     private String billType;
@@ -38,6 +79,12 @@ public class BookingDTO {
     private String eWayBillNumber;
     private String employeeName;
     private String paidVia;
+	private String partyName;
+	private String remarks;
+	private List<String> eWayBillNumbers;
+	private String gstPaidBy;
+	private String deliveryType;
+
     
 	public String getConsignorName() {
 		return consignorName;
@@ -57,6 +104,12 @@ public class BookingDTO {
 	public void setConsignorAddress(String consignorAddress) {
 		this.consignorAddress = consignorAddress;
 	}
+	public String getConsignorGST() {
+		return consignorGST;
+	}
+	public void setConsignorGST(String consignorGST) {
+		this.consignorGST = consignorGST;
+	}
 	public String getConsigneeName() {
 		return consigneeName;
 	}
@@ -74,6 +127,12 @@ public class BookingDTO {
 	}
 	public void setConsigneeAddress(String consigneeAddress) {
 		this.consigneeAddress = consigneeAddress;
+	}
+	public String getConsigneeGST() {
+		return consigneeGST;
+	}
+	public void setConsigneeGST(String consigneeGST) {
+		this.consigneeGST = consigneeGST;
 	}
 	
 	public double getFreight() {
@@ -209,7 +268,180 @@ public class BookingDTO {
 	public void setPaidVia(String paidVia) {
 		this.paidVia = paidVia;
 	}
-	
 
-    
+	public String getPartyName() {
+		return partyName;
+	}
+
+	public void setPartyName(String partyName) {
+		this.partyName = partyName;
+	}
+
+	public double getLrCharge() {
+		return lrCharge;
+	}
+
+	public void setLrCharge(double lrCharge) {
+		this.lrCharge = lrCharge;
+	}
+
+	public double getHamali() {
+		return hamali;
+	}
+
+	public void setHamali(double hamali) {
+		this.hamali = hamali;
+	}
+
+	public double getStationary() {
+		return stationary;
+	}
+
+	public void setStationary(double stationary) {
+		this.stationary = stationary;
+	}
+
+	public double getOtherCharges() {
+		return otherCharges;
+	}
+
+	public void setOtherCharges(double otherCharges) {
+		this.otherCharges = otherCharges;
+	}
+
+	public double getOtherTransportCharges() {
+		return otherTransportCharges;
+	}
+
+	public void setOtherTransportCharges(double otherTransportCharges) {
+		this.otherTransportCharges = otherTransportCharges;
+	}
+
+	public double getMiscellaneous() {
+		return miscellaneous;
+	}
+
+	public void setMiscellaneous(double miscellaneous) {
+		this.miscellaneous = miscellaneous;
+	}
+
+	public double getCrossingAmount() {
+		return crossingAmount;
+	}
+
+	public void setCrossingAmount(double crossingAmount) {
+		this.crossingAmount = crossingAmount;
+	}
+
+	public double getPodCharges() {
+		return podCharges;
+	}
+
+	public void setPodCharges(double podCharges) {
+		this.podCharges = podCharges;
+	}
+
+	public double getDoorDelivery() {
+		return doorDelivery;
+	}
+
+	public void setDoorDelivery(double doorDelivery) {
+		this.doorDelivery = doorDelivery;
+	}
+
+	public double getDoorPickup() {
+		return doorPickup;
+	}
+
+	public void setDoorPickup(double doorPickup) {
+		this.doorPickup = doorPickup;
+	}
+
+	public double getDdc() {
+		return ddc;
+	}
+
+	public void setDdc(double ddc) {
+		this.ddc = ddc;
+	}
+
+	public double getDcc() {
+		return dcc;
+	}
+
+	public void setDcc(double dcc) {
+		this.dcc = dcc;
+	}
+
+	public double getDemurrage() {
+		return demurrage;
+	}
+
+	public void setDemurrage(double demurrage) {
+		this.demurrage = demurrage;
+	}
+
+	public double getUnloading() {
+		return unloading;
+	}
+
+	public void setUnloading(double unloading) {
+		this.unloading = unloading;
+	}
+
+	public double getLocalVehicle() {
+		return localVehicle;
+	}
+
+	public void setLocalVehicle(double localVehicle) {
+		this.localVehicle = localVehicle;
+	}
+
+	public double getCrossingHire() {
+		return crossingHire;
+	}
+
+	public void setCrossingHire(double crossingHire) {
+		this.crossingHire = crossingHire;
+	}
+
+	public double getTotalAmount() {
+		return totalAmount;
+	}
+
+	public void setTotalAmount(double totalAmount) {
+		this.totalAmount = totalAmount;
+	}
+
+	public String getRemarks() {
+		return remarks;
+	}
+
+	public void setRemarks(String remarks) {
+		this.remarks = remarks;
+	}
+
+	public List<String> geteWayBillNumbers() {
+		return eWayBillNumbers;
+	}
+
+	public void seteWayBillNumbers(List<String> eWayBillNumbers) {
+		this.eWayBillNumbers = eWayBillNumbers;
+	}
+
+	public String getGstPaidBy() {
+		return gstPaidBy;
+	}
+
+	public void setGstPaidBy(String gstPaidBy) {
+		this.gstPaidBy = gstPaidBy;
+	}
+
+	public String getDeliveryType() {
+		return deliveryType;
+	}
+
+	public void setDeliveryType(String deliveryType) {
+		this.deliveryType = deliveryType;
+	}
 }

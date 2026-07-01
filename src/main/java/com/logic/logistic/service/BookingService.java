@@ -4,6 +4,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.logic.logistic.dto.*;
+import com.logic.logistic.model.*;
+import com.logic.logistic.repository.*;
 import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,21 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import com.logic.logistic.dto.ArticleDetailDto;
-import com.logic.logistic.dto.Booking;
-import com.logic.logistic.dto.BookingReceiptSequence;
-import com.logic.logistic.dto.BookingSearchRequest;
-import com.logic.logistic.dto.LoadingSheetDTO;
 import com.logic.logistic.mapper.LoadingSheetMapper;
-import com.logic.logistic.model.ArticleDetail;
-import com.logic.logistic.model.BookingDTO;
-import com.logic.logistic.model.BookingPageResponse;
-import com.logic.logistic.model.DispatchRequest;
-import com.logic.logistic.model.DispatchResponse;
-import com.logic.logistic.repository.ArticleDetailRepository;
-import com.logic.logistic.repository.BookRepository;
-import com.logic.logistic.repository.BookingReceiptSequenceRepository;
-import com.logic.logistic.repository.LoadingSheetRepository;
 
 import jakarta.transaction.Transactional;
 
@@ -49,11 +38,122 @@ public class BookingService {
 
 	@Autowired
 	private LoadingSheetRepository loadingSheetRepository;
+
+	@Autowired
+	private BookingChargeDetailsRepo bookingChargeRepo;
+
+	@Autowired
+	private EmailService emailService;
+
+	@Autowired
+	private BranchRepo branchRepo;
+
+	@Autowired
+	private CompanyRegisterrepo companyRegisterrepo;
 	
+	/**
+	 * Returns true if a booking with the given LR already exists.
+	 * Used for real-time duplicate validation on the frontend.
+	 */
+	public boolean lrExists(String lr) {
+		return bookingRepo.findByLoadingReciept(lr) != null;
+	}
+
+	/**
+	 * Creates a manual booking where the LR number and booking date are
+	 * supplied by the user. Does NOT touch BookingReceiptSequence.
+	 * Always sets bookingtype = "MANUAL".
+	 */
 	@Transactional
-	public Booking saveBooking(BookingDTO dto) {
+	public BookingResponseDTO saveManualBooking(BookingDTO dto) {
+		String lr = dto.getLoadingReciept();
+		if (lr == null || lr.isBlank()) {
+			throw new IllegalArgumentException("LR Number is required for manual booking");
+		}
+		// Server-side duplicate guard (defence-in-depth)
+		if (bookingRepo.findByLoadingReciept(lr) != null) {
+			throw new IllegalArgumentException("LR Number already exists: " + lr);
+		}
+
+		Booking booking = new Booking();
+		booking.setLoadingReciept(lr);
+		booking.setBookingtype("MANUAL");
+		booking.setConsignStatus("BOOKED");
+
+		// Use the user-supplied booking date; fall back to now
+		LocalDateTime bookingDate = (dto.getBookingDate() != null)
+				? dto.getBookingDate()
+				: LocalDateTime.now();
+		booking.setBookingDate(bookingDate);
+
+		if (dto.getConsignorName() != null) booking.setConsignorName(dto.getConsignorName());
+		if (dto.getConsignorMobile() != null) booking.setConsignorMobile(dto.getConsignorMobile());
+		if (dto.getConsignorAddress() != null) booking.setConsignorAddress(dto.getConsignorAddress());
+		if (dto.getConsignorGST() != null) booking.setConsignorGST(dto.getConsignorGST());
+		if (dto.getConsigneeName() != null) booking.setConsigneeName(dto.getConsigneeName());
+		if (dto.getConsigneeMobile() != null) booking.setConsigneeMobile(dto.getConsigneeMobile());
+		if (dto.getConsigneeAddress() != null) booking.setConsigneeAddress(dto.getConsigneeAddress());
+		if (dto.getConsigneeGST() != null) booking.setConsigneeGST(dto.getConsigneeGST());
+		if (dto.getPartyName() != null) booking.setPartyName(dto.getPartyName());
+		if (dto.getGstPaidBy() != null) booking.setGstPaidBy(dto.getGstPaidBy());
+		if (dto.getDeliveryType() != null) booking.setDeliveryType(dto.getDeliveryType());
+		if (dto.getInvoiceNumber() != null) booking.setInvoiceNumber(dto.getInvoiceNumber());
+		booking.setInvoiceValue(dto.getInvoiceValue());
+		if (dto.geteWayBillNumber() != null) booking.seteWayBillNumber(dto.geteWayBillNumber());
+		if (dto.getBillType() != null) booking.setBillType(dto.getBillType());
+		if (dto.getBranchCode() != null) booking.setBranchCode(dto.getBranchCode());
+		if (dto.getDestinationBranchCode() != null) booking.setDestinationBranchCode(dto.getDestinationBranchCode());
+		if (dto.getEmployeeName() != null) booking.setEmployeeName(dto.getEmployeeName());
+		if (dto.getPaidVia() != null) booking.setPaidVia(dto.getPaidVia());
+		if (dto.getRemarks() != null) booking.setRemarks(dto.getRemarks());
+
+		if (dto.geteWayBillNumbers() != null && !dto.geteWayBillNumbers().isEmpty()) {
+			booking.seteWayBillNumbers(String.join(",", dto.geteWayBillNumbers()));
+			booking.seteWayBillNumber(dto.geteWayBillNumbers().get(0));
+		}
+
+		// Sync charge summary fields to booking row
+		booking.setFreight(dto.getFreight());
+		booking.setLoading(dto.getLoading());
+		booking.setLoadingCharge(dto.getLoadingCharge());
+		booking.setSgst(dto.getSgst());
+		booking.setCgst(dto.getCgst());
+		booking.setIgst(dto.getIgst());
+
+		List<ArticleDetailDto> articleDetailDtos = saveBookingArticles(lr, dto.getArticleDetails());
+		BookingChargeDetails bookingChargeDetails = saveBookingCharges(lr, dto);
+
+		Booking saved = bookingRepo.save(booking);
+		logger.info("manual booking saved :: " + saved.getLoadingReciept());
+
+		// Send email notification (same as regular booking)
+		try {
+			dto.setLoadingReciept(lr);
+			String branchCodeToUse = dto.getBranchCode();
+			String companyCodeToUse = dto.getCompanyCode();
+			com.logic.logistic.dto.BranchDTO branch = branchCodeToUse != null ? branchRepo.getBranchBybranchCode(branchCodeToUse) : null;
+			com.logic.logistic.dto.CompanyDto company = companyCodeToUse != null ? companyRegisterrepo.getCompanyByID(companyCodeToUse) : null;
+			if (branch != null && branch.getBranchEmail() != null && !branch.getBranchEmail().isBlank()) {
+				emailService.sendBookingEmail(branch.getBranchEmail(), dto,
+						company != null ? company.getCompanyFullName() : "",
+						branch.getBranchName(), false);
+			}
+		} catch (Exception ex) {
+			logger.error("Failed to trigger manual booking email: " + ex.getMessage());
+		}
+
+		BookingResponseDTO response = new BookingResponseDTO();
+		response.setBooking(saved);
+		response.setArticles(articleDetailDtos);
+		response.setCharges(bookingChargeDetails);
+		return response;
+	}
+
+	@Transactional
+	public BookingResponseDTO saveBooking(BookingDTO dto) {
 		String key =  dto.getBranchCode();
 		Booking save = null;
+		BookingResponseDTO response = new BookingResponseDTO();
 		try {
 			BookingReceiptSequence sequence = sequenceRepo.findById(key).orElseGet(() -> {
 				BookingReceiptSequence s = new BookingReceiptSequence();
@@ -79,6 +179,8 @@ public class BookingService {
 				booking.setConsignorMobile(dto.getConsignorMobile());
 			if (dto.getConsignorAddress() != null)
 				booking.setConsignorAddress(dto.getConsignorAddress());
+			if (dto.getConsignorGST() != null)
+				booking.setConsignorGST(dto.getConsignorGST());
 
 			if (dto.getConsigneeName() != null)
 				booking.setConsigneeName(dto.getConsigneeName());
@@ -86,14 +188,17 @@ public class BookingService {
 				booking.setConsigneeMobile(dto.getConsigneeMobile());
 			if (dto.getConsigneeAddress() != null)
 				booking.setConsigneeAddress(dto.getConsigneeAddress());
-			booking.setLoading(dto.getLoading());
-			booking.setLoadingCharge(dto.getLoadingCharge());
-			
-			saveBookingArticles(loadingReceipt, dto.getArticleDetails());
-			booking.setSgst(dto.getSgst());
-			booking.setCgst(dto.getCgst());
-			booking.setIgst(dto.getIgst());
-			booking.setFreight(dto.getFreight());
+			if (dto.getConsigneeGST() != null)
+				booking.setConsigneeGST(dto.getConsigneeGST());
+			if (dto.getPartyName() != null)
+				booking.setPartyName(dto.getPartyName());
+			if (dto.getGstPaidBy() != null)
+				booking.setGstPaidBy(dto.getGstPaidBy());
+			if (dto.getDeliveryType() != null)
+				booking.setDeliveryType(dto.getDeliveryType());
+
+			List<ArticleDetailDto> articleDetailDtos = saveBookingArticles(loadingReceipt, dto.getArticleDetails());
+			BookingChargeDetails bookingChargeDetails = saveBookingCharges(loadingReceipt, dto);
 
 			booking.setBookingDate(LocalDateTime.now());
 			booking.setConsignStatus("BOOKED");
@@ -121,28 +226,53 @@ public class BookingService {
 				booking.setEmployeeName(dto.getEmployeeName());
 			if (dto.getPaidVia() != null)
 				booking.setPaidVia(dto.getPaidVia());
+			
+			if (dto.getRemarks() != null)
+				booking.setRemarks(dto.getRemarks());
+			
+			if (dto.geteWayBillNumbers() != null && !dto.geteWayBillNumbers().isEmpty()) {
+				booking.seteWayBillNumbers(String.join(",", dto.geteWayBillNumbers()));
+				// Set first bill for compatibility
+				booking.seteWayBillNumber(dto.geteWayBillNumbers().get(0));
+			}
+
+			// Sync charges to booking
+			booking.setFreight(dto.getFreight());
+			booking.setLoading(dto.getLoading());
+			booking.setLoadingCharge(dto.getLoadingCharge());
+			booking.setSgst(dto.getSgst());
+			booking.setCgst(dto.getCgst());
+			booking.setIgst(dto.getIgst());
+
 			save = bookingRepo.save(booking);
 			save.setNextLr(key+"/" + String.format("%03d", newSerial+1));
 			logger.info("booking saved:: " + save.getLoadingReciept());
-		} catch (Exception e) {
+
+			response.setBooking(save);
+			response.setArticles(articleDetailDtos);
+			response.setCharges(bookingChargeDetails);
 			
+			try {
+				dto.setLoadingReciept(loadingReceipt);
+				String branchCodeToUse = dto.getBranchCode() != null ? dto.getBranchCode() : booking.getBranchCode();
+				String companyCodeToUse = dto.getCompanyCode() != null ? dto.getCompanyCode() : booking.getCompanyCode();
+				com.logic.logistic.dto.BranchDTO branch = branchCodeToUse != null ? branchRepo.getBranchBybranchCode(branchCodeToUse) : null;
+				com.logic.logistic.dto.CompanyDto company = companyCodeToUse != null ? companyRegisterrepo.getCompanyByID(companyCodeToUse) : null;
+				if (branch != null && branch.getBranchEmail() != null && !branch.getBranchEmail().isBlank()) {
+					emailService.sendBookingEmail(branch.getBranchEmail(), dto, 
+						company != null ? company.getCompanyFullName() : "", 
+						branch.getBranchName(), false);
+				}
+			} catch (Exception ex) {
+				logger.error("Failed to trigger booking create email: " + ex.getMessage());
+			}
+		} catch (Exception e) {
 			logger.error("Exception in saveBooking: " + e);
 		}
-		return save;
+
+		return response;
 	}
 
-	/*
-	 * public BookingPageResponse getBookingReportsBetweenDates(LocalDateTime
-	 * fromDate, LocalDateTime toDate, String status) {
-	 * 
-	 * try { List<Booking> page = bookingRepo.findByBookingDateBetween(fromDate,
-	 * toDate, "BOOKED"); BookingPageResponse response = new BookingPageResponse();
-	 * response.setContent(page);
-	 * 
-	 * logger.info("BookingPageResponse: " + response); return response; } catch
-	 * (Exception e) { logger.info("error BookingPageResponse: " +
-	 * e.getLocalizedMessage()); return null; } }
-	 */
 
 	@Transactional
 	public DispatchResponse dispatchLoad(DispatchRequest request) {
@@ -178,31 +308,98 @@ public class BookingService {
 	}
 
 
-	public BookingPageResponse getReports(LocalDateTime from, LocalDateTime to, String status, String lastId,
+	public BookingPageResponse getReports(
+			LocalDateTime from,
+			LocalDateTime to,
+			String status,
+			String lastId,
 			String branchCode) {
+
 		int limit = 10;
-		Pageable pageable = PageRequest.of(0, limit, Sort.by("bookingDate").descending());
+
+		Pageable pageable =
+				PageRequest.of(
+						0,
+						limit,
+						Sort.by("bookingDate").descending()
+				);
+
 		List<Booking> bookings;
 
 		if (lastId == null) {
-			bookings = bookingRepo.findFirstPage(from, to, status, pageable, branchCode);
+
+			bookings = bookingRepo.findFirstPage(
+					from,
+					to,
+					status,
+					pageable,
+					branchCode
+			);
+
 		} else {
-			bookings = bookingRepo.findNextPage(from, to, status, lastId, pageable, branchCode);
+
+			bookings = bookingRepo.findNextPage(
+					from,
+					to,
+					status,
+					lastId,
+					pageable,
+					branchCode
+			);
 		}
 
-		BookingPageResponse response = new BookingPageResponse();
-		response.setContent(bookings);
+		List<BookingReportDTO> reportList =
+				new ArrayList<>();
+
+		for (Booking booking : bookings) {
+
+			BookingReportDTO dto =
+					new BookingReportDTO();
+
+			dto.setBooking(booking);
+
+			BookingChargeDetails charges =
+					bookingChargeRepo
+							.findByLoadingReciept(
+									booking.getLoadingReciept()
+							)
+							.orElse(null);
+
+			dto.setCharges(charges);
+
+			reportList.add(dto);
+		}
+
+		BookingPageResponse response =
+				new BookingPageResponse();
+
+		response.setContent(reportList);
+
 		response.setPageSize(limit);
+
 		response.setPageNumber(0);
-		response.setTotalElements(bookings.size());
+
+		response.setTotalElements(reportList.size());
+
 		response.setTotalPages(1);
-		response.setLast(bookings.size() < limit);
+
+		response.setLast(reportList.size() < limit);
+
+		if (!bookings.isEmpty()) {
+
+			response.setLastId(
+					bookings.get(
+							bookings.size() - 1
+					).getLoadingReciept()
+			);
+		}
 
 		return response;
 	}
 
-	public void saveBookingArticles(String lrNumber, List<ArticleDetail> details) {
+	public List<ArticleDetailDto> saveBookingArticles(String lrNumber, List<ArticleDetail> details) {
 		ArrayList<ArticleDetailDto> dtoList = new ArrayList<ArticleDetailDto>();
+		List<ArticleDetailDto> articleDetailDtos=new ArrayList<ArticleDetailDto>();
 		try {
 			for (ArticleDetail detail : details) {
 				ArticleDetailDto dto = new ArticleDetailDto();
@@ -217,11 +414,14 @@ public class BookingService {
 
 				dtoList.add(dto);
 			}
-			articleRepo.saveAll(dtoList);
+			 articleDetailDtos = articleRepo.saveAll(dtoList);
+
 		} catch (Exception e) {
 			logger.error("unable to save article details :: ", e.getMessage());
 		}
-	}
+
+        return articleDetailDtos;
+    }
 
 	public BookingDTO findByLoadingReciept(String lr) {
 		// Fetch articleDetails from table
@@ -236,7 +436,25 @@ public class BookingService {
 
 			BeanUtils.copyProperties(bookingByLr, dto);
 
+			if (bookingByLr.geteWayBillNumbers() != null) {
+				dto.seteWayBillNumbers(java.util.Arrays.asList(bookingByLr.geteWayBillNumbers().split(",")));
+			}
+			dto.setRemarks(bookingByLr.getRemarks());
+
 			dto.setArticleDetails(articleDetails);
+
+			// Full charge breakdown lives in booking_charge_details; merge for edit/search UI
+			java.util.Optional<BookingChargeDetails> chargeDetails =
+					bookingChargeRepo.findByLoadingReciept(lr);
+			if (chargeDetails.isPresent()) {
+				BeanUtils.copyProperties(
+						chargeDetails.get(),
+						dto,
+						"id",
+						"loadingReciept",
+						"createdDate",
+						"modifiedDate");
+			}
 		}
 		return dto;
 	}
@@ -259,7 +477,8 @@ public class BookingService {
 		return details;
 	}
 
-	public Booking updateBooking(String lr, BookingDTO dto) {
+	@Transactional
+	public BookingResponseDTO updateBooking(String lr, BookingDTO dto) {
 		Booking existing = bookingRepo.findById(lr).orElseThrow(() -> new RuntimeException("LR not found"));
 
 		// Update fields
@@ -267,26 +486,64 @@ public class BookingService {
 		existing.setConsignorName(dto.getConsignorName());
 		existing.setConsignorMobile(dto.getConsignorMobile());
 		existing.setConsignorAddress(dto.getConsignorAddress());
+		existing.setConsignorGST(dto.getConsignorGST());
 		existing.setConsigneeName(dto.getConsigneeName());
 		existing.setConsigneeMobile(dto.getConsigneeMobile());
 		existing.setConsigneeAddress(dto.getConsigneeAddress());
+		existing.setConsigneeGST(dto.getConsigneeGST());
 		existing.setFreight(dto.getFreight());
 		existing.setSgst(dto.getSgst());
 		existing.setCgst(dto.getCgst());
 		existing.setIgst(dto.getIgst());
+		existing.setLoading(dto.getLoading());
+		existing.setLoadingCharge(dto.getLoadingCharge());
 		existing.setInvoiceNumber(dto.getInvoiceNumber());
 		existing.setInvoiceValue(dto.getInvoiceValue());
-		existing.seteWayBillNumber(dto.geteWayBillNumber());
 		existing.setDestinationBranchCode(dto.getDestinationBranchCode());
 		existing.setBillType(dto.getBillType());
+		existing.setRemarks(dto.getRemarks());
+		existing.setPaidVia(dto.getPaidVia());
+		existing.setPartyName(dto.getPartyName());
+		existing.setGstPaidBy(dto.getGstPaidBy());
+		existing.setDeliveryType(dto.getDeliveryType());
+
+		if (dto.geteWayBillNumbers() != null && !dto.geteWayBillNumbers().isEmpty()) {
+			existing.seteWayBillNumbers(String.join(",", dto.geteWayBillNumbers()));
+			existing.seteWayBillNumber(dto.geteWayBillNumbers().get(0));
+		} else if (dto.geteWayBillNumber() != null) {
+			existing.seteWayBillNumber(dto.geteWayBillNumber());
+			existing.seteWayBillNumbers(dto.geteWayBillNumber());
+		}
+
 		existing.setModifiedDate(LocalDateTime.now());
+
+		BookingChargeDetails charges = saveBookingCharges(lr, dto);
 
 		articleRepo.deleteByLoadingReciept(lr);
 
-		saveArticles(lr, dto.getArticleDetails());
-		bookingRepo.save(existing);
+		List<ArticleDetailDto> articles = saveBookingArticles(lr, dto.getArticleDetails());
+		existing = bookingRepo.save(existing);
 
-		return existing;
+		try {
+			dto.setLoadingReciept(lr);
+			String branchCodeToUse = dto.getBranchCode() != null ? dto.getBranchCode() : existing.getBranchCode();
+			String companyCodeToUse = dto.getCompanyCode() != null ? dto.getCompanyCode() : existing.getCompanyCode();
+			com.logic.logistic.dto.BranchDTO branch = branchCodeToUse != null ? branchRepo.getBranchBybranchCode(branchCodeToUse) : null;
+			com.logic.logistic.dto.CompanyDto company = companyCodeToUse != null ? companyRegisterrepo.getCompanyByID(companyCodeToUse) : null;
+			if (branch != null && branch.getBranchEmail() != null && !branch.getBranchEmail().isBlank()) {
+				emailService.sendBookingEmail(branch.getBranchEmail(), dto, 
+					company != null ? company.getCompanyFullName() : "", 
+					branch.getBranchName(), true);
+			}
+		} catch (Exception ex) {
+			logger.error("Failed to trigger booking update email: " + ex.getMessage());
+		}
+
+		BookingResponseDTO response = new BookingResponseDTO();
+		response.setBooking(existing);
+		response.setCharges(charges);
+		response.setArticles(articles);
+		return response;
 	}
 
 	private void saveArticles(String lr, List<ArticleDetail> details) {
@@ -300,69 +557,272 @@ public class BookingService {
 		}
 	}
 
-//	public BookingPageResponse getGlobalSearchreports(LocalDateTime fromDate, LocalDateTime toDate, String lastId,
-//			String branchCode) {
-//		int limit = 10;
-//		Pageable pageable = PageRequest.of(0, limit, Sort.by("bookingDate").descending());
-//		List<Booking> bookings;
-//
-//		if (lastId == null) {
-//			bookings = bookingRepo.findFirstPageForGlobalSearchreports(fromDate, toDate, pageable, branchCode);
-//		} else {
-//			bookings = bookingRepo.findNextPageForGlobalSearchreports(fromDate, toDate, lastId, pageable, branchCode);
-//		}
-//
-//		BookingPageResponse response = new BookingPageResponse();
-//		response.setContent(bookings);
-//		response.setPageSize(limit);
-//		response.setPageNumber(0);
-//		response.setTotalElements(bookings.size());
-//		response.setTotalPages(1);
-//		response.setLast(bookings.size() < limit);
-//
-//		return response;
-//	}
+	public BookingPageResponse getGlobalSearchReports(
+			BookingSearchRequest request) {
 
-	public BookingPageResponse getGlobalSearchReports(BookingSearchRequest request) {
-	    int limit = 10;
-	    Pageable pageable = PageRequest.of(0, limit, Sort.by("bookingDate").descending());
+		int limit = 10;
 
-	    List<String> branchCodes = bookingRepo.getlistofBranchcodes(
-	        request.getCity(),
-	        request.getState(),
-	        request.getBranchCode()
-	    );
+		Pageable pageable =
+				PageRequest.of(
+						0,
+						limit,
+						Sort.by("bookingDate").descending()
+				);
 
-	    if (branchCodes.isEmpty()) {
-	        return new BookingPageResponse(); // empty if no branches
-	    }
+		List<String> branchCodes =
+				bookingRepo.getlistofBranchcodes(
 
-	    List<Booking> bookings = bookingRepo.searchBookings(
-	        request.getFromDate(),
-	        request.getToDate(),
-	        request.getStatus(),
-	        request.getLastId(),
-	        branchCodes,
-	        pageable
-	    );
+						normalize(request.getCity()),
 
-	    BookingPageResponse response = new BookingPageResponse();
-	    response.setContent(bookings);
-	    response.setPageSize(limit);
-	    response.setPageNumber(request.getPage());
-	    response.setTotalElements(bookings.size());
-	    response.setTotalPages(1);
-	    response.setLast(bookings.size() < limit);
-	    response.setLastId(bookings.isEmpty() ? null : bookings.get(bookings.size() - 1).getLoadingReciept());
+						normalize(request.getState()),
 
-	    return response;
+						normalize(request.getBranchCode()),
+
+						request.getCompanyCode()
+				);
+
+		if (branchCodes.isEmpty()) {
+
+			return new BookingPageResponse();
+		}
+
+		List<Booking> bookings =
+				bookingRepo.searchBookings(
+
+						request.getFromDate(),
+
+						request.getToDate(),
+
+						request.getStatus(),
+
+						request.getLastId(),
+
+						branchCodes,
+
+						pageable
+				);
+
+		// 🔥 NEW REPORT DTO LIST
+		List<BookingReportDTO> reportList =
+				new ArrayList<>();
+
+		for (Booking booking : bookings) {
+
+			BookingReportDTO dto =
+					new BookingReportDTO();
+
+			// booking
+			dto.setBooking(booking);
+
+			// charges
+			BookingChargeDetails charges =
+					bookingChargeRepo
+							.findByLoadingReciept(
+									booking.getLoadingReciept()
+							)
+							.orElse(null);
+
+			dto.setCharges(charges);
+
+			reportList.add(dto);
+		}
+
+		BookingPageResponse response =
+				new BookingPageResponse();
+
+		response.setContent(reportList);
+
+		response.setPageSize(limit);
+
+		response.setPageNumber(
+				request.getPage()
+		);
+
+		response.setTotalElements(
+				reportList.size()
+		);
+
+		response.setTotalPages(1);
+
+		response.setLast(
+				reportList.size() < limit
+		);
+
+		response.setLastId(
+
+				bookings.isEmpty()
+
+						? null
+
+						: bookings.get(
+						bookings.size() - 1
+				).getLoadingReciept()
+		);
+
+		return response;
 	}
 
 	public List<String> getSaidToContainsByCompany(String companyCode) {
 		 return articleRepo.findDistinctSaidToContainsByCompanyCode(companyCode);
 	}
 
+	public BookingChargeDetails saveBookingCharges(String lrNumber, BookingDTO dto) {
+		BookingChargeDetails chargeData = null;
+		try {
+			LocalDateTime now = LocalDateTime.now();
 
+			// Update existing row instead of delete/insert to avoid transaction flush conflicts
+			BookingChargeDetails charges = bookingChargeRepo.findByLoadingReciept(lrNumber).orElseGet(BookingChargeDetails::new);
 
+			charges.setLoadingReciept(lrNumber);
+			if (charges.getCreatedDate() == null) {
+				charges.setCreatedDate(now);
+			}
+
+			charges.setLrCharge(dto.getLrCharge());
+
+			charges.setHamali(dto.getHamali());
+
+			charges.setLoading(dto.getLoading());
+
+			charges.setStationary(dto.getStationary());
+
+			charges.setOtherCharges(dto.getOtherCharges());
+
+			charges.setOtherTransportCharges(
+					dto.getOtherTransportCharges()
+			);
+
+			charges.setMiscellaneous(
+					dto.getMiscellaneous()
+			);
+
+			charges.setCrossingAmount(
+					dto.getCrossingAmount()
+			);
+
+			charges.setPodCharges(
+					dto.getPodCharges()
+			);
+
+			charges.setDoorDelivery(
+					dto.getDoorDelivery()
+			);
+
+			charges.setDoorPickup(
+					dto.getDoorPickup()
+			);
+
+			charges.setDdc(dto.getDdc());
+
+			charges.setDcc(dto.getDcc());
+
+			charges.setDemurrage(
+					dto.getDemurrage()
+			);
+
+			charges.setUnloading(
+					dto.getUnloading()
+			);
+
+			charges.setLocalVehicle(
+					dto.getLocalVehicle()
+			);
+
+			charges.setCrossingHire(
+					dto.getCrossingHire()
+			);
+
+			charges.setFreight(
+					dto.getFreight()
+			);
+
+			charges.setSgst(
+					dto.getSgst()
+			);
+
+			charges.setCgst(
+					dto.getCgst()
+			);
+
+			charges.setIgst(
+					dto.getIgst()
+			);
+
+			charges.setLoadingCharge(
+					dto.getLoadingCharge()
+			);
+
+			// TOTAL CALCULATION
+			double totalAmount =
+
+					dto.getLrCharge()
+
+							+ dto.getHamali()
+
+							+ dto.getLoading()
+
+							+ dto.getStationary()
+
+							+ dto.getOtherCharges()
+
+							+ dto.getOtherTransportCharges()
+
+							+ dto.getMiscellaneous()
+
+							+ dto.getCrossingAmount()
+
+							+ dto.getPodCharges()
+
+							+ dto.getDoorDelivery()
+
+							+ dto.getDoorPickup()
+
+							+ dto.getDdc()
+
+							+ dto.getDcc()
+
+							+ dto.getDemurrage()
+
+							+ dto.getUnloading()
+
+							+ dto.getLocalVehicle()
+
+							+ dto.getCrossingHire()
+
+							+ dto.getFreight()
+
+							+ dto.getSgst()
+
+							+ dto.getCgst()
+
+							+ dto.getIgst()
+
+							+ dto.getLoadingCharge();
+
+			charges.setTotalAmount(totalAmount);
+
+			charges.setModifiedDate(now);
+
+			chargeData = bookingChargeRepo.save(charges);
+
+			logger.info(
+					"booking charges saved :: "
+							+ lrNumber
+			);
+
+		} catch (Exception e) {
+
+			logger.error(
+					"unable to save booking charges :: ",
+					e
+			);
+		}
+        return chargeData;
+    }
+
+    private String normalize(String value) {
+        return (value == null || value.trim().isEmpty()) ? null : value.trim();
+    }
 
 }

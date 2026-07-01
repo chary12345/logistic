@@ -31,6 +31,7 @@ public class EmployeeMapper {
 		userDto.setLogo(user.getLogo() != null ? user.getLogo() : null);
 		userDto.setPermissions(user.getPermissions() != null ? user.getPermissions() : null);
 		userDto.setBlockUser(user.isBlockUser());
+		userDto.setEmployeeActive(user.isEmployeeActive());
 		userDto.setBlockReason(user.getBlockReason() != null ? user.getBlockReason() : null);
 		userDto.setBlockedBy(user.getBlockedBy() != null ? user.getBlockedBy() : null);
 		if (user.getCompanyDetails() != null) {

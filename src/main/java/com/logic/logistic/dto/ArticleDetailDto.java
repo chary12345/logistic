@@ -9,7 +9,7 @@ public class ArticleDetailDto {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "row_num")
-	private Long id; // ✅ Just a technical identifier
+	private Long id;
 
 
 	@Column(name = "article")
@@ -35,6 +35,13 @@ public class ArticleDetailDto {
 
 	@Column(name = "company_code")
 	private String companyCode;
+
+	@Column(name = "actual_weight")
+	private String actualWeight;
+
+	@Column(name = "charge_weight")
+	private String chargeWeight;
+
 	// No @Id required for insert-only logic
 
 	public String getArticle() {
@@ -103,5 +110,20 @@ public class ArticleDetailDto {
 		this.companyCode = companyCode;
 	}
 	
+	public String getActualWeight() {
+		return actualWeight;
+	}
+
+	public void setActualWeight(String actualWeight) {
+		this.actualWeight = actualWeight;
+	}
+
+	public String getChargeWeight() {
+		return chargeWeight;
+	}
+
+	public void setChargeWeight(String chargeWeight) {
+		this.chargeWeight = chargeWeight;
+	}
 }
 

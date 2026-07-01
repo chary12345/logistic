@@ -18,6 +18,8 @@ public class Branch {
 	private String branchCreatedBy;
 	private String companyCode;
 	private Address branchAddress;
+	private boolean isBranchActive = true;
+
 	public String getBranchCode() {
 		return branchCode;
 	}
@@ -108,5 +110,10 @@ public class Branch {
 	public void setBranchPhoneAlt(String branchPhoneAlt) {
 		this.branchPhoneAlt = branchPhoneAlt;
 	}
-
+	public boolean isBranchActive() {
+		return isBranchActive;
+	}
+	public void setBranchActive(boolean isBranchActive) {
+		this.isBranchActive = isBranchActive;
+	}
 }

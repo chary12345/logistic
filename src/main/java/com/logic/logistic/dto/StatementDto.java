@@ -14,6 +14,7 @@ public class StatementDto {
     private double gst;
     private double loading;
     private double loadingCharge;
+    private double otherCharges;
     private double total;
 	public String getLoadingReciept() {
 		return loadingReciept;
@@ -75,6 +76,12 @@ public class StatementDto {
 	public void setLoadingCharge(double loadingCharge) {
 		this.loadingCharge = loadingCharge;
 	}
+	public double getOtherCharges() {
+		return otherCharges;
+	}
+	public void setOtherCharges(double otherCharges) {
+		this.otherCharges = otherCharges;
+	}
 	public double getTotal() {
 		return total;
 	}
@@ -83,7 +90,7 @@ public class StatementDto {
 	}
 	public StatementDto(String loadingReciept, LocalDateTime bookingDate, LocalDateTime dispatchDate,
 			String consignorName, String consigneeName, String billType, double freight, double gst, double loading,
-			double loadingCharge, double total) {
+			double loadingCharge, double otherCharges, double total) {
 		super();
 		this.loadingReciept = loadingReciept;
 		this.bookingDate = bookingDate;
@@ -95,6 +102,7 @@ public class StatementDto {
 		this.gst = gst;
 		this.loading = loading;
 		this.loadingCharge = loadingCharge;
+		this.otherCharges = otherCharges;
 		this.total = total;
 	}
 	public StatementDto() {

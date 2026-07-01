@@ -1,6 +1,8 @@
 package com.logic.logistic.model;
 
 import java.sql.Date;
+import java.util.List;
+import java.util.Map;
 
 public class LoginResponse {
 
@@ -14,10 +16,19 @@ public class LoginResponse {
 	private Date updatedDate;
 	private Date expiryDate;
 	private String logo;
-	private String permissions;
+	private Map<String, Boolean> permissions;
 	private String blockReason;
 	private boolean blockUser;
+	private boolean isEmployeeActive = true;
 	private String blockedBy;
+
+	public boolean isEmployeeActive() {
+		return isEmployeeActive;
+	}
+	public void setEmployeeActive(boolean isEmployeeActive) {
+		this.isEmployeeActive = isEmployeeActive;
+	}
+	
 	private CompanyAndBranch companyAndBranchDeatils;
 	public String getFirstName() {
 		return firstName;
@@ -79,12 +90,15 @@ public class LoginResponse {
 	public void setLogo(String logo) {
 		this.logo = logo;
 	}
-	public String getPermissions() {
+
+	public Map<String, Boolean> getPermissions() {
 		return permissions;
 	}
-	public void setPermissions(String permissions) {
+
+	public void setPermissions(Map<String, Boolean> permissions) {
 		this.permissions = permissions;
 	}
+
 	public String getBlockReason() {
 		return blockReason;
 	}

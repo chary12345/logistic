@@ -16,18 +16,120 @@ import jakarta.transaction.Transactional;
 @Repository
 @Transactional
 public interface BookRepository extends JpaRepository<Booking, String> {
-	@Query("SELECT b FROM Booking b WHERE b.bookingDate BETWEEN :fromDate AND :toDate or b.consignStatus = :status AND b.BranchCode= :branchCode ORDER BY b.bookingDate DESC")
-	List<Booking> findByBookingDateBetween(@Param("fromDate") LocalDateTime fromDate,
-			@Param("toDate") LocalDateTime toDate, @Param("status") String status,
+	@Query("""
+			    SELECT b
+			    FROM Booking b
+			    WHERE
+			    b.consignStatus = :status
+			    AND b.BranchCode = :fromBranch
+			    AND b.destinationBranchCode = :destinationBranch
+			    ORDER BY b.bookingDate DESC
+			""")
+	List<Booking> getBookingsWithFilter(@Param("status") String status,
+			@Param("fromBranch") String branchCode, @Param("destinationBranch") String destinationBranchCode);
+
+	@Query("""
+			    SELECT b
+			    FROM Booking b
+			    WHERE
+			    b.consignStatus = :status
+			    AND b.BranchCode = :fromBranch
+			    AND b.destinationBranchCode IN :destBranches
+			    ORDER BY b.bookingDate DESC
+			""")
+	List<Booking> getBookingsWithFilterByDestBranches(
+			@Param("status") String status,
+			@Param("fromBranch") String branchCode,
+			@Param("destBranches") List<String> destBranches);
+
+	@Query("""
+			    SELECT b
+			    FROM Booking b
+			    WHERE
+			    b.consignStatus = :status
+			    AND b.BranchCode = :fromBranch
+			    ORDER BY b.bookingDate DESC
+			""")
+	List<Booking> getBookingsWithFilterNoDest(
+			@Param("status") String status,
+			@Param("fromBranch") String branchCode);
+
+	@Query(value = """
+			SELECT * FROM booking b
+			WHERE
+			    (UPPER(b.branch_code) = UPPER(:branchCode) AND (b.booking_date >= :from AND b.booking_date <= :to))
+			    OR
+			    (UPPER(b.branch_code) = UPPER(:branchCode) AND (b.dispatch_date >= :from AND b.dispatch_date <= :to))
+			    OR
+			    (UPPER(b.dest_branch_code) = UPPER(:branchCode) AND (b.recieve_date >= :from AND b.recieve_date <= :to))
+			    OR
+			    (UPPER(b.dest_branch_code) = UPPER(:branchCode) AND (b.delivery_date >= :from AND b.delivery_date <= :to))
+			""", nativeQuery = true)
+	List<Booking> findDashboardBookings(
+			@Param("from") LocalDateTime from,
+			@Param("to") LocalDateTime to,
 			@Param("branchCode") String branchCode);
 
-	@Query("SELECT b FROM Booking b WHERE b.bookingDate BETWEEN :from AND :to AND b.consignStatus = :status AND b.BranchCode= :branchCode ORDER BY b.bookingDate DESC")
-	List<Booking> findFirstPage(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to,
-			@Param("status") String status, Pageable pageable, @Param("branchCode") String branchCode);
+	@Query("""
+			SELECT b FROM Booking b
+			WHERE
+			(
+			    (:status = 'BOOKED' AND b.bookingDate BETWEEN :from AND :to) OR
+			    (:status = 'DISPATCHED' AND COALESCE(b.dispatchDate, b.bookingDate) BETWEEN :from AND :to) OR
+			    (:status = 'RECEIVED' AND COALESCE(b.recieveDate, b.bookingDate) BETWEEN :from AND :to) OR
+			    (:status = 'DELIVERED' AND COALESCE(b.deliveryDate, b.bookingDate) BETWEEN :from AND :to)
+			)
+			AND b.consignStatus = :status
+			AND
+			(
+			    (:status IN ('BOOKED','DISPATCHED') AND b.BranchCode = :branchCode) OR
+			    (:status IN ('RECEIVED','DELIVERED') AND b.destinationBranchCode = :branchCode)
+			)
+			ORDER BY
+			CASE
+			    WHEN :status = 'BOOKED' THEN b.bookingDate
+			    WHEN :status = 'DISPATCHED' THEN b.dispatchDate
+			    WHEN :status = 'RECEIVED' THEN b.recieveDate
+			    WHEN :status = 'DELIVERED' THEN b.deliveryDate
+			END DESC
+			""")
+	List<Booking> findFirstPage(
+			@Param("from") LocalDateTime from,
+			@Param("to") LocalDateTime to,
+			@Param("status") String status,
+			Pageable pageable,
+			@Param("branchCode") String branchCode);
 
-	@Query("SELECT b FROM Booking b WHERE b.bookingDate BETWEEN :from AND :to AND b.consignStatus = :status AND b.BranchCode= :branchCode AND b.id < :lastId ORDER BY b.bookingDate DESC")
-	List<Booking> findNextPage(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to,
-			@Param("status") String status, @Param("lastId") String lastId, Pageable pageable,
+	@Query("""
+			SELECT b FROM Booking b
+			WHERE
+			(
+			    (:status = 'BOOKED' AND b.bookingDate BETWEEN :from AND :to) OR
+			    (:status = 'DISPATCHED' AND COALESCE(b.dispatchDate, b.bookingDate) BETWEEN :from AND :to) OR
+			    (:status = 'RECEIVED' AND COALESCE(b.recieveDate, b.bookingDate) BETWEEN :from AND :to) OR
+			    (:status = 'DELIVERED' AND COALESCE(b.deliveryDate, b.bookingDate) BETWEEN :from AND :to)
+			)
+			AND b.consignStatus = :status
+			AND
+			(
+			    (:status IN ('BOOKED','DISPATCHED') AND b.BranchCode = :branchCode) OR
+			    (:status IN ('RECEIVED','DELIVERED') AND b.destinationBranchCode = :branchCode)
+			)
+			AND b.loadingReciept < :lastId
+			ORDER BY
+			CASE
+			    WHEN :status = 'BOOKED' THEN b.bookingDate
+			    WHEN :status = 'DISPATCHED' THEN b.dispatchDate
+			    WHEN :status = 'RECEIVED' THEN b.recieveDate
+			    WHEN :status = 'DELIVERED' THEN b.deliveryDate
+			END DESC
+			""")
+	List<Booking> findNextPage(
+			@Param("from") LocalDateTime from,
+			@Param("to") LocalDateTime to,
+			@Param("status") String status,
+			@Param("lastId") String lastId,
+			Pageable pageable,
 			@Param("branchCode") String branchCode);
 
 	@Query("SELECT b FROM Booking b WHERE b.loadingReciept IN :receipts")
@@ -53,12 +155,17 @@ public interface BookRepository extends JpaRepository<Booking, String> {
 			@Param("status") String status, @Param("region") String region, @Param("subregion") String subregion,
 			@Param("branchCode") String branchCode, @Param("employeeName") String employeeName);
 
-	@Query("SELECT DISTINCT (TRIM(r.id.branchCode)) " + "FROM RegionMasterDto r "
-			+ "WHERE (:state IS NULL OR (TRIM(r.id.region)) = (TRIM(:state))) "
-			+ "AND (:city IS NULL OR (TRIM(r.id.subRegion)) = (TRIM(:city))) "
-			+ "AND (:branchCode IS NULL OR (TRIM(r.id.branchCode)) = (TRIM(:branchCode)))")
-	List<String> getlistofBranchcodes(@Param("city") String city, @Param("state") String state,
-			@Param("branchCode") String branchCode);
+	@Query(value = "SELECT DISTINCT branch_code " +
+			"FROM region_master " +
+			"WHERE company_code = :companyCode " +
+			"AND (:state IS NULL OR state = :state) " +
+			"AND (:city IS NULL OR city = :city) " +
+			"AND (:branchCode IS NULL OR branch_code = :branchCode)", nativeQuery = true)
+	List<String> getlistofBranchcodes(
+			@Param("city") String city,
+			@Param("state") String state,
+			@Param("branchCode") String branchCode,
+			@Param("companyCode") String companyCode);
 
 	@Query("SELECT b FROM Booking b " + "WHERE b.bookingDate BETWEEN :fromDate AND :toDate "
 			+ "AND b.BranchCode IN (:branchCodes) " + "AND (:status IS NULL OR b.consignStatus = :status) "
@@ -72,4 +179,47 @@ public interface BookRepository extends JpaRepository<Booking, String> {
 			+ "AND (:paymentMode IS NULL OR b.billType = :paymentMode)")
 	List<Booking> findStatements(@Param("branchCode") String branchCode, @Param("fromDate") LocalDateTime fromDate,
 			@Param("toDate") LocalDateTime toDate, @Param("paymentMode") String paymentMode);
+
+	List<Booking> findByLoadingRecieptInAndConsignStatus(
+			List<String> lrIds, String status);
+
+	List<Booking> findByConsignStatusAndDestinationBranchCode(
+			String status,
+			String destinationBranchCode);
+
+	@Query("""
+			SELECT b FROM Booking b
+			WHERE
+			    b.billType = 'TBB'
+			    AND (b.partyName = :consignorName OR b.consignorName = :consignorName)
+			    AND b.bookingDate BETWEEN :from AND :to
+			    AND b.BranchCode = :fromBranch
+			    AND (b.cancelLr IS NULL OR b.cancelLr = false)
+			    AND b.consignStatus != 'BILLED'
+			ORDER BY b.bookingDate DESC
+			""")
+	List<Booking> findTbbBookings(
+			@Param("consignorName") String consignorName,
+            @Param("fromBranch") String fromBranch,
+			@Param("from") LocalDateTime from,
+			@Param("to") LocalDateTime to);
+
+	@Query("""
+			SELECT b FROM Booking b
+			WHERE
+			    b.billType = 'TBB'
+			    AND (b.partyName = :consignorName OR b.consignorName = :consignorName)
+			    AND b.BranchCode = :fromBranch
+			    AND (b.cancelLr IS NULL OR b.cancelLr = false)
+			    AND b.consignStatus != 'BILLED'
+			ORDER BY b.bookingDate DESC
+			""")
+	List<Booking> findTbbBookingsNoDate(
+			@Param("consignorName") String consignorName,
+			@Param("fromBranch") String fromBranch);
+
+	/*
+	 * List<Booking> findByVehicleNumberAndConsignStatus(
+	 * String vehicleNo, String status);
+	 */
 }

@@ -79,13 +79,13 @@ public class BranchAndAddressMapper {
 		
 		if (branch.getUpdateDate() != null) {
 			dto.setUpdateDate(branch.getUpdateDate());
-			isActive=true;
+			isActive = true;
 		}
-		if(isActive==true) {
-			dto.setBranchActive(true);
+
+		if (isActive == true) {
+			dto.setBranchActive(branch.isBranchActive());
 			dto.setCreateDate(new Date(System.currentTimeMillis()));
 		}
-			
 
 		return dto;
 	}
@@ -156,6 +156,7 @@ public class BranchAndAddressMapper {
 	        branch.setUpdateDate(copyDate(branchDTO.getUpdateDate()));
 	        branch.setBranchCreatedBy(nullSafe(branchDTO.getBranchCreatedBy()));
 	        branch.setCompanyCode(nullSafe(branchDTO.getCompanyCode()));
+	        branch.setBranchActive(branchDTO.isBranchActive());
 
 	        // Address map
 	        if (addressDto != null) {

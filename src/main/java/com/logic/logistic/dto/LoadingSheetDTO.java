@@ -40,6 +40,15 @@ public class LoadingSheetDTO {
     @Column(name = "created_date")
     private LocalDateTime createdAt;
 
+	@Column(name = "status")
+	private String status;
+
+    @Column(name = "from_branch")
+    private String fromBranch;
+
+    @Column(name = "unload_point")
+    private String unloadPoint;
+
 	public Long getLoadingSheetNumber() {
 		return loadingSheetNumber;
 	}
@@ -103,6 +112,28 @@ public class LoadingSheetDTO {
 	public void setCreatedAt(LocalDateTime createdAt) {
 		this.createdAt = createdAt;
 	}
-    
-    
+
+	public String getStatus() {
+		return status;
+	}
+
+	public void setStatus(String status) {
+		this.status = status;
+	}
+
+    public String getFromBranch() {
+        return fromBranch;
+    }
+
+    public void setFromBranch(String fromBranch) {
+        this.fromBranch = fromBranch;
+    }
+
+    public String getUnloadPoint() {
+        return unloadPoint;
+    }
+
+    public void setUnloadPoint(String unloadPoint) {
+        this.unloadPoint = unloadPoint;
+    }
 }

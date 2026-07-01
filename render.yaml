@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: logistic
+    runtime: docker
+    rootDir: .
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_USERNAME
+        sync: false
+      - key: DATABASE_PASSWORD
+        sync: false
