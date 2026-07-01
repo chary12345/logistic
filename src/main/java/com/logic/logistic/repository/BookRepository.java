@@ -195,6 +195,7 @@ public interface BookRepository extends JpaRepository<Booking, String> {
 			    AND b.bookingDate BETWEEN :from AND :to
 			    AND b.BranchCode = :fromBranch
 			    AND (b.cancelLr IS NULL OR b.cancelLr = false)
+			    AND b.consignStatus != 'BILLED'
 			ORDER BY b.bookingDate DESC
 			""")
 	List<Booking> findTbbBookings(
@@ -202,6 +203,21 @@ public interface BookRepository extends JpaRepository<Booking, String> {
             @Param("fromBranch") String fromBranch,
 			@Param("from") LocalDateTime from,
 			@Param("to") LocalDateTime to);
+
+	@Query("""
+			SELECT b FROM Booking b
+			WHERE
+			    b.billType = 'TBB'
+			    AND (b.partyName = :consignorName OR b.consignorName = :consignorName)
+			    AND b.BranchCode = :fromBranch
+			    AND (b.cancelLr IS NULL OR b.cancelLr = false)
+			    AND b.consignStatus != 'BILLED'
+			ORDER BY b.bookingDate DESC
+			""")
+	List<Booking> findTbbBookingsNoDate(
+			@Param("consignorName") String consignorName,
+			@Param("fromBranch") String fromBranch);
+
 	/*
 	 * List<Booking> findByVehicleNumberAndConsignStatus(
 	 * String vehicleNo, String status);

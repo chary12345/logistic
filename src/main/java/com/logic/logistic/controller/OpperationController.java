@@ -19,7 +19,7 @@ public class OpperationController {
 
 	@Autowired
 	private OperationService operationService;
-	
+
 	@PostMapping("/bookingList")
 	public List<Booking> getFilteredReport(@RequestBody OperationFilter filter) {
 		return operationService.getBookingsWithFilter(filter);
@@ -31,20 +31,19 @@ public class OpperationController {
 			@RequestParam(required = false) String vehicleNo) {
 		return ResponseEntity.ok(operationService.disaptchedListByLsORVehicleNumber(lsId, vehicleNo));
 	}
-	
+
 	@GetMapping("/dispatchedListByBranch")
 	public ResponseEntity<List<DispatchedResponseDTO>> getDispatchedListByBranch(
-			@RequestParam String destinationBranch,@RequestParam String fromBranch) {
-		return ResponseEntity.ok(operationService.getDispatchedListByBranch(destinationBranch,fromBranch));
+			@RequestParam String destinationBranch, @RequestParam String fromBranch) {
+		return ResponseEntity.ok(operationService.getDispatchedListByBranch(destinationBranch, fromBranch));
 	}
 
 	@GetMapping("/loadingSheet/list")
 	public ResponseEntity<?> getLoadingSheets(
-	    @RequestParam String companyCode,
-	    @RequestParam String destinationBranch){
-	    return ResponseEntity.ok(
-	    		operationService.getLoadingSheetList(companyCode, destinationBranch)
-	    );
+			@RequestParam String companyCode,
+			@RequestParam String destinationBranch) {
+		return ResponseEntity.ok(
+				operationService.getLoadingSheetList(companyCode, destinationBranch));
 	}
 
 	@PostMapping("/receive")
@@ -58,8 +57,7 @@ public class OpperationController {
 			@RequestParam String destinationBranchCode,
 			@RequestParam(required = false) String lrNumber) {
 		return ResponseEntity.ok(
-				operationService.getReceivedLrsForDelivery(destinationBranchCode, lrNumber)
-		);
+				operationService.getReceivedLrsForDelivery(destinationBranchCode, lrNumber));
 	}
 
 	@PostMapping("/deliverLrs")

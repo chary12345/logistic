@@ -38,6 +38,8 @@ public class UserPermissionDTO {
     private Boolean receiveReport = false;
     @Column(name = "delivery_report")
     private Boolean deliveryReport = false;
+    @Column(name = "tbb_bill_report")
+    private Boolean tbbBillReport = false;
 
     @Column(name = "view_statements")
     private Boolean viewStatements = false;
@@ -164,6 +166,14 @@ public class UserPermissionDTO {
 
     public void setDeliveryReport(Boolean deliveryReport) {
         this.deliveryReport = deliveryReport;
+    }
+
+    public Boolean getTbbBillReport() {
+        return tbbBillReport;
+    }
+
+    public void setTbbBillReport(Boolean tbbBillReport) {
+        this.tbbBillReport = tbbBillReport;
     }
 
     public Boolean getViewStatements() {
