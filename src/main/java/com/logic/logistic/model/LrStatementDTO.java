@@ -6,13 +6,23 @@ public class LrStatementDTO {
 
     private String lrNumber;
     private LocalDateTime bookingDate;
-    private String fromBranch;
-    private String toBranch;
+    private String fromBranch;     // branch code
+    private String fromBranchName; // branch name
+    private String toBranch;       // branch code
+    private String toBranchName;   // branch name
     private String consigneeName;
     private double freight;
+    private double loading;
     private double gst;
     private double total;
     private String status;
+
+    public String getFromBranchName() { return fromBranchName; }
+    public void setFromBranchName(String v) { this.fromBranchName = v; }
+    public String getToBranchName() { return toBranchName; }
+    public void setToBranchName(String v) { this.toBranchName = v; }
+    public double getLoading() { return loading; }
+    public void setLoading(double loading) { this.loading = loading; }
 
     public String getLrNumber() {
         return lrNumber;

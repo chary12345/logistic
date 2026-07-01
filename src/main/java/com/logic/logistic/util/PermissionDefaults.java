@@ -29,6 +29,7 @@ public class PermissionDefaults {
                 p.setDispatchReport(true);
                 p.setReceiveReport(true);
                 p.setDeliveryReport(true);
+                p.setTbbBillReport(true);
 
                 p.setViewStatements(true);
                 p.setTbbInvoice(true);
@@ -60,6 +61,7 @@ public class PermissionDefaults {
                 p.setDispatchReport(true);
                 p.setReceiveReport(true);
                 p.setDeliveryReport(true);
+                p.setTbbBillReport(true);
 
                 p.setViewStatements(true);
                 p.setTbbInvoice(true);
@@ -103,6 +105,7 @@ public class PermissionDefaults {
                 p.setDispatchReport(true);
                 p.setReceiveReport(true);
                 p.setDeliveryReport(true);
+                p.setTbbBillReport(true);
 
                 // Finance/Billing
                 p.setViewStatements(true);
