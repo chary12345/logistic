@@ -61,6 +61,12 @@ public class UserPermissionDTO {
     private Boolean rolesAndPermissions = false;
     @Column(name = "loading_sheet_list")
     private Boolean loadingSheetList = false;
+
+    @Column(name = "articles")
+    private Boolean articles = false;
+
+    @Column(name = "assigned_by")
+    private String assignedBy;
     @Transient
     private Boolean globalSearch = false;
 
@@ -248,7 +254,23 @@ public class UserPermissionDTO {
 		this.loadingSheetList = loadingSheetList;
 	}
 
-	public Boolean getGlobalSearch() {
+    public String getAssignedBy() {
+        return assignedBy;
+    }
+
+    public void setAssignedBy(String assignedBy) {
+        this.assignedBy = assignedBy;
+    }
+
+    public Boolean getArticles() {
+        return articles;
+    }
+
+    public void setArticles(Boolean articles) {
+        this.articles = articles;
+    }
+
+    public Boolean getGlobalSearch() {
         return globalSearch;
     }
 

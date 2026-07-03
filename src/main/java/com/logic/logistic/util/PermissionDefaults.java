@@ -43,6 +43,7 @@ public class PermissionDefaults {
                 p.setRolesAndPermissions(true);
                 p.setGlobalSearch(true);
 				p.setLoadingSheetList(true);
+                p.setArticles(true);
                 break;
 
 
@@ -75,6 +76,7 @@ public class PermissionDefaults {
                 p.setRolesAndPermissions(true);
                 p.setLoadingSheetList(true);
                 p.setGlobalSearch(true);
+                p.setArticles(true);
                 break;
 
             case "ADMIN":
@@ -86,8 +88,21 @@ public class PermissionDefaults {
                 p.setReceive(true);
                 p.setDelivery(true);
 
-                // LIMITED REPORTS
                 p.setBookingReport(true);
+                p.setDispatchReport(true);
+                p.setReceiveReport(true);
+                p.setDeliveryReport(true);
+                p.setTbbBillReport(true);
+
+                p.setViewStatements(true);
+                p.setTbbInvoice(true);
+
+
+                p.setEmployees(true);
+                p.setVehicles(true);
+                p.setParties(true);
+
+                p.setLoadingSheetList(true);
                 break;
 
             case "EMPLOYEE":
@@ -108,12 +123,12 @@ public class PermissionDefaults {
                 p.setTbbBillReport(true);
 
                 // Finance/Billing
-                p.setViewStatements(true);
-                p.setTbbInvoice(true);
+               // p.setViewStatements(true);
+               // p.setTbbInvoice(true);
                 
                 // Other
                 p.setLoadingSheetList(true);
-                p.setGlobalSearch(true);
+
 
                 // Administration modules (remains false by default):
                 // Branches, Employees, Vehicles, Parties, Charges, RolesAndPermissions

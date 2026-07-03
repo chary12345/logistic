@@ -12,4 +12,6 @@ public interface VehicleRepository extends JpaRepository<VehicleDTO, String> {
     boolean existsByTruckNumber(String truckNumber);
 
 	List<VehicleDTO> findByBranchCodeAndIsActive(String branchCode, boolean b);
+
+    List<VehicleDTO> findByCompanyCodeAndIsActive(String companyCode, boolean b);
 }

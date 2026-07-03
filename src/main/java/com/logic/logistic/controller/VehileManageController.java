@@ -46,4 +46,9 @@ public class VehileManageController {
 	    return ResponseEntity.ok(activeVehicles);
 	}
 
+    @GetMapping("/activevehiclesByCompanyCode")
+    public ResponseEntity<List<VehicleDTO>> getActiveVehiclesbyCompanyCOde(@RequestParam String companyCode) {
+        List<VehicleDTO> activeVehicles = vehicleRepository.findByCompanyCodeAndIsActive(companyCode, true);
+        return ResponseEntity.ok(activeVehicles);
+    }
 }
