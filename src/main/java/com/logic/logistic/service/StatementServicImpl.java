@@ -69,62 +69,108 @@ public class StatementServicImpl implements StatementService{
 	    if (bookings == null || bookings.isEmpty()) return new ArrayList<>();
 
 	    List<String> lrIds = bookings.stream().map(Booking::getLoadingReciept).collect(Collectors.toList());
-	    List<BookingChargeDetails> charges = bookingChargeRepo.findByLoadingRecieptIn(lrIds);
+	    List<BookingChargeDetails> chargeDetailsList = bookingChargeRepo.findByLoadingRecieptIn(lrIds);
 	    java.util.Map<String, BookingChargeDetails> chargeMap = new java.util.HashMap<>();
-	    for (BookingChargeDetails c : charges) {
+	    for (BookingChargeDetails c : chargeDetailsList) {
 	        chargeMap.put(c.getLoadingReciept(), c);
 	    }
 
-	    return bookings.stream().map(b -> {
-	        double gst = (b.getSgst() + b.getCgst() + b.getIgst());
-	        
-	        double otherCharges = 0;
+	    return bookings.stream().map(b -> {  // Build StatementDto per booking
+	        // Look up BookingChargeDetails – source of truth for all charge values
 	        BookingChargeDetails c = chargeMap.get(b.getLoadingReciept());
-	        if (c != null) {
-	            otherCharges += c.getLrCharge();
-	            otherCharges += c.getHamali();
-	            otherCharges += c.getStationary();
-	            otherCharges += c.getOtherCharges();
-	            otherCharges += c.getOtherTransportCharges();
-	            otherCharges += c.getMiscellaneous();
-	            otherCharges += c.getCrossingAmount();
-	            otherCharges += c.getPodCharges();
-	            otherCharges += c.getDoorDelivery();
-	            otherCharges += c.getDoorPickup();
-	            otherCharges += c.getDdc();
-	            otherCharges += c.getDcc();
-	            otherCharges += c.getDemurrage();
-	            otherCharges += c.getUnloading();
-	            otherCharges += c.getLocalVehicle();
-	            otherCharges += c.getCrossingHire();
-	        }
-	        
-	        double total = b.getFreight() + gst + b.getLoading() + b.getLoadingCharge() + otherCharges;
 
-	        // Logic: amount effective date
-	        LocalDateTime effectiveDate;
-	        if ("PAID".equalsIgnoreCase(b.getBillType())) {
-	            effectiveDate = b.getBookingDate();
-	        } else { // TO PAY / TBB
-	            effectiveDate = b.getDispatchDate();
+	        // Individual charges – prefer BookingChargeDetails; fall back to Booking entity
+	        double lrCharge             = (c != null) ? c.getLrCharge()             : 0;
+	        double hamali               = (c != null) ? c.getHamali()               : 0;
+	        double loading              = (c != null) ? c.getLoading()              : b.getLoading();
+	        double loadingCharge        = (c != null) ? c.getLoadingCharge()        : b.getLoadingCharge();
+	        double stationary           = (c != null) ? c.getStationary()           : 0;
+	        double otherChargesAmt      = (c != null) ? c.getOtherCharges()         : 0;  // "Other Charges" charge type
+	        double otherTransportCharges = (c != null) ? c.getOtherTransportCharges() : 0;
+	        double miscellaneous        = (c != null) ? c.getMiscellaneous()        : 0;
+	        double crossingAmount       = (c != null) ? c.getCrossingAmount()       : 0;
+	        double podCharges           = (c != null) ? c.getPodCharges()           : 0;
+	        double doorDelivery         = (c != null) ? c.getDoorDelivery()         : 0;
+	        double doorPickup           = (c != null) ? c.getDoorPickup()           : 0;
+	        double ddc                  = (c != null) ? c.getDdc()                  : 0;
+	        double dcc                  = (c != null) ? c.getDcc()                  : 0;
+	        double demurrage            = (c != null) ? c.getDemurrage()            : 0;
+	        double unloading            = (c != null) ? c.getUnloading()            : 0;
+	        double localVehicle         = (c != null) ? c.getLocalVehicle()         : 0;
+	        double crossingHire         = (c != null) ? c.getCrossingHire()         : 0;
+
+	        // GST – prefer BookingChargeDetails values when non-zero
+	        double sgst = b.getSgst();
+	        double cgst = b.getCgst();
+	        double igst = b.getIgst();
+	        if (c != null && (c.getSgst() + c.getCgst() + c.getIgst()) > 0) {
+	            sgst = c.getSgst();
+	            cgst = c.getCgst();
+	            igst = c.getIgst();
+	        }
+	        double gst = sgst + cgst + igst;
+
+	        // Freight – prefer BookingChargeDetails value when non-zero
+	        double freight = (c != null && c.getFreight() > 0) ? c.getFreight() : b.getFreight();
+
+	        // chargesTotal = sum of all non-freight, non-GST charges
+	        double chargesTotal = lrCharge + hamali + loading + loadingCharge + stationary
+	                + otherChargesAmt + otherTransportCharges + miscellaneous
+	                + crossingAmount + podCharges + doorDelivery + doorPickup
+	                + ddc + dcc + demurrage + unloading + localVehicle + crossingHire;
+
+	        // Total – use stored totalAmount from BookingChargeDetails when available
+	        double total;
+	        if (c != null && c.getTotalAmount() > 0) {
+	            total = c.getTotalAmount();
+	        } else {
+	            total = freight + gst + chargesTotal;
 	        }
 
-	        return new StatementDto(
-	                b.getLoadingReciept(),
-	                b.getBookingDate(),
-	                b.getDispatchDate(),
-	                b.getConsignorName(),
-	                b.getConsigneeName(),
-	                b.getBillType(),
-	                b.getFreight(),
-	                gst,
-	                b.getLoading(),
-	                b.getLoadingCharge(),
-	                otherCharges,
-	                (effectiveDate != null ? total : 0) // amount only if effective date present
-	        );
+	        // Populate DTO with full charge breakdown
+	        StatementDto dto = new StatementDto();
+	        dto.setLoadingReciept(b.getLoadingReciept());
+	        dto.setBookingDate(b.getBookingDate());
+	        dto.setDispatchDate(b.getDispatchDate());
+	        dto.setConsignorName(b.getConsignorName());
+	        dto.setConsigneeName(b.getConsigneeName());
+	        dto.setBillType(b.getBillType());
+	        dto.setConsignStatus(b.getConsignStatus());
+	        // Amounts
+	        dto.setFreight(freight);
+	        // Individual charge breakdown
+	        dto.setLrCharge(lrCharge);
+	        dto.setHamali(hamali);
+	        dto.setLoading(loading);
+	        dto.setLoadingCharge(loadingCharge);
+	        dto.setStationary(stationary);
+	        dto.setOtherChargesAmt(otherChargesAmt);
+	        dto.setOtherTransportCharges(otherTransportCharges);
+	        dto.setMiscellaneous(miscellaneous);
+	        dto.setCrossingAmount(crossingAmount);
+	        dto.setPodCharges(podCharges);
+	        dto.setDoorDelivery(doorDelivery);
+	        dto.setDoorPickup(doorPickup);
+	        dto.setDdc(ddc);
+	        dto.setDcc(dcc);
+	        dto.setDemurrage(demurrage);
+	        dto.setUnloading(unloading);
+	        dto.setLocalVehicle(localVehicle);
+	        dto.setCrossingHire(crossingHire);
+	        // GST components
+	        dto.setSgst(sgst);
+	        dto.setCgst(cgst);
+	        dto.setIgst(igst);
+	        dto.setGst(gst);
+	        // Derived totals
+	        dto.setChargesTotal(chargesTotal);
+	        dto.setTotal(total);
+	        return dto;
+
 	    }).collect(Collectors.toList());
+
 	}
+
 
 	@Override
 	public TbbStatementResponse getTbbStatement(TbbSummaryRequest request) {
@@ -192,7 +238,7 @@ public class StatementServicImpl implements StatementService{
     @Override
     public String generateTbbInvoice(List<String> lrIds, String consignorName, String fromBranch, Double totalAmount) {
         String invoiceNumber = generateNextSequence(fromBranch);
-        
+
         TbbInvoiceDTO invoice = new TbbInvoiceDTO();
         invoice.setInvoiceNumber(invoiceNumber);
         invoice.setConsignorName(consignorName);
@@ -200,21 +246,32 @@ public class StatementServicImpl implements StatementService{
         invoice.setTotalAmount(totalAmount);
         invoice.setCreatedAt(LocalDateTime.now());
         invoice.setStatus("BILLED");
-        
+
         try {
             invoice.setLrIdsJson(new ObjectMapper().writeValueAsString(lrIds));
         } catch (JsonProcessingException e) {
             e.printStackTrace();
         }
-        
-        tbbInvoiceRepository.save(invoice);
-        
+
+        // Snapshot each LR's current status before overwriting with BILLED
         List<Booking> bookings = bookingRepository.findByLoadingRecieptIn(lrIds);
+        java.util.Map<String, String> prevStatuses = new java.util.LinkedHashMap<>();
+        for (Booking b : bookings) {
+            prevStatuses.put(b.getLoadingReciept(), b.getConsignStatus());
+        }
+        try {
+            invoice.setPreviousLrStatusesJson(new ObjectMapper().writeValueAsString(prevStatuses));
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+
+        tbbInvoiceRepository.save(invoice);
+
         for (Booking b : bookings) {
             b.setConsignStatus("BILLED");
         }
         bookingRepository.saveAll(bookings);
-        
+
         return invoiceNumber;
     }
     
@@ -257,6 +314,38 @@ public class StatementServicImpl implements StatementService{
     public List<com.logic.logistic.model.LrStatementDTO> getTbbInvoiceLrDetails(Long invoiceId) {
         TbbInvoiceDTO invoice = tbbInvoiceRepository.findById(invoiceId)
             .orElseThrow(() -> new RuntimeException("Invoice not found"));
+
+        // Self-heal: CANCELLED bills must have no LRs associated
+        if ("CANCELLED".equals(invoice.getStatus())) {
+            try {
+                List<String> lrIds = new ObjectMapper().readValue(
+                    invoice.getLrIdsJson() != null ? invoice.getLrIdsJson() : "[]", List.class);
+                if (!lrIds.isEmpty()) {
+                    // Load the previous-status snapshot (saved at bill-generation time)
+                    java.util.Map<String, String> prevStatuses = new java.util.HashMap<>();
+                    if (invoice.getPreviousLrStatusesJson() != null) {
+                        prevStatuses = new ObjectMapper().readValue(
+                            invoice.getPreviousLrStatusesJson(),
+                            new com.fasterxml.jackson.core.type.TypeReference<java.util.Map<String, String>>() {});
+                    }
+                    final java.util.Map<String, String> statusMap = prevStatuses;
+                    List<Booking> bookings = bookingRepository.findByLoadingRecieptIn(lrIds);
+                    for (Booking b : bookings) {
+                        // Restore to original pre-billing status; fall back to RECEIVED for legacy bills
+                        String original = statusMap.getOrDefault(b.getLoadingReciept(), "RECEIVED");
+                        b.setConsignStatus(original);
+                    }
+                    bookingRepository.saveAll(bookings);
+                    // Clear LR association on the cancelled invoice
+                    invoice.setLrIdsJson("[]");
+                    tbbInvoiceRepository.save(invoice);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return new ArrayList<>(); // Cancelled bill shows no LRs
+        }
+
         try {
             List<String> lrIds = new ObjectMapper().readValue(invoice.getLrIdsJson(), List.class);
             List<Booking> bookings = bookingRepository.findByLoadingRecieptIn(lrIds);
@@ -287,6 +376,7 @@ public class StatementServicImpl implements StatementService{
         }
     }
 
+
     @Override
     public void addLrToInvoice(Long invoiceId, String lrNumber) {
         TbbInvoiceDTO invoice = tbbInvoiceRepository.findById(invoiceId)
@@ -301,10 +391,18 @@ public class StatementServicImpl implements StatementService{
                 double gst = booking.getSgst() + booking.getCgst() + booking.getIgst();
                 double loadingAmt = booking.getLoading() + booking.getLoadingCharge();
                 invoice.setTotalAmount(invoice.getTotalAmount() + booking.getFreight() + gst + loadingAmt);
-                tbbInvoiceRepository.save(invoice);
+
                 booking.setConsignStatus("BILLED");
                 bookingRepository.save(booking);
             }
+
+            // If adding to a cancelled bill (even if LR was partially added before), revive it back to BILLED status and update date
+            if ("CANCELLED".equals(invoice.getStatus())) {
+                invoice.setStatus("BILLED");
+                invoice.setCreatedAt(LocalDateTime.now());
+            }
+
+            tbbInvoiceRepository.save(invoice);
         } catch (Exception e) {
             throw new RuntimeException("Failed to add LR: " + e.getMessage());
         }
@@ -325,7 +423,17 @@ public class StatementServicImpl implements StatementService{
                     double loadingAmt = booking.getLoading() + booking.getLoadingCharge();
                     double newTotal = Math.max(0, invoice.getTotalAmount() - booking.getFreight() - gst - loadingAmt);
                     invoice.setTotalAmount(newTotal);
-                    booking.setConsignStatus("RECEIVED");
+                    
+                    // Restore exact original status from snapshot; fall back to RECEIVED if no snapshot
+                    String original = "RECEIVED";
+                    if (invoice.getPreviousLrStatusesJson() != null) {
+                        java.util.Map<String, String> prevStatuses = new ObjectMapper().readValue(
+                            invoice.getPreviousLrStatusesJson(),
+                            new com.fasterxml.jackson.core.type.TypeReference<java.util.Map<String, String>>() {}
+                        );
+                        original = prevStatuses.getOrDefault(lrNumber, "RECEIVED");
+                    }
+                    booking.setConsignStatus(original);
                     bookingRepository.save(booking);
                 }
                 tbbInvoiceRepository.save(invoice);
@@ -339,21 +447,39 @@ public class StatementServicImpl implements StatementService{
     public void cancelTbbInvoice(Long invoiceId) {
         TbbInvoiceDTO invoice = tbbInvoiceRepository.findById(invoiceId)
             .orElseThrow(() -> new RuntimeException("Invoice not found"));
-        
-        invoice.setStatus("CANCELLED");
-        tbbInvoiceRepository.save(invoice);
-        
+
         try {
             List<String> lrIds = new ObjectMapper().readValue(invoice.getLrIdsJson(), List.class);
-            List<Booking> bookings = bookingRepository.findByLoadingRecieptIn(lrIds);
-            for (Booking b : bookings) {
-                b.setConsignStatus("RECEIVED"); // Assuming it falls back to RECEIVED
+            if (lrIds != null && !lrIds.isEmpty()) {
+                // Load the original status snapshot captured at bill generation time
+                java.util.Map<String, String> prevStatuses = new java.util.HashMap<>();
+                if (invoice.getPreviousLrStatusesJson() != null) {
+                    prevStatuses = new ObjectMapper().readValue(
+                        invoice.getPreviousLrStatusesJson(),
+                        new com.fasterxml.jackson.core.type.TypeReference<java.util.Map<String, String>>() {}
+                    );
+                }
+                final java.util.Map<String, String> statusMap = prevStatuses;
+                List<Booking> bookings = bookingRepository.findByLoadingRecieptIn(lrIds);
+                for (Booking b : bookings) {
+                    // Restore exact original status; fall back to RECEIVED for old bills without snapshot
+                    String original = statusMap.getOrDefault(b.getLoadingReciept(), "RECEIVED");
+                    b.setConsignStatus(original);
+                }
+                bookingRepository.saveAll(bookings);
             }
-            bookingRepository.saveAll(bookings);
+            // Clear LR association so the cancelled bill card shows no LRs
+            invoice.setLrIdsJson("[]");
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        invoice.setStatus("CANCELLED");
+        invoice.setTotalAmount(0.0); // Reset amount to 0 for cancelled bills
+        invoice.setCreatedAt(LocalDateTime.now()); // Update date to cancellation time
+        tbbInvoiceRepository.save(invoice);
     }
+
 
     @Override
     public void settleTbbInvoice(Long invoiceId) {

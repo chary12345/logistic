@@ -31,7 +31,12 @@ public class TbbInvoiceDTO {
     private Double totalAmount;
 
     @Column(name = "lr_ids", columnDefinition = "TEXT")
-    private String lrIdsJson; // JSON string of LR IDs
+    private String lrIdsJson; // JSON array of LR IDs
+
+    // Stores original consignStatus per LR before billing, so cancel can restore exact status
+    // Format: {"PISENA/136":"RECEIVED","PISENA/137":"BOOKED"}
+    @Column(name = "previous_lr_statuses", columnDefinition = "TEXT")
+    private String previousLrStatusesJson;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -79,9 +84,10 @@ public class TbbInvoiceDTO {
         this.totalAmount = totalAmount;
     }
 
-    public String getLrIdsJson() {
-        return lrIdsJson;
-    }
+    public String getPreviousLrStatusesJson() { return previousLrStatusesJson; }
+    public void setPreviousLrStatusesJson(String v) { this.previousLrStatusesJson = v; }
+
+    public String getLrIdsJson() { return lrIdsJson; }
 
     public void setLrIdsJson(String lrIdsJson) {
         this.lrIdsJson = lrIdsJson;
