@@ -35,6 +35,9 @@ public class OperationServiceImpl implements OperationService {
 	@Autowired
 	private com.logic.logistic.repository.ArticleDetailRepository articleDetailRepo;
 
+    @Autowired
+    private com.logic.logistic.repository.BranchRepo branchRepo;
+
 	private void enrichBookingsWithCharges(List<Booking> bookings) {
 		if (bookings == null || bookings.isEmpty())
 			return;
@@ -114,7 +117,7 @@ public class OperationServiceImpl implements OperationService {
 	}
 
 	@Override
-	public DispatchedResponseDTO disaptchedListByLsORVehicleNumber(Long lsId, String vehicleNo) {
+	public DispatchedResponseDTO disaptchedListByLsORVehicleNumber(Long lsId, String vehicleNo, String companyCode) {
 
 		if (lsId == null) {
 			throw new RuntimeException("Provide LS ID");
@@ -124,6 +127,14 @@ public class OperationServiceImpl implements OperationService {
 
 		LoadingSheetDTO ls = loadingSheetRepository.findById(lsId)
 				.orElseThrow(() -> new RuntimeException("LS not found"));
+
+        if (companyCode != null && !companyCode.isEmpty()) {
+            List<String> branches = branchRepo.getbranchesListByCompanyCode(companyCode).stream()
+                .map(com.logic.logistic.model.BranchMap::getBranchCode).toList();
+            if (!branches.contains(ls.getFromBranch()) && !branches.contains(ls.getDestinationBranch())) {
+                throw new RuntimeException("LS belongs to another company");
+            }
+        }
 
 		response.setLoadingSheet(ls);
 

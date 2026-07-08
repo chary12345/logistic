@@ -32,4 +32,11 @@ public interface TbbInvoiceRepository extends JpaRepository<TbbInvoiceDTO, Long>
         @Param("fromDate") LocalDateTime fromDate,
         @Param("toDate") LocalDateTime toDate
     );
+
+    @Query("SELECT t FROM TbbInvoiceDTO t WHERE t.fromBranch IN :branches AND t.createdAt BETWEEN :fromDate AND :toDate ORDER BY t.createdAt DESC")
+    List<TbbInvoiceDTO> findByFromBranchInAndDateRange(
+        @Param("branches") List<String> branches,
+        @Param("fromDate") LocalDateTime fromDate,
+        @Param("toDate") LocalDateTime toDate
+    );
 }

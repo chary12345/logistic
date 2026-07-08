@@ -99,8 +99,9 @@ public class StatementController {
     public ResponseEntity<List<TbbInvoiceDTO>> getTbbBillReport(
             @RequestParam(required = false) String branchCode,
             @RequestParam(defaultValue = "false") boolean allBranches,
+            @RequestParam(required = false) String companyCode,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fromDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime toDate) {
-        return ResponseEntity.ok(statementService.getTbbBillReport(branchCode, allBranches, fromDate, toDate));
+        return ResponseEntity.ok(statementService.getTbbBillReport(branchCode, allBranches, companyCode, fromDate, toDate));
     }
 }

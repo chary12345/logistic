@@ -11,7 +11,7 @@ import com.logic.logistic.model.OperationFilter;
 public interface OperationService {
 
 	List<Booking> getBookingsWithFilter(OperationFilter filter);
-	DispatchedResponseDTO disaptchedListByLsORVehicleNumber(Long lsId, String vehicleNo);
+	DispatchedResponseDTO disaptchedListByLsORVehicleNumber(Long lsId, String vehicleNo, String companyCode);
 	void receiveSelectedLrs(ReceiveRequest request);
 
 	List<Booking> getReceivedLrsForDelivery(String destinationBranchCode, String lrNumber);

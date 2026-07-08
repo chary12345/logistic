@@ -28,8 +28,9 @@ public class OpperationController {
 	@GetMapping("/disaptchedList")
 	public ResponseEntity<DispatchedResponseDTO> disaptchedListByLsORVehicleNumber(
 			@RequestParam(required = false) Long lsId,
-			@RequestParam(required = false) String vehicleNo) {
-		return ResponseEntity.ok(operationService.disaptchedListByLsORVehicleNumber(lsId, vehicleNo));
+			@RequestParam(required = false) String vehicleNo,
+			@RequestParam(required = false) String companyCode) {
+		return ResponseEntity.ok(operationService.disaptchedListByLsORVehicleNumber(lsId, vehicleNo, companyCode));
 	}
 
 	@GetMapping("/dispatchedListByBranch")

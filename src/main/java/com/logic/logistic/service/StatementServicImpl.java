@@ -296,10 +296,17 @@ public class StatementServicImpl implements StatementService{
 
     @Override
     public List<TbbInvoiceDTO> searchTbbInvoices(String branchCode, String invoiceNumber, LocalDateTime fromDate, LocalDateTime toDate) {
+        if (invoiceNumber != null && !invoiceNumber.isEmpty() && fromDate != null && toDate != null) {
+            return tbbInvoiceRepository.findByInvoiceNumber(invoiceNumber).stream()
+                .filter(inv -> inv.getFromBranch().equals(branchCode) && 
+                               !inv.getCreatedAt().isBefore(fromDate) && 
+                               !inv.getCreatedAt().isAfter(toDate))
+                .collect(Collectors.toList());
+        }
         // Search by invoice number only
         if (invoiceNumber != null && !invoiceNumber.isEmpty()) {
             return tbbInvoiceRepository.findByInvoiceNumber(invoiceNumber)
-                .map(inv -> java.util.Collections.singletonList(inv))
+                .map(inv -> inv.getFromBranch().equals(branchCode) ? java.util.Collections.singletonList(inv) : new ArrayList<TbbInvoiceDTO>())
                 .orElse(new ArrayList<>());
         }
         // Search by date range only
@@ -504,8 +511,13 @@ public class StatementServicImpl implements StatementService{
     }
 
     @Override
-    public List<TbbInvoiceDTO> getTbbBillReport(String branchCode, boolean allBranches, LocalDateTime fromDate, LocalDateTime toDate) {
+    public List<TbbInvoiceDTO> getTbbBillReport(String branchCode, boolean allBranches, String companyCode, LocalDateTime fromDate, LocalDateTime toDate) {
         if (allBranches) {
+            if (companyCode != null && !companyCode.isEmpty()) {
+                List<String> branchCodes = branchRepo.getbranchesListByCompanyCode(companyCode)
+                    .stream().map(com.logic.logistic.model.BranchMap::getBranchCode).collect(Collectors.toList());
+                return tbbInvoiceRepository.findByFromBranchInAndDateRange(branchCodes, fromDate, toDate);
+            }
             return tbbInvoiceRepository.findAllByDateRange(fromDate, toDate);
         } else {
             return tbbInvoiceRepository.findByBranchAndDateRange(branchCode, fromDate, toDate);

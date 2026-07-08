@@ -81,19 +81,6 @@ public class PermissionDefaults {
 
                 p.setHome(true);
 
-                p.setBooking(true);
-                p.setDispatch(true);
-                p.setReceive(true);
-                p.setDelivery(true);
-
-                // LIMITED REPORTS
-                p.setBookingReport(true);
-                break;
-
-            case "EMPLOYEE":
-
-                p.setHome(true);
-
                 // Operations
                 p.setBooking(true);
                 p.setDispatch(true);
@@ -115,9 +102,29 @@ public class PermissionDefaults {
                 p.setLoadingSheetList(true);
                 p.setGlobalSearch(true);
 
-                // Administration modules (remains false by default):
-                // Branches, Employees, Vehicles, Parties, Charges, RolesAndPermissions
+                // Administration modules
+                p.setBranches(true);
+                p.setEmployees(true);
+                p.setVehicles(true);
+                p.setParties(true);
+                p.setCharges(true);
+                p.setRolesAndPermissions(true);
 
+                break;
+
+            case "EMPLOYEE":
+
+                p.setHome(true);
+
+                // Operations
+                p.setBooking(true);
+                p.setDispatch(true);
+                p.setReceive(true);
+                p.setDelivery(true);
+
+                // Limited Reports
+                p.setBookingReport(true);
+                
                 break;
         }
 

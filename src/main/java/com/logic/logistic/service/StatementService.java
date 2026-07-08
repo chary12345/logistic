@@ -32,5 +32,5 @@ public interface StatementService {
 
     void settleTbbInvoice(Long invoiceId);
 
-    List<com.logic.logistic.dto.TbbInvoiceDTO> getTbbBillReport(String branchCode, boolean allBranches, LocalDateTime fromDate, LocalDateTime toDate);
+    List<com.logic.logistic.dto.TbbInvoiceDTO> getTbbBillReport(String branchCode, boolean allBranches, String companyCode, LocalDateTime fromDate, LocalDateTime toDate);
 }
