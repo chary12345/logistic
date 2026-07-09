@@ -72,19 +72,23 @@ public interface BookRepository extends JpaRepository<Booking, String> {
 
 	@Query("""
 			SELECT b FROM Booking b
-			WHERE
-			(
-			    (:status = 'BOOKED' AND b.bookingDate BETWEEN :from AND :to) OR
-			    (:status = 'DISPATCHED' AND COALESCE(b.dispatchDate, b.bookingDate) BETWEEN :from AND :to) OR
-			    (:status = 'RECEIVED' AND COALESCE(b.recieveDate, b.bookingDate) BETWEEN :from AND :to) OR
-			    (:status = 'DELIVERED' AND COALESCE(b.deliveryDate, b.bookingDate) BETWEEN :from AND :to)
-			)
-			AND b.consignStatus = :status
-			AND
-			(
-			    (:status IN ('BOOKED','DISPATCHED') AND b.BranchCode = :branchCode) OR
-			    (:status IN ('RECEIVED','DELIVERED') AND b.destinationBranchCode = :branchCode)
-			)
+            WHERE
+            (
+                (:status = 'BOOKED' AND b.bookingDate BETWEEN :from AND :to) OR
+                (:status = 'DISPATCHED' AND COALESCE(b.dispatchDate, b.bookingDate) BETWEEN :from AND :to) OR
+                (:status = 'RECEIVED' AND COALESCE(b.recieveDate, b.bookingDate) BETWEEN :from AND :to) OR
+                (:status = 'DELIVERED' AND COALESCE(b.deliveryDate, b.bookingDate) BETWEEN :from AND :to)
+            )
+            AND
+            (
+                :status = 'BOOKED'
+                OR b.consignStatus = :status
+            )
+            AND
+            (
+                (:status IN ('BOOKED','DISPATCHED') AND b.BranchCode = :branchCode) OR
+                (:status IN ('RECEIVED','DELIVERED') AND b.destinationBranchCode = :branchCode)
+            )
 			ORDER BY
 			CASE
 			    WHEN :status = 'BOOKED' THEN b.bookingDate
@@ -102,19 +106,23 @@ public interface BookRepository extends JpaRepository<Booking, String> {
 
 	@Query("""
 			SELECT b FROM Booking b
-			WHERE
-			(
-			    (:status = 'BOOKED' AND b.bookingDate BETWEEN :from AND :to) OR
-			    (:status = 'DISPATCHED' AND COALESCE(b.dispatchDate, b.bookingDate) BETWEEN :from AND :to) OR
-			    (:status = 'RECEIVED' AND COALESCE(b.recieveDate, b.bookingDate) BETWEEN :from AND :to) OR
-			    (:status = 'DELIVERED' AND COALESCE(b.deliveryDate, b.bookingDate) BETWEEN :from AND :to)
-			)
-			AND b.consignStatus = :status
-			AND
-			(
-			    (:status IN ('BOOKED','DISPATCHED') AND b.BranchCode = :branchCode) OR
-			    (:status IN ('RECEIVED','DELIVERED') AND b.destinationBranchCode = :branchCode)
-			)
+         WHERE
+            (
+                (:status = 'BOOKED' AND b.bookingDate BETWEEN :from AND :to) OR
+                (:status = 'DISPATCHED' AND COALESCE(b.dispatchDate, b.bookingDate) BETWEEN :from AND :to) OR
+                (:status = 'RECEIVED' AND COALESCE(b.recieveDate, b.bookingDate) BETWEEN :from AND :to) OR
+                (:status = 'DELIVERED' AND COALESCE(b.deliveryDate, b.bookingDate) BETWEEN :from AND :to)
+            )
+            AND
+            (
+                :status = 'BOOKED'
+                OR b.consignStatus = :status
+            )
+            AND
+            (
+                (:status IN ('BOOKED','DISPATCHED') AND b.BranchCode = :branchCode) OR
+                (:status IN ('RECEIVED','DELIVERED') AND b.destinationBranchCode = :branchCode)
+            )
 			AND b.loadingReciept < :lastId
 			ORDER BY
 			CASE

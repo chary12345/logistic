@@ -211,7 +211,7 @@ public class BookingService {
 			if (dto.getBillType() != null) {
 				booking.setBillType(dto.getBillType());
 				if (dto.getBillType().equalsIgnoreCase("TO PAY") || dto.getBillType().equalsIgnoreCase("PAID")
-						|| dto.getBillType().equalsIgnoreCase("TBD")) {
+						|| dto.getBillType().equalsIgnoreCase("TBB")) {
 					booking.setBookingtype("AUTO");
 				} else {
 					booking.setBookingtype("MANUAL");

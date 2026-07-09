@@ -267,10 +267,6 @@ public class StatementServicImpl implements StatementService{
 
         tbbInvoiceRepository.save(invoice);
 
-        for (Booking b : bookings) {
-            b.setConsignStatus("BILLED");
-        }
-        bookingRepository.saveAll(bookings);
 
         return invoiceNumber;
     }
@@ -496,17 +492,7 @@ public class StatementServicImpl implements StatementService{
         if ("BILLED".equals(invoice.getStatus())) {
             invoice.setStatus("SETTLED");
             tbbInvoiceRepository.save(invoice);
-            // Update all LR statuses to SETTLED
-            try {
-                List<String> lrIds = new ObjectMapper().readValue(invoice.getLrIdsJson(), List.class);
-                List<Booking> bookings = bookingRepository.findByLoadingRecieptIn(lrIds);
-                for (Booking b : bookings) {
-                    b.setConsignStatus("SETTLED");
-                }
-                bookingRepository.saveAll(bookings);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+
         }
     }
 
