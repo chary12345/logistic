@@ -267,6 +267,7 @@ public class StatementServicImpl implements StatementService{
 
         tbbInvoiceRepository.save(invoice);
 
+        bookingRepository.saveAll(bookings);
 
         return invoiceNumber;
     }

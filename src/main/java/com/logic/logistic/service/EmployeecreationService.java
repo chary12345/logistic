@@ -14,6 +14,8 @@ public interface EmployeecreationService {
 
 	List<String> getEmployeesByBranch(String companyCode, String branchCode);
 
+	List<UserDto> getEmployeesByBranchFull(String companyCode, String branchCode);
+
 	List<UserDto> getEmployeesByCompany(String companyCode);
 
 	UserDto getEmployeeByUserId(String userId);

@@ -151,6 +151,14 @@ public class EmployyeServiceImpl implements EmployeecreationService {
 	}
 
 	@Override
+	public List<UserDto> getEmployeesByBranchFull(String companyCode, String branchCode) {
+		List<UserDto> all = userRepository.findByCompanyCode(companyCode);
+		return all.stream()
+				.filter(u -> branchCode.equalsIgnoreCase(u.getBranchCode()))
+				.collect(java.util.stream.Collectors.toList());
+	}
+
+	@Override
 	public List<UserDto> getEmployeesByCompany(String companyCode) {
 		return userRepository.findByCompanyCode(companyCode);
 	}

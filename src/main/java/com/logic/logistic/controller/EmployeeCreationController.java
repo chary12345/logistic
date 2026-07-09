@@ -94,6 +94,23 @@ public class EmployeeCreationController {
         }
     }
 
+    @GetMapping("/employeesByBranch")
+    public ResponseEntity<Map<String, Object>> getEmployeesByBranch(
+            @RequestParam String companyCode,
+            @RequestParam String branchCode) {
+        Map<String, Object> map = new HashMap<>();
+        try {
+            List<UserDto> employees = employeecreationService.getEmployeesByBranchFull(companyCode, branchCode);
+            map.put("status", "SUCCESS");
+            map.put("data", employees);
+            return ResponseEntity.ok(map);
+        } catch (Exception e) {
+            map.put("status", "FAILURE");
+            map.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(map);
+        }
+    }
+
     @GetMapping("/getEmployeeDetails/{userId}")
     public ResponseEntity<UserDto> getEmployeeDetails(@PathVariable String userId) {
         UserDto employee = employeecreationService.getEmployeeByUserId(userId);
